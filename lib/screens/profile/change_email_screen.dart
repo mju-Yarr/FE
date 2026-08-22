@@ -47,7 +47,10 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
       final api = ref.read(apiClientProvider);
       await api.post<Map<String, dynamic>>(
         "/me/email/change-request",
-        body: {"newEmail": _emailCtrl.text.trim(), "password": _passwordCtrl.text},
+        body: {
+          "newEmail": _emailCtrl.text.trim(),
+          "password": _passwordCtrl.text,
+        },
       );
       if (mounted) {
         setState(() {
@@ -80,7 +83,10 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
   }
 
   Widget _buildFormState(String? currentEmail) {
-    final canSubmit = !_submitting && _emailCtrl.text.trim().isNotEmpty && _passwordCtrl.text.isNotEmpty;
+    final canSubmit =
+        !_submitting &&
+        _emailCtrl.text.trim().isNotEmpty &&
+        _passwordCtrl.text.isNotEmpty;
     return Column(
       children: [
         Expanded(
@@ -90,16 +96,31 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
               if (currentEmail != null) ...[
                 Container(
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(18)),
+                  decoration: BoxDecoration(
+                    color: EnsomColors.surface2,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
                         "현재 이메일",
-                        style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: EnsomColors.inkFaint, letterSpacing: .3),
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: EnsomColors.inkFaint,
+                          letterSpacing: .3,
+                        ),
                       ),
                       const SizedBox(height: 6),
-                      Text(currentEmail, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: EnsomColors.ink)),
+                      Text(
+                        currentEmail,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: EnsomColors.ink,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -120,10 +141,17 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
               const SizedBox(height: 14),
               Container(
                 padding: const EdgeInsets.all(13),
-                decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(14)),
+                decoration: BoxDecoration(
+                  color: EnsomColors.surface2,
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: const Text(
                   "새 이메일로 인증 메일을 보내드려요. 인증을 완료해야 변경이 적용돼요.",
-                  style: TextStyle(fontSize: 11.5, color: EnsomColors.inkMuted, height: 1.5),
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: EnsomColors.inkMuted,
+                    height: 1.5,
+                  ),
                 ),
               ),
               if (_error != null) ...[
@@ -156,22 +184,44 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
           Container(
             width: 64,
             height: 64,
-            decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: EnsomColors.surface2,
+              shape: BoxShape.circle,
+            ),
             alignment: Alignment.center,
-            child: const Icon(Icons.mark_email_read_outlined, size: 26, color: EnsomColors.inkMuted),
+            child: const Icon(
+              Icons.mark_email_read_outlined,
+              size: 26,
+              color: EnsomColors.inkMuted,
+            ),
           ),
           const SizedBox(height: 16),
           const Text(
             "인증 메일을 보냈어요",
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.3, color: EnsomColors.ink),
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.3,
+              color: EnsomColors.ink,
+            ),
           ),
           const SizedBox(height: 9),
           RichText(
             textAlign: TextAlign.center,
             text: TextSpan(
-              style: const TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted, height: 1.6),
+              style: const TextStyle(
+                fontSize: 12.5,
+                color: EnsomColors.inkMuted,
+                height: 1.6,
+              ),
               children: [
-                TextSpan(text: _emailCtrl.text.trim(), style: const TextStyle(fontWeight: FontWeight.w700, color: EnsomColors.ink)),
+                TextSpan(
+                  text: _emailCtrl.text.trim(),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    color: EnsomColors.ink,
+                  ),
+                ),
                 const TextSpan(text: " 로\n보낸 메일에서 인증을 완료해 주세요."),
               ],
             ),
@@ -186,7 +236,11 @@ class _ChangeEmailScreenState extends ConsumerState<ChangeEmailScreen> {
             onPressed: _submitting ? null : _submit,
             child: const Text(
               "다시 보내기",
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                decoration: TextDecoration.underline,
+              ),
             ),
           ),
           const SizedBox(height: 4),

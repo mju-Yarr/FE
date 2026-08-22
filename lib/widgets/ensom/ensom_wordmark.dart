@@ -55,8 +55,9 @@ class _EnsomWordmarkState extends State<EnsomWordmark>
           ? CustomPaint(painter: _RingPainter(0, widget.color))
           : AnimatedBuilder(
               animation: _controller!,
-              builder: (context, _) =>
-                  CustomPaint(painter: _RingPainter(_controller!.value, widget.color)),
+              builder: (context, _) => CustomPaint(
+                painter: _RingPainter(_controller!.value, widget.color),
+              ),
             ),
     );
 
@@ -73,7 +74,10 @@ class _EnsomWordmarkState extends State<EnsomWordmark>
             height: 1,
           ),
         ),
-        Padding(padding: const EdgeInsets.symmetric(horizontal: 2), child: ring),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2),
+          child: ring,
+        ),
         Text(
           "M",
           style: TextStyle(

@@ -6,7 +6,9 @@ import "package:flutter_riverpod/legacy.dart";
 import "../core/app_config.dart";
 import "../core/auth_service.dart";
 import "../core/fcm_service.dart";
+import "../core/onboarding_service.dart";
 import "../core/secure_storage_service.dart";
+import "../models/onboarding_progress.dart";
 import "../network/api_client.dart";
 import "map_providers.dart";
 
@@ -23,6 +25,11 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 final authServiceProvider = Provider<AuthService>((ref) {
   final apiClient = ref.watch(apiClientProvider);
   return AuthService(apiClient: apiClient);
+});
+
+final onboardingServiceProvider = Provider<OnboardingService>((ref) {
+  final apiClient = ref.watch(apiClientProvider);
+  return OnboardingService(apiClient: apiClient);
 });
 
 /// 인증 상태 — 앱 전체에서 로그인 여부, 온보딩 완료 여부를 추적한다.
@@ -43,8 +50,7 @@ class AuthState {
     this.userId,
     this.email,
     this.consentRequired = const [],
-    this.onboardingRequired = false,
-    this.onboardingStep,
+    this.onboarding,
     this.errorMessage,
   });
 
@@ -52,9 +58,17 @@ class AuthState {
   final String? userId;
   final String? email;
   final List<String> consentRequired;
-  final bool onboardingRequired;
-  final String? onboardingStep;
+
+  /// 서버가 판정한 온보딩 진행 상태(§6.2 가드 3). 라우터가 재개 지점을
+  /// 여기서 읽는다.
+  final OnboardingProgress? onboarding;
+
   final String? errorMessage;
+
+  bool get onboardingRequired => onboarding != null && !onboarding!.completed;
+
+  /// 온보딩 재개 경로. 완료됐거나 정보가 없으면 null.
+  String? get onboardingRoute => onboarding?.route;
 
   static const initial = AuthState(status: AuthStatus.unknown);
 }
@@ -65,6 +79,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required this.secureStorage,
     required this.apiClient,
     required this.clearMapDraft,
+    this.onboardingService,
     Future<void> Function(ApiClient apiClient, String installationId)?
     initializeFcm,
     Future<void> Function()? disposeFcm,
@@ -88,6 +103,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final SecureStorageService secureStorage;
   final ApiClient apiClient;
   final Future<void> Function() clearMapDraft;
+
+  /// 기존 단위 테스트가 이 notifier를 직접 만들 수 있게 nullable로 둔다.
+  final OnboardingService? onboardingService;
   final Future<void> Function(ApiClient apiClient, String installationId)
   _initializeFcm;
   final Future<void> Function() _disposeFcm;
@@ -116,22 +134,25 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       // refresh가 필요하면 ApiClient가 처리한다. 세션 검사 네트워크 실패와
       // 인증 실패를 구분하기 위해 실제 인증 필요 API를 호출한다.
-      await apiClient.get<Map<String, dynamic>>("/me/bootstrap");
+      final bootstrap = await apiClient.get<Map<String, dynamic>>(
+        "/me/bootstrap",
+      );
       if (!apiClient.isCurrentSessionGeneration(bootstrapGeneration)) return;
-      final isOnboardingDone = await secureStorage.onboardingCompleted;
-      if (!apiClient.isCurrentSessionGeneration(bootstrapGeneration)) return;
-      if (!isOnboardingDone) {
-        final step = await secureStorage.onboardingStep;
-        if (!apiClient.isCurrentSessionGeneration(bootstrapGeneration)) return;
+      // 온보딩 진행 상태의 출처는 서버다. SecureStorage를 보면 기기를 바꾼
+      // 사용자가 이미 끝낸 온보딩을 처음부터 다시 하게 된다.
+      final onboarding = _readBootstrapOnboarding(bootstrap);
+      if (onboarding != null && !onboarding.completed) {
         state = AuthState(
           status: AuthStatus.onboarding,
-          onboardingRequired: true,
-          onboardingStep: step,
+          onboarding: onboarding,
         );
         _syncFcm();
         return;
       }
-      state = const AuthState(status: AuthStatus.authenticated);
+      state = AuthState(
+        status: AuthStatus.authenticated,
+        onboarding: onboarding,
+      );
       _syncFcm();
     } on ApiException catch (e) {
       if (!apiClient.isCurrentSessionGeneration(bootstrapGeneration) ||
@@ -162,10 +183,34 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  /// BootstrapResponse.gate.onboarding. 구버전 서버가 gate를 안 주면 null을
+  /// 돌려주고, 호출부는 온보딩을 강제하지 않는다.
+  OnboardingProgress? _readBootstrapOnboarding(Map<String, dynamic> bootstrap) {
+    final gate = bootstrap["gate"] as Map<String, dynamic>?;
+    final onboarding = gate?["onboarding"] as Map<String, dynamic>?;
+    return onboarding == null ? null : OnboardingProgress.fromJson(onboarding);
+  }
+
   Future<void> retrySessionCheck() {
     final completion = _checkExistingSession();
     _sessionCheckCompletion = completion;
     return completion;
+  }
+
+  /// 서버 응답을 기다릴 수 없는 손상 세션에서 로컬 인증 정보만 폐기한다.
+  /// 서버 logout은 호출하지 않으므로 splash의 복구 버튼이 즉시 동작한다.
+  Future<void> discardLocalSession() async {
+    final cleanupGeneration = apiClient.beginSessionTransition();
+    await Future.wait([
+      _bestEffort(
+        () => apiClient.clearSession(expectedGeneration: cleanupGeneration),
+      ),
+      _bestEffort(clearMapDraft),
+      _bestEffort(_disposeFcm),
+    ]);
+    if (apiClient.isCurrentSessionGeneration(cleanupGeneration)) {
+      state = const AuthState(status: AuthStatus.unauthenticated);
+    }
   }
 
   /// main.dart가 Firebase.initializeApp() + 백그라운드 핸들러 등록까지는
@@ -188,22 +233,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
     return generation;
   }
 
-  /// 이메일 가입 성공 — BE는 token을 발급하지 않고 인증 메일을 보낸다.
-  /// 인증 링크를 연 뒤 사용자가 로그인하면 BE가 access/refresh token을 발급한다.
+  /// S-16 atomic 가입. 화면 안에서 이메일 인증을 이미 끝냈으므로 티켓과 약관을
+  /// 함께 보낸다. 가입 응답에는 토큰이 없고(BE SignupResponse), 이어서 S-18에서
+  /// 로그인해 세션을 만든다.
   Future<SignupResult> signupWithEmail({
     required String email,
     required String password,
+    required String verificationTicket,
+    required Map<String, bool> consents,
+    String? name,
+    String? nickname,
+    String? timezone,
   }) async {
-    final result = await authService.signupWithEmail(
+    final installationId = await secureStorage.installationId;
+    return authService.signupWithEmail(
       email: email,
       password: password,
+      verificationTicket: verificationTicket,
+      consents: consents,
+      name: name,
+      nickname: nickname,
+      timezone: timezone,
+      installationId: installationId,
     );
-    state = AuthState(
-      status: AuthStatus.emailVerificationRequired,
-      userId: result.userId,
-      email: result.email,
-    );
-    return result;
   }
 
   /// 이메일 로그인 성공
@@ -262,14 +314,57 @@ class AuthNotifier extends StateNotifier<AuthState> {
           ? AuthStatus.onboarding
           : AuthStatus.authenticated,
       userId: state.userId,
-      onboardingRequired: state.onboardingRequired,
+      onboarding: state.onboarding,
     );
     _syncFcm();
   }
 
-  void onOnboardingCompleted() {
-    secureStorage.setOnboardingCompleted(true);
-    state = AuthState(status: AuthStatus.authenticated, userId: state.userId);
+  /// 온보딩 단계를 서버에 기록하고 상태에 반영한다. 단계 이동은 화면 전환의
+  /// 부수 효과이지 관문이 아니므로, 기록에 실패해도 흐름을 막지 않고 로컬에만
+  /// 남긴다 — 여기서 사용자를 세우면 온보딩 중간에 갇힌다.
+  Future<void> advanceOnboarding(String step) async {
+    await _bestEffort(() => secureStorage.setOnboardingStep(step));
+    final service = onboardingService;
+    if (service == null) return;
+    try {
+      onOnboardingProgressed(await service.updateStep(step));
+    } catch (_) {
+      // 다음 진입 때 bootstrap이 서버 상태를 다시 읽어 정렬한다.
+    }
+  }
+
+  /// 온보딩 단계 진행. 서버가 돌려준 진행 상태를 그대로 반영해서
+  /// 앱을 껐다 켜도 같은 자리에서 이어진다.
+  void onOnboardingProgressed(OnboardingProgress progress) {
+    state = AuthState(
+      status: progress.completed
+          ? AuthStatus.authenticated
+          : AuthStatus.onboarding,
+      userId: state.userId,
+      onboarding: progress,
+    );
+    if (progress.completed) _syncFcm();
+  }
+
+  Future<void> onOnboardingCompleted() async {
+    // 로컬 플래그는 구버전 서버 호환용으로만 남긴다. 판정 기준은 서버다.
+    await secureStorage.setOnboardingCompleted(true);
+    await _bestEffort(() async {
+      final progress = await onboardingService?.complete();
+      if (progress != null) onOnboardingProgressed(progress);
+    });
+    if (state.status == AuthStatus.authenticated) return;
+    state = AuthState(
+      status: AuthStatus.authenticated,
+      userId: state.userId,
+      onboarding:
+          (state.onboarding ??
+                  const OnboardingProgress(
+                    currentStep: "completed",
+                    completed: true,
+                  ))
+              .copyWith(currentStep: "completed", completed: true),
+    );
   }
 
   /// 이메일 인증 확인 완료 후 상태 전이
@@ -357,33 +452,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }) {
     if (!apiClient.isCurrentSessionGeneration(expectedGeneration)) return;
     _terminalAuthExpiryFuture = null;
-    if (result.emailVerificationRequired) {
-      state = AuthState(
-        status: AuthStatus.emailVerificationRequired,
-        userId: result.userId,
-        email: email,
-      );
-    } else if (result.consentRequired.isNotEmpty) {
+    // §6.2 가드는 순서대로 평가한다 — 약관을 통과해야 온보딩을 검사한다.
+    // 미인증 이메일은 BE가 로그인 자체를 403 EMAIL_VERIFICATION_REQUIRED로
+    // 막으므로 여기까지 오지 않는다.
+    if (result.consentRequired.isNotEmpty) {
       state = AuthState(
         status: AuthStatus.consentRequired,
         userId: result.userId,
+        email: email,
         consentRequired: result.consentRequired,
-        onboardingRequired: result.isNew,
+        onboarding: result.onboarding,
       );
-    } else if (result.isNew) {
+      return;
+    }
+    final onboarding = result.onboarding;
+    if (onboarding != null && !onboarding.completed) {
       state = AuthState(
         status: AuthStatus.onboarding,
         userId: result.userId,
-        onboardingRequired: true,
+        email: email,
+        onboarding: onboarding,
       );
       _syncFcm();
-    } else {
-      state = AuthState(
-        status: AuthStatus.authenticated,
-        userId: result.userId,
-      );
-      _syncFcm();
+      return;
     }
+    state = AuthState(
+      status: AuthStatus.authenticated,
+      userId: result.userId,
+      email: email,
+      onboarding: onboarding,
+    );
+    _syncFcm();
   }
 }
 
@@ -398,6 +497,7 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
     secureStorage: secureStorage,
     apiClient: apiClient,
     clearMapDraft: () => ref.read(mapDraftEventProvider.notifier).clear(),
+    onboardingService: ref.watch(onboardingServiceProvider),
   );
   apiClient.setAuthExpiredHandler(notifier.onTerminalAuthExpired);
   ref.onDispose(() => apiClient.setAuthExpiredHandler(null));

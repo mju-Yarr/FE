@@ -73,7 +73,10 @@ class _CoachmarkOverlayState extends State<CoachmarkOverlay> {
           // 반투명 배경 + 원형 컷아웃
           CustomPaint(
             size: screenSize,
-            painter: _SpotlightPainter(center: spot.center, radius: spot.radius),
+            painter: _SpotlightPainter(
+              center: spot.center,
+              radius: spot.radius,
+            ),
           ),
           // 툴팁 버블
           Positioned(

@@ -36,18 +36,31 @@ class _ReasonSectionState extends State<ReasonSection> {
               children: [
                 const Text(
                   "계산 근거",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: -.2, color: EnsomColors.ink),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.2,
+                    color: EnsomColors.ink,
+                  ),
                 ),
                 const Spacer(),
                 Text(
                   _expanded ? "접기" : "자세히",
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: EnsomColors.inkFaint),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: EnsomColors.inkFaint,
+                  ),
                 ),
                 const SizedBox(width: 3),
                 AnimatedRotation(
                   turns: _expanded ? .5 : 0,
                   duration: const Duration(milliseconds: 180),
-                  child: const Icon(Icons.keyboard_arrow_down, size: 15, color: EnsomColors.inkFaint),
+                  child: const Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 15,
+                    color: EnsomColors.inkFaint,
+                  ),
                 ),
               ],
             ),
@@ -64,7 +77,10 @@ class _ReasonSectionState extends State<ReasonSection> {
             child: Column(
               children: [
                 for (var i = 0; i < widget.reasons.length; i++)
-                  _ReasonRow(item: widget.reasons[i], isLast: i == widget.reasons.length - 1),
+                  _ReasonRow(
+                    item: widget.reasons[i],
+                    isLast: i == widget.reasons.length - 1,
+                  ),
               ],
             ),
           ),
@@ -84,7 +100,9 @@ class _ReasonRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        border: isLast ? null : const Border(bottom: BorderSide(color: EnsomColors.hairline)),
+        border: isLast
+            ? null
+            : const Border(bottom: BorderSide(color: EnsomColors.hairline)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,7 +121,9 @@ class _ReasonRow extends StatelessWidget {
                   item.text,
                   style: TextStyle(
                     fontSize: 12.5,
-                    fontWeight: item.adjusted ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: item.adjusted
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                     color: EnsomColors.ink,
                   ),
                 ),
@@ -111,7 +131,10 @@ class _ReasonRow extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     "최근 ${item.sampleCount}회 기록 기준",
-                    style: const TextStyle(fontSize: 11, color: EnsomColors.inkMuted),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: EnsomColors.inkMuted,
+                    ),
                   ),
                 ],
               ],

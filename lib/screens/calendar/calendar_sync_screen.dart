@@ -9,6 +9,7 @@ import "../../providers/bootstrap_provider.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_error_banner.dart";
 import "../../widgets/ensom/ensom_pill_button.dart";
+import "widgets/calendar_source_section.dart";
 
 /// S-41 캘린더 연동 관리.
 /// Google OAuth에서 받은 serverAuthCode를 BE 계약에 맞춰 전달한다.
@@ -81,8 +82,12 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
       ).showSnackBar(const SnackBar(content: Text("캘린더를 연동했어요.")));
 
       if (widget.isOnboarding) {
-        await ref.read(secureStorageProvider).setOnboardingStep("wellness");
-        if (mounted) context.go("/onboarding/wellness");
+        // §4.1 캘린더 다음은 위치 프라이밍이다. 프라이밍 3종은 서버에
+        // permissions 한 단계로만 기록한다.
+        await ref
+            .read(authNotifierProvider.notifier)
+            .advanceOnboarding("permissions");
+        if (mounted) context.go("/onboarding/priming/location");
       }
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -146,8 +151,10 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
   }
 
   Future<void> _continueWithoutCalendar() async {
-    await ref.read(secureStorageProvider).setOnboardingStep("wellness");
-    if (mounted) context.go("/onboarding/wellness");
+    await ref
+        .read(authNotifierProvider.notifier)
+        .advanceOnboarding("permissions");
+    if (mounted) context.go("/onboarding/priming/location");
   }
 
   @override
@@ -161,7 +168,11 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
         automaticallyImplyLeading: !widget.isOnboarding,
         title: const Text(
           "캘린더 연동",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: EnsomColors.ink),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: EnsomColors.ink,
+          ),
         ),
       ),
       body: ListView(
@@ -172,37 +183,65 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
               width: 64,
               height: 64,
               margin: const EdgeInsets.only(bottom: 16),
-              decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: EnsomColors.surface2,
+                shape: BoxShape.circle,
+              ),
               alignment: Alignment.center,
-              child: const Icon(Icons.calendar_today_outlined, size: 26, color: EnsomColors.ink),
+              child: const Icon(
+                Icons.calendar_today_outlined,
+                size: 26,
+                color: EnsomColors.ink,
+              ),
             ),
             const Text(
               "다음 일정과 장소를\n자동으로 인식하려면",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: -.3, height: 1.35, color: EnsomColors.ink),
+              style: TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.w700,
+                letterSpacing: -.3,
+                height: 1.35,
+                color: EnsomColors.ink,
+              ),
             ),
             const SizedBox(height: 12),
             const Text(
               "캘린더를 연동하면 일정마다 시간과 장소를 다시 입력하지 않아도, 언제부터 준비를 시작해야 하는지 자동으로 알려드려요.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: EnsomColors.inkMuted, height: 1.65),
+              style: TextStyle(
+                fontSize: 13,
+                color: EnsomColors.inkMuted,
+                height: 1.65,
+              ),
             ),
             const SizedBox(height: 20),
           ],
           Container(
             padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(18)),
+            decoration: BoxDecoration(
+              color: EnsomColors.surface2,
+              borderRadius: BorderRadius.circular(18),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (_connected) ...[
                   Row(
                     children: [
-                      const Icon(Icons.check_circle, size: 18, color: EnsomColors.limeInk),
+                      const Icon(
+                        Icons.check_circle,
+                        size: 18,
+                        color: EnsomColors.limeInk,
+                      ),
                       const SizedBox(width: 8),
                       const Text(
                         "캘린더를 연동했어요",
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: EnsomColors.ink),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: EnsomColors.ink,
+                        ),
                       ),
                     ],
                   ),
@@ -211,7 +250,10 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
                     padding: EdgeInsets.only(left: 26),
                     child: Text(
                       "Google 캘린더",
-                      style: TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted),
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: EnsomColors.inkMuted,
+                      ),
                     ),
                   ),
                 ] else
@@ -220,8 +262,15 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
                       Container(
                         width: 34,
                         height: 34,
-                        decoration: const BoxDecoration(color: EnsomColors.surface1, shape: BoxShape.circle),
-                        child: const Icon(Icons.calendar_today_outlined, size: 15, color: EnsomColors.ink),
+                        decoration: const BoxDecoration(
+                          color: EnsomColors.surface1,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.calendar_today_outlined,
+                          size: 15,
+                          color: EnsomColors.ink,
+                        ),
                       ),
                       const SizedBox(width: 11),
                       const Expanded(
@@ -230,12 +279,19 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
                           children: [
                             Text(
                               "Google 캘린더",
-                              style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: EnsomColors.ink),
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: EnsomColors.ink,
+                              ),
                             ),
                             SizedBox(height: 2),
                             Text(
                               "연동 안 됨",
-                              style: TextStyle(fontSize: 11.5, color: EnsomColors.inkFaint),
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: EnsomColors.inkFaint,
+                              ),
                             ),
                           ],
                         ),
@@ -248,18 +304,31 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
                 ],
                 const SizedBox(height: 14),
                 EnsomPillButton(
-                  label: _connected ? "연결 해제" : (_loading ? "연결 중..." : "캘린더 연동하기"),
-                  variant: _connected ? EnsomPillVariant.secondary : EnsomPillVariant.primary,
-                  onPressed: _loading ? null : (_connected ? _disconnect : _connect),
+                  label: _connected
+                      ? "연결 해제"
+                      : (_loading ? "연결 중..." : "캘린더 연동하기"),
+                  variant: _connected
+                      ? EnsomPillVariant.secondary
+                      : EnsomPillVariant.primary,
+                  onPressed: _loading
+                      ? null
+                      : (_connected ? _disconnect : _connect),
                 ),
               ],
             ),
           ),
+          // 연결된 계정의 캘린더별 설정. 온보딩 중에는 연결 여부만 묻고
+          // 세부 설정은 나중에 설정에서 하게 둔다.
+          if (!widget.isOnboarding && _connected) const CalendarSourceSection(),
           if (!widget.isOnboarding) ...[
             const SizedBox(height: 16),
             const Text(
               "캘린더를 연동하면 다음 일정과 장소를 자동으로 인식해요. 별도로 일정을 입력하지 않아도 준비 계획을 세워드려요.",
-              style: TextStyle(fontSize: 12, color: EnsomColors.inkFaint, height: 1.6),
+              style: TextStyle(
+                fontSize: 12,
+                color: EnsomColors.inkFaint,
+                height: 1.6,
+              ),
             ),
           ],
           if (widget.isOnboarding) ...[
@@ -269,7 +338,11 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
                 onPressed: _loading ? null : _continueWithoutCalendar,
                 child: const Text(
                   "나중에 할게요",
-                  style: TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted, decoration: TextDecoration.underline),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: EnsomColors.inkMuted,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
             ),

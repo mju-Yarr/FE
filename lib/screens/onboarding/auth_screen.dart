@@ -46,7 +46,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     super.initState();
     // 웹은 GSI가 직접 그리는 버튼(google_web_button.dart)을 쓴다 —
     // signIn()과 달리 결과가 Future 반환값이 아니라 이 스트림으로 온다.
-    if (kIsWeb) {
+    if (kIsWeb && kGoogleServerClientId.isNotEmpty) {
       _webGoogleSub = GoogleAuthHelper.instance.onLoginUserChanged.listen(
         _handleWebGoogleAccount,
       );
@@ -78,7 +78,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     } on ApiException catch (e) {
       debugPrint("[google-login] 실패(ApiException): ${e.code} ${e.message}");
       setState(() {
-        _notice = e.code == "NETWORK_ERROR" ? _AuthNotice.network : _AuthNotice.provider;
+        _notice = e.code == "NETWORK_ERROR"
+            ? _AuthNotice.network
+            : _AuthNotice.provider;
         _errorDetail = "${e.code}: ${e.message}";
       });
     } catch (e, st) {
@@ -113,7 +115,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     } on ApiException catch (e) {
       debugPrint("[google-login] 실패(ApiException): ${e.code} ${e.message}");
       setState(() {
-        _notice = e.code == "NETWORK_ERROR" ? _AuthNotice.network : _AuthNotice.provider;
+        _notice = e.code == "NETWORK_ERROR"
+            ? _AuthNotice.network
+            : _AuthNotice.provider;
         _errorDetail = "${e.code}: ${e.message}";
       });
     } catch (e, st) {
@@ -154,13 +158,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   void _openPrivacyPolicy() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const ConsentDetailScreen(consentType: "privacy", title: "개인정보 처리방침"),
+        builder: (_) => const ConsentDetailScreen(
+          consentType: "privacy",
+          title: "개인정보 처리방침",
+        ),
       ),
     );
   }
 
   void _openSupport() {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SupportScreen()));
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const SupportScreen()));
   }
 
   @override
@@ -231,12 +240,18 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 children: [
                   EnsomPillButton(
                     label: "이메일로 계속하기",
-                    icon: const Icon(Icons.mail_outline, size: 18, color: Colors.white),
+                    icon: const Icon(
+                      Icons.mail_outline,
+                      size: 18,
+                      color: Colors.white,
+                    ),
                     onPressed: _submitting
                         ? null
                         : () {
                             Navigator.of(context).push(
-                              MaterialPageRoute(builder: (_) => const EmailSignupScreen()),
+                              MaterialPageRoute(
+                                builder: (_) => const EmailSignupScreen(),
+                              ),
                             );
                           },
                   ),
@@ -245,7 +260,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     if (kIsWeb)
                       buildGoogleWebButton()
                     else
-                      _GoogleButton(loading: _submitting, onPressed: _handleGoogleLogin),
+                      _GoogleButton(
+                        loading: _submitting,
+                        onPressed: _handleGoogleLogin,
+                      ),
                 ],
               ),
               const SizedBox(height: 18),
@@ -254,7 +272,9 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     ? null
                     : () {
                         Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const EmailLoginScreen()),
+                          MaterialPageRoute(
+                            builder: (_) => const EmailLoginScreen(),
+                          ),
                         );
                       },
                 child: const Text(
@@ -271,18 +291,30 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     onTap: _openPrivacyPolicy,
                     child: const Text(
                       "개인정보 처리방침",
-                      style: TextStyle(fontSize: 11, color: EnsomColors.inkFaint),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: EnsomColors.inkFaint,
+                      ),
                     ),
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(horizontal: 6),
-                    child: Text("·", style: TextStyle(fontSize: 11, color: EnsomColors.hairline)),
+                    child: Text(
+                      "·",
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: EnsomColors.hairline,
+                      ),
+                    ),
                   ),
                   GestureDetector(
                     onTap: _openSupport,
                     child: const Text(
                       "고객지원",
-                      style: TextStyle(fontSize: 11, color: EnsomColors.inkFaint),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: EnsomColors.inkFaint,
+                      ),
                     ),
                   ),
                 ],
@@ -308,14 +340,20 @@ class _GoogleButton extends StatelessWidget {
       shape: StadiumBorder(side: BorderSide(color: EnsomColors.hairline)),
       child: InkWell(
         onTap: loading ? null : onPressed,
-        customBorder: StadiumBorder(side: BorderSide(color: EnsomColors.hairline)),
+        customBorder: StadiumBorder(
+          side: BorderSide(color: EnsomColors.hairline),
+        ),
         child: SizedBox(
           width: double.infinity,
           height: 50,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.g_mobiledata, size: 26, color: Color(0xFF4285F4)),
+              const Icon(
+                Icons.g_mobiledata,
+                size: 26,
+                color: Color(0xFF4285F4),
+              ),
               const SizedBox(width: 4),
               Text(
                 "Google로 계속하기",
@@ -345,11 +383,19 @@ class _QuietNote extends StatelessWidget {
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: EnsomColors.surface2,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 12, color: EnsomColors.inkMuted, height: 1.6, letterSpacing: -.2),
+        style: const TextStyle(
+          fontSize: 12,
+          color: EnsomColors.inkMuted,
+          height: 1.6,
+          letterSpacing: -.2,
+        ),
       ),
     );
   }
@@ -383,7 +429,9 @@ class _ErrorBanner extends StatelessWidget {
           Container(
             width: 3,
             decoration: BoxDecoration(
-              color: caution ? EnsomColors.caution : EnsomColors.inkFaint.withValues(alpha: .4),
+              color: caution
+                  ? EnsomColors.caution
+                  : EnsomColors.inkFaint.withValues(alpha: .4),
               borderRadius: BorderRadius.circular(999),
             ),
           ),
@@ -394,12 +442,22 @@ class _ErrorBanner extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, letterSpacing: -.3, color: EnsomColors.ink),
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.3,
+                    color: EnsomColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 11, color: EnsomColors.inkMuted, height: 1.5, letterSpacing: -.2),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: EnsomColors.inkMuted,
+                    height: 1.5,
+                    letterSpacing: -.2,
+                  ),
                 ),
               ],
             ),
@@ -414,7 +472,11 @@ class _ErrorBanner extends StatelessWidget {
             ),
             child: const Text(
               "다시 시도",
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                decoration: TextDecoration.underline,
+              ),
             ),
           ),
         ],

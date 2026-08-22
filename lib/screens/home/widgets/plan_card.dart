@@ -1,6 +1,7 @@
 import "package:flutter/material.dart";
 import "package:intl/intl.dart";
 import "../../../models/plan.dart";
+import "../../../models/today_plan.dart";
 import "../../../theme/ensom_colors.dart";
 import "../../../widgets/ensom/ensom_pill_button.dart";
 import "reason_section.dart";
@@ -9,11 +10,10 @@ import "wellness_actions_section.dart";
 import "plan_change_banner.dart";
 
 /// HOME-01/02 · S-06 히어로 카드. 화면연결명세서 §3 "홈 카드 상태 6종"을
-/// 반영한다. 이상적으로는 상태를 서버가 내려줘야 하지만(§7.2 "홈 카드
-/// 상태는 서버가 내려준다") 현재 API가 그 필드를 아직 안 주므로,
-/// eventStatus + feasible + 남은 시간으로 클라이언트가 근사 계산한다
-/// (`_HeroBand._of`). 서버 필드가 추가되면 이 부분만 교체하면 된다.
-enum _HeroBand { ease, start, depart, rush }
+/// 반영한다. 상태는 GET /plans/today가 내려준 값을 그대로 쓴다 — §7.2가
+/// "클라이언트가 시각을 비교해 상태를 계산하지 않는다"고 못박고 있고, 기기
+/// 시계·타임존이 틀어지면 상태가 서버와 어긋나기 때문이다.
+/// wrap은 카드 전체를 오늘 요약으로 대체하므로 여기서 다루지 않는다.
 
 class _HeroContent {
   const _HeroContent({
@@ -39,6 +39,7 @@ class PlanCard extends StatelessWidget {
   const PlanCard({
     super.key,
     required this.eventTitle,
+    required this.state,
     required this.plan,
     this.previousPlan,
     this.onTap,
@@ -54,6 +55,10 @@ class PlanCard extends StatelessWidget {
   });
 
   final String eventTitle;
+
+  /// 서버가 판정한 히어로 상태(§7.2).
+  final HomeCardState state;
+
   final Plan plan;
   final Plan? previousPlan;
   final VoidCallback? onTap;
@@ -100,21 +105,10 @@ class PlanCard extends StatelessWidget {
     }
   }
 
-  _HeroBand get _band {
-    if (!plan.feasible) return _HeroBand.rush;
-    if (plan.eventStatus == EventLifecycleStatus.enroute) return _HeroBand.depart;
-    final now = DateTime.now();
-    if (now.isAfter(plan.recommendedDepartAt)) return _HeroBand.rush;
-    if (now.isAfter(plan.prepStartAt)) {
-      final untilDepart = plan.recommendedDepartAt.difference(now);
-      return untilDepart.inMinutes <= 15 ? _HeroBand.depart : _HeroBand.start;
-    }
-    return _HeroBand.ease;
-  }
-
-  _HeroContent _content(_HeroBand band) {
+  _HeroContent _content(HomeCardState band) {
     switch (band) {
-      case _HeroBand.ease:
+      case HomeCardState.wrap:
+      case HomeCardState.ease:
         return _HeroContent(
           badgeLabel: "여유",
           caution: false,
@@ -126,19 +120,22 @@ class PlanCard extends StatelessWidget {
           ctaLabel: "경로 확인",
           onCta: onSelectRoute,
         );
-      case _HeroBand.start:
+      case HomeCardState.start:
         final mins = plan.prepStartAt.difference(DateTime.now()).inMinutes;
         return _HeroContent(
           badgeLabel: "준비 시작",
           caution: false,
           headline: "준비를 시작하세요",
           bigNumber: mins > 0 ? "$mins분" : null,
-          sub: "${_timeFmt.format(plan.recommendedDepartAt)}에 출발하면 제시간에 도착할 수 있어요.",
+          sub:
+              "${_timeFmt.format(plan.recommendedDepartAt)}에 출발하면 제시간에 도착할 수 있어요.",
           ctaLabel: "준비 시작",
           onCta: onPrepStart,
         );
-      case _HeroBand.depart:
-        final mins = plan.recommendedDepartAt.difference(DateTime.now()).inMinutes;
+      case HomeCardState.depart:
+        final mins = plan.recommendedDepartAt
+            .difference(DateTime.now())
+            .inMinutes;
         return _HeroContent(
           badgeLabel: "출발 임박",
           caution: false,
@@ -148,7 +145,7 @@ class PlanCard extends StatelessWidget {
           ctaLabel: "출발했어요",
           onCta: onDeparted,
         );
-      case _HeroBand.rush:
+      case HomeCardState.rush:
         return _HeroContent(
           badgeLabel: "촉박",
           caution: true,
@@ -157,6 +154,16 @@ class PlanCard extends StatelessWidget {
           sub: "가장 빠른 기본 경로를 다시 확인했어요.",
           ctaLabel: "경로 확인",
           onCta: onSelectRoute,
+        );
+      case HomeCardState.wellness:
+        return _HeroContent(
+          badgeLabel: "웰니스",
+          caution: false,
+          headline: "오늘 야외 이동이 길어요.",
+          bigNumber: null,
+          sub: "출발 전 선크림과 물을 확인해 주세요.",
+          ctaLabel: "준비 항목 확인",
+          onCta: onTap ?? onSelectRoute,
         );
     }
   }
@@ -172,7 +179,7 @@ class PlanCard extends StatelessWidget {
           onTap: onTap,
           isTerminal: _isTerminal,
           terminalMessage: _terminalMessage,
-          content: _isTerminal ? null : _content(_band),
+          content: _isTerminal ? null : _content(state),
         ),
         if (!_isTerminal) ...[
           const SizedBox(height: 10),
@@ -180,11 +187,17 @@ class PlanCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              OutlinedButton(onPressed: onPrepFinished, child: const Text("준비 완료")),
+              OutlinedButton(
+                onPressed: onPrepFinished,
+                child: const Text("준비 완료"),
+              ),
               if (onArrived != null &&
                   (plan.eventStatus == EventLifecycleStatus.enroute ||
                       plan.eventStatus == EventLifecycleStatus.unresolved))
-                OutlinedButton(onPressed: onArrived, child: const Text("도착했어요")),
+                OutlinedButton(
+                  onPressed: onArrived,
+                  child: const Text("도착했어요"),
+                ),
               OutlinedButton(onPressed: onSnooze, child: const Text("5분 뒤 알림")),
               TextButton(onPressed: onSkip, child: const Text("이번 일정 제외")),
             ],
@@ -200,7 +213,10 @@ class PlanCard extends StatelessWidget {
         const SizedBox(height: 16),
         ReasonSection(reasons: plan.reasons),
         const SizedBox(height: 16),
-        ChecklistSection(checklist: plan.checklist, onToggle: onToggleChecklistItem),
+        ChecklistSection(
+          checklist: plan.checklist,
+          onToggle: onToggleChecklistItem,
+        ),
         if (plan.wellnessActions.isNotEmpty) ...[
           const SizedBox(height: 16),
           WellnessActionsSection(
@@ -277,7 +293,10 @@ class _Hero extends StatelessWidget {
                 ),
               ] else if (c != null) ...[
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 11,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: c.caution
                         ? EnsomColors.caution
@@ -307,7 +326,10 @@ class _Hero extends StatelessWidget {
                       if (c.bigNumber != null)
                         TextSpan(
                           text: "${c.bigNumber} ",
-                          style: const TextStyle(fontSize: 40, letterSpacing: -1.4),
+                          style: const TextStyle(
+                            fontSize: 40,
+                            letterSpacing: -1.4,
+                          ),
                         ),
                       TextSpan(text: c.headline),
                     ],

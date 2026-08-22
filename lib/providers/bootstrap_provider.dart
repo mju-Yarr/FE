@@ -37,27 +37,36 @@ class BootstrapData {
       user: json["user"] != null
           ? BootstrapUser.fromJson(json["user"] as Map<String, dynamic>)
           : const BootstrapUser(
-              userId: "", nickname: "", timezone: "Asia/Seoul", accountStatus: "active"),
-      settings:
-          BootstrapSettings.fromJson(json["settings"] as Map<String, dynamic>? ?? {}),
-      permissions: (json["permissions"] as List<dynamic>?)
-              ?.map((e) =>
-                  BootstrapPermission.fromJson(e as Map<String, dynamic>))
+              userId: "",
+              nickname: "",
+              timezone: "Asia/Seoul",
+              accountStatus: "active",
+            ),
+      settings: BootstrapSettings.fromJson(
+        json["settings"] as Map<String, dynamic>? ?? {},
+      ),
+      permissions:
+          (json["permissions"] as List<dynamic>?)
+              ?.map(
+                (e) => BootstrapPermission.fromJson(e as Map<String, dynamic>),
+              )
               .toList() ??
           [],
-      wellnessPrefs: (json["wellnessPrefs"] as List<dynamic>?)
+      wellnessPrefs:
+          (json["wellnessPrefs"] as List<dynamic>?)
               ?.cast<Map<String, dynamic>>() ??
           [],
       places:
           (json["places"] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
-              [],
-      prepRules: (json["prepItems"] as List<dynamic>?)
-              ?.cast<Map<String, dynamic>>() ??
+          [],
+      prepRules:
+          (json["prepItems"] as List<dynamic>?)?.cast<Map<String, dynamic>>() ??
           [],
       nextEvent: json["nextEvent"] as Map<String, dynamic>?,
       todayPlan: json["todayPlan"] as Map<String, dynamic>?,
       engineConfig: BootstrapEngineConfig.fromJson(
-          (json["engineConfig"] as Map<String, dynamic>?) ?? {}),
+        (json["engineConfig"] as Map<String, dynamic>?) ?? {},
+      ),
     );
   }
 }
@@ -113,8 +122,7 @@ class BootstrapSettings {
       personalizationEnabled: json["personalizationEnabled"] as bool? ?? true,
       autoManageEnabled: json["autoManageEnabled"] as bool? ?? true,
       wellnessEventEnabled: json["wellnessEventEnabled"] as bool? ?? false,
-      lockscreenHideSensitive:
-          json["lockscreenHideSensitive"] as bool? ?? true,
+      lockscreenHideSensitive: json["lockscreenHideSensitive"] as bool? ?? true,
     );
   }
 }
@@ -125,7 +133,8 @@ class BootstrapPermission {
     required this.status,
   });
 
-  final String permissionType; // calendar | location | notification | backgroundLocation
+  final String
+  permissionType; // calendar | location | notification | backgroundLocation
   final String status; // granted | denied | notDetermined
 
   factory BootstrapPermission.fromJson(Map<String, dynamic> json) {
@@ -147,8 +156,12 @@ class BootstrapEngineConfig {
 
   factory BootstrapEngineConfig.fromJson(Map<String, dynamic> json) {
     return BootstrapEngineConfig(
-      calcVersion: json["engineVer"] as String? ?? json["calcVersion"] as String? ?? "3.1.0",
-      weightVersion: json["wisVer"] as String? ?? json["weightVersion"] as String? ?? "w1",
+      calcVersion:
+          json["engineVer"] as String? ??
+          json["calcVersion"] as String? ??
+          "3.1.0",
+      weightVersion:
+          json["wisVer"] as String? ?? json["weightVersion"] as String? ?? "w1",
     );
   }
 }
@@ -162,10 +175,7 @@ class BootstrapEngineConfig {
 final bootstrapProvider = FutureProvider<BootstrapData>((ref) async {
   final authState = ref.watch(authNotifierProvider);
   if (authState.status != AuthStatus.authenticated) {
-    throw ApiException(
-      code: "NOT_AUTHENTICATED",
-      message: "로그인이 필요합니다.",
-    );
+    throw ApiException(code: "NOT_AUTHENTICATED", message: "로그인이 필요합니다.");
   }
 
   final apiClient = ref.watch(apiClientProvider);
@@ -177,9 +187,13 @@ final bootstrapProvider = FutureProvider<BootstrapData>((ref) async {
     // TR-10: 잠금화면 민감 정보 숨김 여부는 bootstrap이 유일한 출처다.
     // 로컬 알림·FCM 둘 다 알림을 직접 표시하므로 각자 반영해야 한다.
     final hideSensitive = data.settings.lockscreenHideSensitive;
-    LocalNotificationService.instance.updateSettings(lockscreenHideSensitive: hideSensitive);
+    LocalNotificationService.instance.updateSettings(
+      lockscreenHideSensitive: hideSensitive,
+    );
     if (!kIsWeb) {
-      FcmService.instance.updateSettings(lockscreenHideSensitive: hideSensitive);
+      FcmService.instance.updateSettings(
+        lockscreenHideSensitive: hideSensitive,
+      );
     }
 
     return data;

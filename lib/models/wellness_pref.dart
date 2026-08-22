@@ -13,6 +13,7 @@ abstract class WellnessPref with _$WellnessPref {
     /// API 명세 §4.2 필드명: "wellnessTopic"
     @JsonKey(name: "wellnessTopic") required String topic,
     required bool isEnabled,
+
     /// null 허용 — API 응답에서 설정하지 않은 항목은 null로 내려올 수 있음.
     int? remindIntervalMinutes,
     @Default(1) int dailyEventCap,

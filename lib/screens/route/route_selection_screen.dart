@@ -19,7 +19,11 @@ class RouteSelectionScreen extends ConsumerWidget {
   final String planId;
   final String eventId;
 
-  Future<void> _select(BuildContext context, WidgetRef ref, RouteOption option) async {
+  Future<void> _select(
+    BuildContext context,
+    WidgetRef ref,
+    RouteOption option,
+  ) async {
     final controller = ref.read(planControllerProvider(eventId).notifier);
     try {
       await controller.selectRoute(option.routeOptionId);
@@ -27,15 +31,21 @@ class RouteSelectionScreen extends ConsumerWidget {
       Navigator.of(context).pop();
     } catch (e) {
       if (!context.mounted) return;
-      final expired = e is ApiException && {
-        "ROUTE_OPTION_EXPIRED",
-        "ROUTE_OPTION_NOT_FOUND",
-        "ROUTE_OPTION_ALREADY_USED",
-      }.contains(e.code);
+      final expired =
+          e is ApiException &&
+          {
+            "ROUTE_OPTION_EXPIRED",
+            "ROUTE_OPTION_NOT_FOUND",
+            "ROUTE_OPTION_ALREADY_USED",
+          }.contains(e.code);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(expired
-            ? "선택한 경로가 만료되었어요. 경로를 다시 검색해주세요."
-            : "경로 선택에 실패했어요. 다시 시도해주세요.")),
+        SnackBar(
+          content: Text(
+            expired
+                ? "선택한 경로가 만료되었어요. 경로를 다시 검색해주세요."
+                : "경로 선택에 실패했어요. 다시 시도해주세요.",
+          ),
+        ),
       );
     }
   }
@@ -50,7 +60,10 @@ class RouteSelectionScreen extends ConsumerWidget {
       body: routesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => const Center(
-          child: Text("경로를 불러오지 못했어요.", style: TextStyle(color: EnsomColors.inkMuted)),
+          child: Text(
+            "경로를 불러오지 못했어요.",
+            style: TextStyle(color: EnsomColors.inkMuted),
+          ),
         ),
         data: (routes) => ListView.separated(
           padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),

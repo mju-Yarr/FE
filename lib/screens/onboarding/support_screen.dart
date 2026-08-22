@@ -21,10 +21,7 @@ const _faqs = [
     "준비 시간이 실제와 안 맞아요",
     "Ensom은 실제 준비·이동 기록을 바탕으로 준비 시간을 계속 조정해요. 설정 > 개인화에서 학습된 값을 확인하고 되돌릴 수 있어요.",
   ),
-  _Faq(
-    "알림이 오지 않아요",
-    "설정 > 권한에서 알림 허용 상태를, 설정 > 알림에서 알림 민감도와 일정별 알림을 확인해 주세요.",
-  ),
+  _Faq("알림이 오지 않아요", "설정 > 권한에서 알림 허용 상태를, 설정 > 알림에서 알림 민감도와 일정별 알림을 확인해 주세요."),
 ];
 
 const _supportEmail = "support@ensom.app";
@@ -45,9 +42,9 @@ class _SupportScreenState extends State<SupportScreen> {
   Future<void> _copyEmail() async {
     await Clipboard.setData(const ClipboardData(text: _supportEmail));
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("$_supportEmail 주소를 복사했어요")),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("$_supportEmail 주소를 복사했어요")));
   }
 
   @override
@@ -60,7 +57,11 @@ class _SupportScreenState extends State<SupportScreen> {
         elevation: 0,
         title: const Text(
           "고객지원",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: EnsomColors.ink),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: EnsomColors.ink,
+          ),
         ),
       ),
       body: ListView(
@@ -80,7 +81,8 @@ class _SupportScreenState extends State<SupportScreen> {
             _FaqTile(
               faq: _faqs[i],
               open: _openIndex == i,
-              onTap: () => setState(() => _openIndex = _openIndex == i ? null : i),
+              onTap: () =>
+                  setState(() => _openIndex = _openIndex == i ? null : i),
             ),
           const Divider(height: 33, color: EnsomColors.hairline),
           const Text(
@@ -98,8 +100,15 @@ class _SupportScreenState extends State<SupportScreen> {
               Container(
                 width: 34,
                 height: 34,
-                decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
-                child: const Icon(Icons.mail_outline, size: 16, color: EnsomColors.ink),
+                decoration: const BoxDecoration(
+                  color: EnsomColors.surface2,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.mail_outline,
+                  size: 16,
+                  color: EnsomColors.ink,
+                ),
               ),
               const SizedBox(width: 12),
               const Column(
@@ -107,12 +116,20 @@ class _SupportScreenState extends State<SupportScreen> {
                 children: [
                   Text(
                     _supportEmail,
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: -.2, color: EnsomColors.ink),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -.2,
+                      color: EnsomColors.ink,
+                    ),
                   ),
                   SizedBox(height: 2),
                   Text(
                     "보통 1~2 영업일 안에 답변드려요",
-                    style: TextStyle(fontSize: 11.5, color: EnsomColors.inkMuted),
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: EnsomColors.inkMuted,
+                    ),
                   ),
                 ],
               ),
@@ -133,7 +150,10 @@ class _SupportScreenState extends State<SupportScreen> {
                 foregroundColor: EnsomColors.ink,
                 minimumSize: const Size.fromHeight(50),
                 shape: const StadiumBorder(),
-                textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
                 elevation: 0,
               ),
               child: const Text("문의 메일 보내기"),
@@ -183,7 +203,11 @@ class _FaqTile extends StatelessWidget {
                     AnimatedRotation(
                       turns: open ? .25 : 0,
                       duration: const Duration(milliseconds: 180),
-                      child: const Icon(Icons.chevron_right, size: 16, color: EnsomColors.inkFaint),
+                      child: const Icon(
+                        Icons.chevron_right,
+                        size: 16,
+                        color: EnsomColors.inkFaint,
+                      ),
                     ),
                   ],
                 ),
@@ -194,10 +218,17 @@ class _FaqTile extends StatelessWidget {
                   padding: const EdgeInsets.only(bottom: 14),
                   child: Text(
                     faq.answer,
-                    style: const TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted, height: 1.75, letterSpacing: -.2),
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: EnsomColors.inkMuted,
+                      height: 1.75,
+                      letterSpacing: -.2,
+                    ),
                   ),
                 ),
-                crossFadeState: open ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                crossFadeState: open
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
                 duration: const Duration(milliseconds: 180),
               ),
             ],

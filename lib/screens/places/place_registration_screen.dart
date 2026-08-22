@@ -254,11 +254,12 @@ class _PlaceRegistrationScreenState
           if (widget.isOnboarding)
             TextButton(
               onPressed: () async {
+                // §4.1 주요 장소 다음은 캘린더 프라이밍이다.
                 await ref
-                    .read(secureStorageProvider)
-                    .setOnboardingStep("notification");
+                    .read(authNotifierProvider.notifier)
+                    .advanceOnboarding("calendar");
                 if (context.mounted) {
-                  context.go("/onboarding/priming/notification");
+                  context.go("/onboarding/priming/calendar");
                 }
               },
               child: const Text(

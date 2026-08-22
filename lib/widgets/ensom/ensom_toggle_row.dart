@@ -33,13 +33,21 @@ class EnsomToggleRow extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: EnsomColors.ink),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: EnsomColors.ink,
+                    ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 3),
                     Text(
                       subtitle!,
-                      style: const TextStyle(fontSize: 11, color: EnsomColors.inkFaint, height: 1.5),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: EnsomColors.inkFaint,
+                        height: 1.5,
+                      ),
                     ),
                   ],
                 ],

@@ -30,7 +30,13 @@ class EnsomToggle extends StatelessWidget {
             decoration: BoxDecoration(
               color: value ? EnsomColors.lime : Colors.white,
               shape: BoxShape.circle,
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .2), blurRadius: 3, offset: const Offset(0, 1))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: .2),
+                  blurRadius: 3,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
           ),
         ),

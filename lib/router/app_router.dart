@@ -8,6 +8,7 @@ import "../providers/map_providers.dart";
 import "../screens/onboarding/auth_screen.dart";
 import "../screens/onboarding/splash_screen.dart";
 import "../screens/onboarding/consent_screen.dart";
+import "../screens/onboarding/consent_detail_screen.dart";
 import "../screens/onboarding/email_verification_screen.dart";
 import "../screens/onboarding/prep_time_entry_screen.dart";
 import "../screens/onboarding/wellness_onboarding_screen.dart";
@@ -41,6 +42,13 @@ import "../screens/profile/sessions_screen.dart";
 import "../screens/onboarding/password_reset_screen.dart";
 import "../screens/map/bookmarks_screen.dart";
 
+const _consentTitles = {
+  "terms": "이용약관",
+  "privacy": "개인정보 처리방침",
+  "location": "위치기반 서비스 이용약관",
+  "marketing": "마케팅 정보 수신 동의",
+};
+
 /// GoRouter + Riverpod 연동.
 /// AuthState를 구독해서 인증 상태 변화 시 자동 리다이렉트.
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -59,10 +67,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final authState = ref.read(authNotifierProvider);
       final path = state.uri.path;
+      // §6.1 "인증 필요 = 아니오" 화면들. 약관 본문은 가입 폼에서 열기 때문에
+      // 로그인 전에도 볼 수 있어야 한다.
       final isAuthPage =
           path.startsWith("/onboarding/auth") ||
           path.startsWith("/onboarding/email") ||
-          path.startsWith("/onboarding/password-reset");
+          path.startsWith("/onboarding/password-reset") ||
+          path.startsWith("/terms/");
       final isConsentPage = path == "/onboarding/consent";
 
       switch (authState.status) {
@@ -83,18 +94,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return "/onboarding/auth";
 
         case AuthStatus.emailVerificationRequired:
-          // 이메일 미인증 — 인증 대기 화면으로
+          // 이메일 인증은 S-16 가입 화면 안 인라인 영역으로 편입됐다(명세 §14).
+          // 링크 인증만 남은 구계정이 로그인에서 403을 받은 경우에만 여기 온다.
           if (path.startsWith("/onboarding/email-verification")) return null;
           if (path == "/onboarding/auth") return null;
           final email = authState.email ?? "";
           return "/onboarding/email-verification?email=${Uri.encodeComponent(email)}";
 
         case AuthStatus.consentRequired:
-          // 약관 미동의 — 동의 화면으로
+          // 가드 2 — consentRequired가 빌 때까지 탈출 불가(§1.3).
           if (isConsentPage) return null;
           return "/onboarding/consent";
 
         case AuthStatus.onboarding:
+          // 가드 3 — 온보딩 미완료면 마지막 미완료 단계로 교체한다.
           final isOnboardingFlow =
               (path.startsWith("/onboarding/") &&
                   !isAuthPage &&
@@ -102,32 +115,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               (path == "/calendar/sync" &&
                   state.uri.queryParameters["onboarding"] == "true");
           if (isOnboardingFlow) return null;
-          // 저장된 온보딩 단계로 복원 — 앱 종료 후 재진입 시 진행 중
-          // 단계부터 다시 시작한다.
-          final step = authState.onboardingStep;
-          switch (step) {
-            case "prep_time":
-              return "/onboarding/prep-time";
-            case "places":
-              return "/onboarding/places";
-            case "notification":
-              // Issue #52: 알림 프라이밍 단계 복원 누락 수정
-              return "/onboarding/priming/notification";
-            case "location":
-              // Issue #52: 위치 프라이밍 단계 복원 누락 수정
-              return "/onboarding/priming/location";
-            case "calendar":
-              return "/onboarding/priming/calendar";
-            case "wellness":
-              return "/onboarding/wellness";
-            case "permissions":
-              return "/onboarding/complete";
-            default:
-              // Issue #54: step이 null(가입완료 버튼 누르기 전 kill)일 때
-              // signup-complete(뒤로가기 차단)로 보내면 루프 발생.
-              // 온보딩의 실제 첫 단계인 prep-time으로 진행.
-              return "/onboarding/prep-time";
-          }
+          // 재개 지점은 서버가 판정한다(GET /me/onboarding · bootstrap gate).
+          // 서버가 단계를 안 주면 온보딩 첫 화면으로 보낸다.
+          return authState.onboardingRoute ?? "/onboarding/prep-time";
 
         case AuthStatus.authenticated:
           // cold start에서 유효한 지도 draft가 복원되면 사용자가 작성 중이던
@@ -189,6 +179,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: "/onboarding/password-reset",
         builder: (c, s) => const PasswordResetScreen(),
       ),
+      // S-21 약관 본문 (§6.1 /terms/:key, key = tos/privacy/location/marketing)
+      GoRoute(
+        path: "/terms/:key",
+        builder: (c, s) {
+          final key = s.pathParameters["key"]!;
+          // 명세의 라우트 key(tos)와 서버 consentType(terms)이 다르다.
+          final consentType = key == "tos" ? "terms" : key;
+          return ConsentDetailScreen(
+            consentType: consentType,
+            title: _consentTitles[consentType] ?? "약관",
+          );
+        },
+      ),
       GoRoute(
         path: "/onboarding/priming/notification",
         builder: (c, s) => PermissionPrimingScreen(
@@ -203,12 +206,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 PermissionRationaleType.notification,
               );
             }
-            await ref.read(secureStorageProvider).setOnboardingStep("location");
-            if (c.mounted) c.go("/onboarding/priming/location");
+            // 알림은 §4.1 프라이밍 3종의 마지막이다. 다음은 S-05 웰니스.
+            await ref
+                .read(authNotifierProvider.notifier)
+                .advanceOnboarding("wellness");
+            if (c.mounted) c.go("/onboarding/wellness");
           },
           onSkip: () async {
-            await ref.read(secureStorageProvider).setOnboardingStep("location");
-            if (c.mounted) c.go("/onboarding/priming/location");
+            await ref
+                .read(authNotifierProvider.notifier)
+                .advanceOnboarding("wellness");
+            if (c.mounted) c.go("/onboarding/wellness");
           },
         ),
       ),
@@ -225,12 +233,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 PermissionRationaleType.location,
               );
             }
-            await ref.read(secureStorageProvider).setOnboardingStep("calendar");
-            if (c.mounted) c.go("/onboarding/priming/calendar");
+            if (c.mounted) c.go("/onboarding/priming/notification");
           },
           onSkip: () async {
-            await ref.read(secureStorageProvider).setOnboardingStep("calendar");
-            if (c.mounted) c.go("/onboarding/priming/calendar");
+            c.go("/onboarding/priming/notification");
           },
         ),
       ),
@@ -239,12 +245,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (c, s) => PermissionPrimingScreen(
           type: PermissionPrimingType.calendar,
           onAllow: () async {
-            await ref.read(secureStorageProvider).setOnboardingStep("calendar");
             if (c.mounted) c.push("/calendar/sync?onboarding=true");
           },
           onSkip: () async {
-            await ref.read(secureStorageProvider).setOnboardingStep("wellness");
-            if (c.mounted) c.go("/onboarding/wellness");
+            // 프라이밍 3종은 서버에 permissions 한 단계로만 기록한다.
+            await ref
+                .read(authNotifierProvider.notifier)
+                .advanceOnboarding("permissions");
+            if (c.mounted) c.go("/onboarding/priming/location");
           },
         ),
       ),
@@ -285,6 +293,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: "/calendar/new",
         builder: (c, s) => const EventFormScreen(),
       ),
+      // S-41 캘린더 연동 관리 (§6.1 /calendar/connections). 기존 /calendar/sync는
+      // 온보딩 중 연결 단계가 계속 쓴다.
+      GoRoute(
+        path: "/calendar/connections",
+        builder: (c, s) => const CalendarSyncScreen(),
+      ),
       GoRoute(
         path: "/calendar/sync",
         builder: (c, s) => CalendarSyncScreen(
@@ -293,7 +307,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: "/calendar/weekly-report",
-        builder: (c, s) => const WeeklyReportScreen(),
+        builder: (c, s) => WeeklyReportScreen(
+          initialDate: DateTime.tryParse(s.uri.queryParameters["date"] ?? ""),
+        ),
       ),
 
       // ─── DTL-01 일정 상세 ─────────────────────────────────────

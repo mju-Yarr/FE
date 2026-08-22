@@ -47,7 +47,8 @@ class _PermissionsScreenState extends State<PermissionsScreen>
     if (mounted) {
       setState(() {
         _statuses = current;
-        _alwaysLocation = current[Permission.locationAlways]?.isGranted ?? false;
+        _alwaysLocation =
+            current[Permission.locationAlways]?.isGranted ?? false;
       });
     }
   }
@@ -79,7 +80,7 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                     title: "캘린더 연동",
                     pillText: "연동됨",
                     isGranted: true,
-                    onTap: () => context.push("/calendar/sync"),
+                    onTap: () => context.push("/calendar/connections"),
                   ),
                   const SizedBox(height: 10),
                   // 위치
@@ -174,8 +175,11 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child:
-                  const Icon(Icons.chevron_left, size: 14, color: EnsomColors.ink),
+              child: const Icon(
+                Icons.chevron_left,
+                size: 14,
+                color: EnsomColors.ink,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -247,7 +251,11 @@ class _PermissionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            const Icon(Icons.chevron_right, size: 14, color: EnsomColors.inkFaint),
+            const Icon(
+              Icons.chevron_right,
+              size: 14,
+              color: EnsomColors.inkFaint,
+            ),
           ],
         ),
       ),
@@ -258,10 +266,7 @@ class _PermissionCard extends StatelessWidget {
 // ─── Always Location Card ───
 
 class _AlwaysLocationCard extends StatelessWidget {
-  const _AlwaysLocationCard({
-    required this.isEnabled,
-    required this.onChanged,
-  });
+  const _AlwaysLocationCard({required this.isEnabled, required this.onChanged});
 
   final bool isEnabled;
   final ValueChanged<bool> onChanged;
@@ -313,8 +318,9 @@ class _AlwaysLocationCard extends StatelessWidget {
               ),
               child: AnimatedAlign(
                 duration: const Duration(milliseconds: 150),
-                alignment:
-                    isEnabled ? Alignment.centerRight : Alignment.centerLeft,
+                alignment: isEnabled
+                    ? Alignment.centerRight
+                    : Alignment.centerLeft,
                 child: Container(
                   margin: const EdgeInsets.all(2.5),
                   width: 20,

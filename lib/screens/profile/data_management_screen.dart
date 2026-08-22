@@ -26,8 +26,7 @@ class DataManagementScreen extends ConsumerWidget {
                   // 행동 기록 삭제
                   _DataRow(
                     title: "행동 기록 삭제",
-                    description:
-                        "준비·이동 기록을 삭제해요. 개인화 학습에 사용된 데이터가 초기화돼요.",
+                    description: "준비·이동 기록을 삭제해요. 개인화 학습에 사용된 데이터가 초기화돼요.",
                   ),
                   const SizedBox(height: 4),
                   Align(
@@ -109,8 +108,11 @@ class DataManagementScreen extends ConsumerWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child:
-                  const Icon(Icons.chevron_left, size: 14, color: EnsomColors.ink),
+              child: const Icon(
+                Icons.chevron_left,
+                size: 14,
+                color: EnsomColors.ink,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -223,8 +225,9 @@ class DataManagementScreen extends ConsumerWidget {
             content: const Text("행동 기록을 삭제했어요"),
             backgroundColor: EnsomColors.cta,
             behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
           ),
         );
       }
@@ -233,9 +236,9 @@ class DataManagementScreen extends ConsumerWidget {
         final msg = e.isNetworkError
             ? "네트워크에 연결할 수 없어요. 다시 시도해주세요."
             : e.message;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(msg)));
       }
     }
   }

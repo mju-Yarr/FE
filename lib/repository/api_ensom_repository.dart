@@ -1,11 +1,16 @@
 import "ensom_repository.dart";
 import "../models/place.dart";
+import "../models/calendar_connection.dart";
+import "../models/bookmark.dart";
 import "../models/event.dart";
+import "../models/pending_event_review.dart";
 import "../models/plan.dart";
+import "../models/today_plan.dart";
 import "../models/prep_item.dart";
 import "../models/notification.dart";
 import "../models/action_log.dart";
 import "../models/daily_wellness_summary.dart";
+import "../models/weekly_summary.dart";
 import "../models/prep_estimate.dart";
 import "../models/wellness_pref.dart";
 import "../models/execution.dart";
@@ -30,6 +35,12 @@ class ApiEnsomRepository implements EnsomRepository {
   final ApiClient _client;
 
   // -- 일정 (M1에서 쓰는 것만 구현) -----------------------------------
+  @override
+  Future<TodayPlan> fetchTodayPlan() async {
+    final json = await _client.get<Map<String, dynamic>>("/plans/today");
+    return TodayPlan.fromJson(json);
+  }
+
   @override
   Future<Event?> fetchNextEvent() async {
     try {
@@ -332,13 +343,32 @@ class ApiEnsomRepository implements EnsomRepository {
   }
 
   @override
+  Future<List<PendingEventReview>> fetchPendingReviews({
+    required DateTime from,
+    required DateTime to,
+  }) async {
+    final json = await _client.get<List<dynamic>>(
+      "/events/reviews/pending",
+      query: {
+        "from": from.toUtc().toIso8601String(),
+        "to": to.toUtc().toIso8601String(),
+      },
+    );
+    return json
+        .map((e) => PendingEventReview.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
   Future<void> reviewEventClassification(
     String eventId,
-    EventClassificationReview review,
-  ) async {
+    EventClassificationReview review, {
+    String? reviewId,
+  }) async {
     await _client.post<Map<String, dynamic>>(
       "/events/$eventId/review",
       body: {
+        if (reviewId != null) "reviewId": reviewId,
         "questionType": review.questionType,
         "userAnswer": review.userAnswer,
       },
@@ -405,6 +435,15 @@ class ApiEnsomRepository implements EnsomRepository {
       }
       rethrow;
     }
+  }
+
+  @override
+  Future<WeeklySummary> fetchWeeklySummary(String date) async {
+    final json = await _client.get<Map<String, dynamic>>(
+      "/summary/weekly",
+      query: {"date": date},
+    );
+    return WeeklySummary.fromJson(json);
   }
 
   @override
@@ -476,6 +515,89 @@ class ApiEnsomRepository implements EnsomRepository {
   }
 
   @override
+  Future<List<Bookmark>> fetchBookmarks({String? folder}) async {
+    final json = await _client.get<List<dynamic>>(
+      "/me/bookmarks",
+      query: {if (folder != null && folder.isNotEmpty) "folder": folder},
+    );
+    return json
+        .map((e) => Bookmark.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<Bookmark> createBookmark({
+    required String placeName,
+    String? address,
+    required double lat,
+    required double lng,
+    String? folder,
+  }) async {
+    final json = await _client.post<Map<String, dynamic>>(
+      "/me/bookmarks",
+      body: {
+        "placeName": placeName,
+        if (address != null) "address": address,
+        "lat": lat,
+        "lng": lng,
+        if (folder != null) "folder": folder,
+      },
+    );
+    return Bookmark.fromJson(json);
+  }
+
+  @override
+  Future<Bookmark> patchBookmark(
+    String bookmarkId, {
+    String? placeName,
+    String? address,
+    String? folder,
+    int? sortOrder,
+  }) async {
+    final json = await _client.patch<Map<String, dynamic>>(
+      "/me/bookmarks/$bookmarkId",
+      body: {
+        if (placeName != null) "placeName": placeName,
+        if (address != null) "address": address,
+        if (folder != null) "folder": folder,
+        if (sortOrder != null) "sortOrder": sortOrder,
+      },
+    );
+    return Bookmark.fromJson(json);
+  }
+
+  @override
+  Future<void> bulkDeleteBookmarks(List<String> bookmarkIds) async {
+    await _client.post<Map<String, dynamic>>(
+      "/me/bookmarks/bulk-delete",
+      body: {"bookmarkIds": bookmarkIds},
+    );
+  }
+
+  @override
+  Future<void> deleteBookmark(String bookmarkId) async {
+    await _client.delete<Map<String, dynamic>>("/me/bookmarks/$bookmarkId");
+  }
+
+  @override
+  Future<List<RecentDestination>> fetchRecentDestinations({
+    int limit = 20,
+  }) async {
+    final json = await _client.get<List<dynamic>>(
+      "/me/recent-destinations",
+      query: {"limit": limit},
+    );
+    return json
+        .map((e) => RecentDestination.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<void> clearRecentDestinations() async {
+    await _client.delete<Map<String, dynamic>>("/me/recent-destinations");
+  }
+
+  @override
   Future<Place> registerPlace(Place place) async {
     // API v5.0 §5 POST /places. placeId는 서버가 생성하므로 요청 바디에서 제외.
     // Idempotency-Key는 api_client.post가 자동 부착.
@@ -506,6 +628,34 @@ class ApiEnsomRepository implements EnsomRepository {
     //  CalendarSyncScreen이 apiClient로 직접 처리한다 — 별개 흐름)
     // 바디 없음. Idempotency-Key는 api_client.post가 자동 부착.
     await _client.post<Map<String, dynamic>>("/calendar/sync", body: const {});
+  }
+
+  @override
+  Future<List<CalendarConnection>> fetchCalendarConnections() async {
+    final json = await _client.get<List<dynamic>>("/calendar/connections");
+    return json
+        .map((e) => CalendarConnection.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  @override
+  Future<CalendarSource> setCalendarSourceSync(
+    String sourceId,
+    bool enabled,
+  ) async {
+    final json = await _client.patch<Map<String, dynamic>>(
+      "/calendar/sources/$sourceId",
+      body: {"syncEnabled": enabled},
+    );
+    return CalendarSource.fromJson(json);
+  }
+
+  @override
+  Future<CalendarSource> setDefaultCalendarSource(String sourceId) async {
+    final json = await _client.post<Map<String, dynamic>>(
+      "/calendar/sources/$sourceId/default",
+    );
+    return CalendarSource.fromJson(json);
   }
 
   // -- 도착 결과·사후 평가 (REPORT-01, §14) -----------------------------

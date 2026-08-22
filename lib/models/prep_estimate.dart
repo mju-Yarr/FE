@@ -9,14 +9,16 @@ part 'prep_estimate.g.dart';
 @freezed
 abstract class PrepEstimate with _$PrepEstimate {
   const factory PrepEstimate({
-    required String scopeType, // global | event_kind | weather | origin_place | time_band
+    required String
+    scopeType, // global | event_kind | weather | origin_place | time_band
     String? scopeValue,
     required int estimatedMinutes,
     required int sampleCount,
     // BE 응답 필드명은 adjustmentReason(API v5.0 §15 · ERD USER_PREP_ESTIMATE).
     // JsonKey 없이는 json['lastReason']을 찾아 항상 null이 되어 보정 근거가
     // 화면에 뜨지 않는다.
-    @JsonKey(name: "adjustmentReason") String? lastReason, // 계산 근거 표시용 (PLAN-03)
+    @JsonKey(name: "adjustmentReason")
+    String? lastReason, // 계산 근거 표시용 (PLAN-03)
   }) = _PrepEstimate;
 
   factory PrepEstimate.fromJson(Map<String, dynamic> json) =>

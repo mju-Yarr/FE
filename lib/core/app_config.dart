@@ -16,9 +16,18 @@ const String kKakaoRestApiKey = String.fromEnvironment(
   defaultValue: '',
 );
 
-/// 구글 서버 클라이언트 ID. 비어 있으면 구글 로그인 버튼이 숨겨진다.
+/// Flutter Web의 Kakao Maps JavaScript SDK 키. 네이티브/REST 키와
+/// 별도이며, 웹 빌드 시 동적으로 SDK script를 로드하는 데만 사용한다.
+const String kKakaoJavaScriptAppKey = String.fromEnvironment(
+  'KAKAO_JAVASCRIPT_APP_KEY',
+  defaultValue: '',
+);
+
+/// Google OAuth 클라이언트 ID. BE의 OAUTH_GOOGLE_CLIENT_ID와 같은
+/// 이름을 사용하되, FE에는 공개 가능한 client ID만 빌드 시 주입한다.
+/// 비어 있으면 구글 로그인 버튼이 숨겨진다.
 const String kGoogleServerClientId = String.fromEnvironment(
-  'GOOGLE_SERVER_CLIENT_ID',
+  'OAUTH_GOOGLE_CLIENT_ID',
   defaultValue: '',
 );
 

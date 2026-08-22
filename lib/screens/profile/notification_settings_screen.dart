@@ -65,9 +65,9 @@ class _NotificationSettingsScreenState
       await api.patch("/me/settings", body: fullBody);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("설정 저장에 실패했어요.")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("설정 저장에 실패했어요.")));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -317,10 +317,7 @@ class _ToggleRow extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: EnsomColors.inkFaint,
-                    ),
+                    style: TextStyle(fontSize: 11, color: EnsomColors.inkFaint),
                   ),
                 ],
               ],

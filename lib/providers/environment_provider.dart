@@ -9,7 +9,9 @@ import "auth_providers.dart";
 ///
 /// 대표 장소를 아직 등록하지 않았으면 404가 오는데, 이건 오류 상태가 아니라
 /// "보여줄 게 없는" 상태라 null로 바꾼다. WeatherWidget은 null이면 비노출된다.
-final environmentProvider = FutureProvider.autoDispose<EnvironmentData?>((ref) async {
+final environmentProvider = FutureProvider.autoDispose<EnvironmentData?>((
+  ref,
+) async {
   try {
     final json = await ref
         .read(apiClientProvider)

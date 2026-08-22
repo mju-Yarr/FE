@@ -99,7 +99,10 @@ class PermissionPrimingScreen extends StatelessWidget {
               Container(
                 width: 64,
                 height: 64,
-                decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: EnsomColors.surface2,
+                  shape: BoxShape.circle,
+                ),
                 alignment: Alignment.center,
                 child: Icon(_icon, size: 28, color: EnsomColors.inkFaint),
               ),
@@ -107,29 +110,53 @@ class PermissionPrimingScreen extends StatelessWidget {
               Text(
                 _title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: -.3, height: 1.35, color: EnsomColors.ink),
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.3,
+                  height: 1.35,
+                  color: EnsomColors.ink,
+                ),
               ),
               const SizedBox(height: 11),
               Text(
                 _description,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted, height: 1.6),
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: EnsomColors.inkMuted,
+                  height: 1.6,
+                ),
               ),
               Container(
                 width: double.infinity,
                 margin: const EdgeInsets.only(top: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
-                decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(14)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 13,
+                ),
+                decoration: BoxDecoration(
+                  color: EnsomColors.surface2,
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: Text(
                   _infoNote,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 11.5, color: EnsomColors.inkMuted, height: 1.55),
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: EnsomColors.inkMuted,
+                    height: 1.55,
+                  ),
                 ),
               ),
               const Spacer(flex: 3),
               EnsomPillButton(label: _allowLabel, onPressed: onAllow),
               const SizedBox(height: 4),
-              EnsomPillButton(label: "나중에", variant: EnsomPillVariant.text, onPressed: onSkip),
+              EnsomPillButton(
+                label: "나중에",
+                variant: EnsomPillVariant.text,
+                onPressed: onSkip,
+              ),
             ],
           ),
         ),

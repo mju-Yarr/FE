@@ -14,5 +14,6 @@ abstract class AppUser with _$AppUser {
     DateTime? ageConfirmedAt, // null이면 아직 미확인
   }) = _AppUser;
 
-  factory AppUser.fromJson(Map<String, dynamic> json) => _$AppUserFromJson(json);
+  factory AppUser.fromJson(Map<String, dynamic> json) =>
+      _$AppUserFromJson(json);
 }

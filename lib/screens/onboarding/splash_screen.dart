@@ -77,6 +77,21 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 style: TextButton.styleFrom(foregroundColor: EnsomColors.ink),
                 child: Text(_isRetrying ? "다시 확인하는 중..." : "다시 시도"),
               ),
+              TextButton(
+                onPressed: _isRetrying
+                    ? null
+                    : () async {
+                        setState(() => _isRetrying = true);
+                        await ref
+                            .read(authNotifierProvider.notifier)
+                            .discardLocalSession();
+                        if (mounted) setState(() => _isRetrying = false);
+                      },
+                style: TextButton.styleFrom(
+                  foregroundColor: EnsomColors.ink.withValues(alpha: .68),
+                ),
+                child: const Text("다시 로그인"),
+              ),
             ],
           ],
         ),

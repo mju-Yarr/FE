@@ -15,7 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Event {
 
- String get eventId; String? get title; String? get displayLabel; String get displayName; DateTime get startsAt; DateTime get endsAt; LocationState get locationState; String? get destinationName; double? get destinationLat; double? get destinationLng; EventAnchor get anchor; EventSourceType get sourceType; EventLifecycleStatus? get status; bool? get autoManageExcluded;
+ String get eventId; String? get title; String? get displayLabel; String get displayName; DateTime get startsAt;// BE EventResponse.endsAt은 nullable이다 — 종료 시각 없이 만든 일정이
+// 그대로 null로 내려온다.
+ DateTime? get endsAt; LocationState get locationState; String? get destinationName; double? get destinationLat; double? get destinationLng; EventAnchor get anchor; EventSourceType get sourceType; EventLifecycleStatus? get status; bool? get autoManageExcluded;
 /// Create a copy of Event
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +50,7 @@ abstract mixin class $EventCopyWith<$Res>  {
   factory $EventCopyWith(Event value, $Res Function(Event) _then) = _$EventCopyWithImpl;
 @useResult
 $Res call({
- String eventId, String? title, String? displayLabel, String displayName, DateTime startsAt, DateTime endsAt, LocationState locationState, String? destinationName, double? destinationLat, double? destinationLng, EventAnchor anchor, EventSourceType sourceType, EventLifecycleStatus? status, bool? autoManageExcluded
+ String eventId, String? title, String? displayLabel, String displayName, DateTime startsAt, DateTime? endsAt, LocationState locationState, String? destinationName, double? destinationLat, double? destinationLng, EventAnchor anchor, EventSourceType sourceType, EventLifecycleStatus? status, bool? autoManageExcluded
 });
 
 
@@ -65,15 +67,15 @@ class _$EventCopyWithImpl<$Res>
 
 /// Create a copy of Event
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? eventId = null,Object? title = freezed,Object? displayLabel = freezed,Object? displayName = null,Object? startsAt = null,Object? endsAt = null,Object? locationState = null,Object? destinationName = freezed,Object? destinationLat = freezed,Object? destinationLng = freezed,Object? anchor = null,Object? sourceType = null,Object? status = freezed,Object? autoManageExcluded = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? eventId = null,Object? title = freezed,Object? displayLabel = freezed,Object? displayName = null,Object? startsAt = null,Object? endsAt = freezed,Object? locationState = null,Object? destinationName = freezed,Object? destinationLat = freezed,Object? destinationLng = freezed,Object? anchor = null,Object? sourceType = null,Object? status = freezed,Object? autoManageExcluded = freezed,}) {
   return _then(_self.copyWith(
 eventId: null == eventId ? _self.eventId : eventId // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,displayLabel: freezed == displayLabel ? _self.displayLabel : displayLabel // ignore: cast_nullable_to_non_nullable
 as String?,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,startsAt: null == startsAt ? _self.startsAt : startsAt // ignore: cast_nullable_to_non_nullable
-as DateTime,endsAt: null == endsAt ? _self.endsAt : endsAt // ignore: cast_nullable_to_non_nullable
-as DateTime,locationState: null == locationState ? _self.locationState : locationState // ignore: cast_nullable_to_non_nullable
+as DateTime,endsAt: freezed == endsAt ? _self.endsAt : endsAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,locationState: null == locationState ? _self.locationState : locationState // ignore: cast_nullable_to_non_nullable
 as LocationState,destinationName: freezed == destinationName ? _self.destinationName : destinationName // ignore: cast_nullable_to_non_nullable
 as String?,destinationLat: freezed == destinationLat ? _self.destinationLat : destinationLat // ignore: cast_nullable_to_non_nullable
 as double?,destinationLng: freezed == destinationLng ? _self.destinationLng : destinationLng // ignore: cast_nullable_to_non_nullable
@@ -166,7 +168,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  DateTime endsAt,  LocationState locationState,  String? destinationName,  double? destinationLat,  double? destinationLng,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  DateTime? endsAt,  LocationState locationState,  String? destinationName,  double? destinationLat,  double? destinationLng,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Event() when $default != null:
 return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_that.startsAt,_that.endsAt,_that.locationState,_that.destinationName,_that.destinationLat,_that.destinationLng,_that.anchor,_that.sourceType,_that.status,_that.autoManageExcluded);case _:
@@ -187,7 +189,7 @@ return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  DateTime endsAt,  LocationState locationState,  String? destinationName,  double? destinationLat,  double? destinationLng,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  DateTime? endsAt,  LocationState locationState,  String? destinationName,  double? destinationLat,  double? destinationLng,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)  $default,) {final _that = this;
 switch (_that) {
 case _Event():
 return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_that.startsAt,_that.endsAt,_that.locationState,_that.destinationName,_that.destinationLat,_that.destinationLng,_that.anchor,_that.sourceType,_that.status,_that.autoManageExcluded);case _:
@@ -207,7 +209,7 @@ return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  DateTime endsAt,  LocationState locationState,  String? destinationName,  double? destinationLat,  double? destinationLng,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  DateTime? endsAt,  LocationState locationState,  String? destinationName,  double? destinationLat,  double? destinationLng,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)?  $default,) {final _that = this;
 switch (_that) {
 case _Event() when $default != null:
 return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_that.startsAt,_that.endsAt,_that.locationState,_that.destinationName,_that.destinationLat,_that.destinationLng,_that.anchor,_that.sourceType,_that.status,_that.autoManageExcluded);case _:
@@ -222,7 +224,7 @@ return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_
 @JsonSerializable()
 
 class _Event implements Event {
-  const _Event({required this.eventId, this.title, this.displayLabel, required this.displayName, required this.startsAt, required this.endsAt, required this.locationState, this.destinationName, this.destinationLat, this.destinationLng, this.anchor = EventAnchor.arriveBy, this.sourceType = EventSourceType.internal, this.status, this.autoManageExcluded});
+  const _Event({required this.eventId, this.title, this.displayLabel, required this.displayName, required this.startsAt, this.endsAt, required this.locationState, this.destinationName, this.destinationLat, this.destinationLng, this.anchor = EventAnchor.arriveBy, this.sourceType = EventSourceType.internal, this.status, this.autoManageExcluded});
   factory _Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);
 
 @override final  String eventId;
@@ -230,7 +232,9 @@ class _Event implements Event {
 @override final  String? displayLabel;
 @override final  String displayName;
 @override final  DateTime startsAt;
-@override final  DateTime endsAt;
+// BE EventResponse.endsAt은 nullable이다 — 종료 시각 없이 만든 일정이
+// 그대로 null로 내려온다.
+@override final  DateTime? endsAt;
 @override final  LocationState locationState;
 @override final  String? destinationName;
 @override final  double? destinationLat;
@@ -273,7 +277,7 @@ abstract mixin class _$EventCopyWith<$Res> implements $EventCopyWith<$Res> {
   factory _$EventCopyWith(_Event value, $Res Function(_Event) _then) = __$EventCopyWithImpl;
 @override @useResult
 $Res call({
- String eventId, String? title, String? displayLabel, String displayName, DateTime startsAt, DateTime endsAt, LocationState locationState, String? destinationName, double? destinationLat, double? destinationLng, EventAnchor anchor, EventSourceType sourceType, EventLifecycleStatus? status, bool? autoManageExcluded
+ String eventId, String? title, String? displayLabel, String displayName, DateTime startsAt, DateTime? endsAt, LocationState locationState, String? destinationName, double? destinationLat, double? destinationLng, EventAnchor anchor, EventSourceType sourceType, EventLifecycleStatus? status, bool? autoManageExcluded
 });
 
 
@@ -290,15 +294,15 @@ class __$EventCopyWithImpl<$Res>
 
 /// Create a copy of Event
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? eventId = null,Object? title = freezed,Object? displayLabel = freezed,Object? displayName = null,Object? startsAt = null,Object? endsAt = null,Object? locationState = null,Object? destinationName = freezed,Object? destinationLat = freezed,Object? destinationLng = freezed,Object? anchor = null,Object? sourceType = null,Object? status = freezed,Object? autoManageExcluded = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? eventId = null,Object? title = freezed,Object? displayLabel = freezed,Object? displayName = null,Object? startsAt = null,Object? endsAt = freezed,Object? locationState = null,Object? destinationName = freezed,Object? destinationLat = freezed,Object? destinationLng = freezed,Object? anchor = null,Object? sourceType = null,Object? status = freezed,Object? autoManageExcluded = freezed,}) {
   return _then(_Event(
 eventId: null == eventId ? _self.eventId : eventId // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,displayLabel: freezed == displayLabel ? _self.displayLabel : displayLabel // ignore: cast_nullable_to_non_nullable
 as String?,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,startsAt: null == startsAt ? _self.startsAt : startsAt // ignore: cast_nullable_to_non_nullable
-as DateTime,endsAt: null == endsAt ? _self.endsAt : endsAt // ignore: cast_nullable_to_non_nullable
-as DateTime,locationState: null == locationState ? _self.locationState : locationState // ignore: cast_nullable_to_non_nullable
+as DateTime,endsAt: freezed == endsAt ? _self.endsAt : endsAt // ignore: cast_nullable_to_non_nullable
+as DateTime?,locationState: null == locationState ? _self.locationState : locationState // ignore: cast_nullable_to_non_nullable
 as LocationState,destinationName: freezed == destinationName ? _self.destinationName : destinationName // ignore: cast_nullable_to_non_nullable
 as String?,destinationLat: freezed == destinationLat ? _self.destinationLat : destinationLat // ignore: cast_nullable_to_non_nullable
 as double?,destinationLng: freezed == destinationLng ? _self.destinationLng : destinationLng // ignore: cast_nullable_to_non_nullable

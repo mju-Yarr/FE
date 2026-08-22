@@ -71,7 +71,10 @@ class WellnessPrefsScreen extends ConsumerWidget {
       body: prefsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, st) => const Center(
-          child: Text("불러오지 못했어요.", style: TextStyle(color: EnsomColors.inkMuted)),
+          child: Text(
+            "불러오지 못했어요.",
+            style: TextStyle(color: EnsomColors.inkMuted),
+          ),
         ),
         data: (prefs) => SafeArea(
           top: false,
@@ -80,14 +83,24 @@ class WellnessPrefsScreen extends ConsumerWidget {
             children: [
               const Text(
                 "관심 환경 항목",
-                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: EnsomColors.inkFaint, letterSpacing: .4),
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: EnsomColors.inkFaint,
+                  letterSpacing: .4,
+                ),
               ),
               const SizedBox(height: 4),
-              for (final pref in prefs) _PrefTile(pref: pref, onChanged: controller.update),
+              for (final pref in prefs)
+                _PrefTile(pref: pref, onChanged: controller.update),
               const SizedBox(height: 12),
               const Text(
                 "재알림 주기는 사용자가 직접 설정해요. 환경과 개인 상태에 따라 달라질 수 있어 앱이 대신 판단하지 않아요.",
-                style: TextStyle(fontSize: 11, color: EnsomColors.inkFaint, height: 1.5),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: EnsomColors.inkFaint,
+                  height: 1.5,
+                ),
               ),
             ],
           ),
@@ -123,10 +136,17 @@ class _PrefTile extends StatelessWidget {
                 Expanded(
                   child: Text(
                     wellnessTopicLabels[pref.topic] ?? pref.topic,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: EnsomColors.ink),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: EnsomColors.ink,
+                    ),
                   ),
                 ),
-                EnsomToggle(value: pref.isEnabled, onChanged: (v) => onChanged(pref.copyWith(isEnabled: v))),
+                EnsomToggle(
+                  value: pref.isEnabled,
+                  onChanged: (v) => onChanged(pref.copyWith(isEnabled: v)),
+                ),
               ],
             ),
           ),
@@ -134,7 +154,10 @@ class _PrefTile extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               "재알림 주기: ${pref.remindIntervalMinutes ?? 120}분",
-              style: const TextStyle(fontSize: 11.5, color: EnsomColors.inkMuted),
+              style: const TextStyle(
+                fontSize: 11.5,
+                color: EnsomColors.inkMuted,
+              ),
             ),
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
@@ -149,7 +172,8 @@ class _PrefTile extends StatelessWidget {
                 min: 30,
                 max: 240,
                 divisions: 14,
-                onChanged: (v) => onChanged(pref.copyWith(remindIntervalMinutes: v.round())),
+                onChanged: (v) =>
+                    onChanged(pref.copyWith(remindIntervalMinutes: v.round())),
               ),
             ),
           ],

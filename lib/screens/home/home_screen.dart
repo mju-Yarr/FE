@@ -5,19 +5,24 @@ import "package:uuid/uuid.dart";
 import "../../core/coachmark_service.dart";
 import "../../core/local_notification_service.dart";
 import "../../models/action_log.dart";
-import "../../models/event.dart";
 import "../../models/plan.dart";
+import "../../models/today_plan.dart";
 import "../../providers/home_providers.dart";
 import "../../providers/offline_queue_providers.dart";
+import "../../providers/system_state_provider.dart";
 import "../../repository/providers.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/coachmark_overlay.dart";
+import "../../widgets/ensom/ensom_error_banner.dart";
 import "../../widgets/ensom/ensom_pill_button.dart";
+import "../../widgets/ensom/ensom_skeleton.dart";
 import "../../widgets/ensom/ensom_wordmark.dart";
 import "../../widgets/permission_degraded_banner.dart";
 import "widgets/arrival_result_card.dart";
 import "widgets/home_empty_state.dart";
 import "widgets/plan_card.dart";
+import "widgets/stacked_event_cards.dart";
+import "widgets/today_wrap_card.dart";
 import "widgets/weather_widget.dart";
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -111,7 +116,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     ref.watch(offlineQueueFlushProvider);
-    final nextEventAsync = ref.watch(nextEventProvider);
+    final todayAsync = ref.watch(todayPlanProvider);
 
     return Scaffold(
       backgroundColor: EnsomColors.canvas,
@@ -132,155 +137,286 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ],
               ),
             ),
-            Expanded(child: _buildBody(nextEventAsync)),
+            Expanded(child: _buildBody(todayAsync)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildBody(AsyncValue<Event?> nextEventAsync) {
-    return nextEventAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, st) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+  Widget _buildBody(AsyncValue<TodayPlan> todayAsync) {
+    return todayAsync.when(
+      // §11 로딩은 스켈레톤. 스피너는 스플래시 워드마크 링에만 허용된다.
+      loading: () => ListView(
+        padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+        children: const [
+          EnsomSkeleton.card(height: 96),
+          SizedBox(height: 16),
+          EnsomSkeleton.card(height: 260),
+          SizedBox(height: 12),
+          EnsomSkeleton.card(height: 72),
+        ],
+      ),
+      error: (err, st) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "불러오지 못했어요.",
+              style: TextStyle(color: EnsomColors.inkMuted),
+            ),
+            const SizedBox(height: 14),
+            EnsomPillButton(
+              label: "다시 시도",
+              expand: false,
+              onPressed: () => ref.invalidate(todayPlanProvider),
+            ),
+          ],
+        ),
+      ),
+      data: (today) {
+        // §3 S-06 — 일정이 0건이면 빈 상태 카드 + CTA 2개.
+        if (today.isEmpty) {
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+            children: const [
+              WeatherWidget(),
+              SizedBox(height: 16),
+              HomeEmptyState(),
+            ],
+          );
+        }
+
+        // §3 S-06 — wrap은 별도 화면이 아니라 히어로 카드를 대체하는 상태다.
+        // 겹친 카드를 두지 않고 오늘 요약 3칸을 보여준다.
+        if (today.homeState == HomeCardState.wrap) {
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
             children: [
-              const Text("불러오지 못했어요.", style: TextStyle(color: EnsomColors.inkMuted)),
-              const SizedBox(height: 14),
-              EnsomPillButton(
-                label: "다시 시도",
-                expand: false,
-                onPressed: () => ref.invalidate(nextEventProvider),
+              _DegradedBanner(reasons: today.degraded),
+              TodayWrapCard(
+                summary: today.wrapSummary,
+                onTap: () => context.push("/summary/daily"),
+              ),
+            ],
+          );
+        }
+
+        final hero = today.hero!;
+        // 이동 계획이 없는 일정(온라인 미팅 등)이 맨 앞일 수 있다. 이때
+        // planController를 부르면 계획이 없어 오류 화면이 뜨므로, 계획 없는
+        // 목록 형태로 그린다.
+        if (hero.plan == null) {
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+            children: [
+              const WeatherWidget(),
+              const SizedBox(height: 12),
+              _DegradedBanner(reasons: today.degraded),
+              StackedEventCards(
+                cards: today.cards,
+                totalCount: today.cards.length,
+                onTapCard: (card) =>
+                    context.push("/events/${card.event.eventId}"),
+                onSeeAll: () => context.go("/calendar"),
+              ),
+            ],
+          );
+        }
+
+        final event = hero.event;
+        final planState = ref.watch(planControllerProvider(event.eventId));
+        final controller = ref.read(
+          planControllerProvider(event.eventId).notifier,
+        );
+
+        // 코치마크: 데이터 로딩 완료 + 일정 있을 때만 1회 표시
+        if (!_coachmarkChecked) {
+          _coachmarkChecked = true;
+          WidgetsBinding.instance.addPostFrameCallback(
+            (_) => _maybeShowCoachmark(),
+          );
+        }
+
+        return planState.when(
+          loading: () => ListView(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
+            children: const [
+              EnsomSkeleton.card(height: 96),
+              SizedBox(height: 16),
+              EnsomSkeleton.card(height: 260),
+            ],
+          ),
+          error: (err, st) => Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  "계획을 불러오지 못했어요.",
+                  style: TextStyle(color: EnsomColors.inkMuted),
+                ),
+                const SizedBox(height: 14),
+                EnsomPillButton(
+                  label: "다시 시도",
+                  expand: false,
+                  onPressed: controller.retry,
+                ),
+              ],
+            ),
+          ),
+          data: (plan) {
+            _scheduleLocalNotifications(plan, event.displayName);
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const WeatherWidget(),
+                const SizedBox(height: 12),
+                const PermissionDegradedBanner(
+                  type: DegradedPermissionType.notification,
+                ),
+                const PermissionDegradedBanner(
+                  type: DegradedPermissionType.location,
+                ),
+                // §1.5 부분 실패는 전면 차단이 아니라 인라인 배너로만 알린다.
+                _DegradedBanner(reasons: today.degraded),
+                PlanCard(
+                  eventTitle: event.displayName,
+                  state: today.homeState,
+                  plan: plan,
+                  previousPlan: controller.previousPlan,
+                  onTap: () => context.push("/events/${event.eventId}"),
+                  onPrepStart: () => _enqueueAndMaybeRefresh(
+                    event.eventId,
+                    plan.planId,
+                    ActionType.prepStarted,
+                  ),
+                  onPrepFinished: () => _enqueueAndMaybeRefresh(
+                    event.eventId,
+                    plan.planId,
+                    ActionType.prepFinished,
+                  ),
+                  onDeparted: () => _enqueueAndMaybeRefresh(
+                    event.eventId,
+                    plan.planId,
+                    ActionType.departed,
+                  ),
+                  onArrived: () => _reportArrived(event.eventId, plan.planId),
+                  onSnooze: () => _enqueueAndMaybeRefresh(
+                    event.eventId,
+                    plan.planId,
+                    ActionType.snoozed,
+                  ),
+                  onSkip: () => _enqueueAndMaybeRefresh(
+                    event.eventId,
+                    plan.planId,
+                    ActionType.excluded,
+                  ),
+                  onSelectRoute: () => context.push(
+                    "/plans/${plan.planId}/routes?eventId=${event.eventId}",
+                  ),
+                  onToggleChecklistItem: (item, completed) async {
+                    try {
+                      await controller.toggleChecklistItem(item, completed);
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("처리하지 못했어요. 다시 시도해주세요.")),
+                      );
+                    }
+                  },
+                  onResolveWellnessAction: (action, status) async {
+                    try {
+                      await controller.resolveWellnessAction(action, status);
+                    } catch (_) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("처리하지 못했어요. 다시 시도해주세요.")),
+                      );
+                    }
+                  },
+                ),
+                // §3 S-06 — 히어로 뒤에 겹치는 오늘의 남은 일정. 탭하면 해당
+                // 일정 상세로 간다.
+                if (today.stacked.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  StackedEventCards(
+                    cards: today.stacked,
+                    totalCount: today.cards.length,
+                    onTapCard: (card) =>
+                        context.push("/events/${card.event.eventId}"),
+                    onSeeAll: () => context.go("/calendar"),
+                  ),
+                ],
+                if (plan.eventStatus == EventLifecycleStatus.arrived ||
+                    plan.eventStatus == EventLifecycleStatus.closed) ...[
+                  const SizedBox(height: 16),
+                  ArrivalResultCard(eventId: event.eventId),
+                  const SizedBox(height: 12),
+                  _DailySummaryRow(onTap: () => context.push("/summary/daily")),
+                ],
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+/// §1.5 · §11 — 일부 API만 실패한 경우. 전면으로 막지 않고 가진 데이터는
+/// 계속 보여주면서 배너로만 알린다.
+class _DegradedBanner extends ConsumerWidget {
+  const _DegradedBanner({required this.reasons});
+
+  final List<String> reasons;
+
+  static const _messages = {
+    "route_unavailable": "경로 정보를 불러오지 못했어요. 예상 시간이 정확하지 않을 수 있어요.",
+    "environment_unavailable": "날씨·대기 정보를 불러오지 못했어요.",
+    "daily_summary_unavailable": "오늘 요약을 아직 만들지 못했어요.",
+  };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (reasons.isEmpty) return const SizedBox.shrink();
+    final dismissed = ref.watch(systemStateProvider).dismissedBanners;
+    // §11 사용자가 닫은 배너는 그 세션 동안 다시 띄우지 않는다.
+    final visible = reasons.where((r) => !dismissed.contains(r)).toList();
+    if (visible.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        for (final reason in visible) ...[
+          Row(
+            children: [
+              Expanded(
+                child: EnsomErrorBanner(
+                  title: _messages[reason] ?? "일부 정보를 불러오지 못했어요.",
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close, size: 16),
+                color: EnsomColors.inkFaint,
+                tooltip: "닫기",
+                onPressed: () => ref
+                    .read(systemStateProvider.notifier)
+                    .dismissBanner(reason),
               ),
             ],
           ),
-        ),
-        data: (event) {
-          if (event == null) {
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-              children: const [
-                WeatherWidget(),
-                SizedBox(height: 16),
-                HomeEmptyState(),
-              ],
-            );
-          }
-
-          final planState = ref.watch(planControllerProvider(event.eventId));
-          final controller = ref.read(
-            planControllerProvider(event.eventId).notifier,
-          );
-
-          // 코치마크: 데이터 로딩 완료 + 일정 있을 때만 1회 표시
-          if (!_coachmarkChecked) {
-            _coachmarkChecked = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowCoachmark());
-          }
-
-          return planState.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, st) => Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text("계획을 불러오지 못했어요.", style: TextStyle(color: EnsomColors.inkMuted)),
-                  const SizedBox(height: 14),
-                  EnsomPillButton(label: "다시 시도", expand: false, onPressed: controller.retry),
-                ],
-              ),
-            ),
-            data: (plan) {
-              _scheduleLocalNotifications(plan, event.displayName);
-              return ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  const WeatherWidget(),
-                  const SizedBox(height: 12),
-                  const PermissionDegradedBanner(
-                    type: DegradedPermissionType.notification,
-                  ),
-                  const PermissionDegradedBanner(
-                    type: DegradedPermissionType.location,
-                  ),
-                  PlanCard(
-                    eventTitle: event.displayName,
-                    plan: plan,
-                    previousPlan: controller.previousPlan,
-                    onTap: () => context.push("/events/${event.eventId}"),
-                    onPrepStart: () => _enqueueAndMaybeRefresh(
-                      event.eventId,
-                      plan.planId,
-                      ActionType.prepStarted,
-                    ),
-                    onPrepFinished: () => _enqueueAndMaybeRefresh(
-                      event.eventId,
-                      plan.planId,
-                      ActionType.prepFinished,
-                    ),
-                    onDeparted: () => _enqueueAndMaybeRefresh(
-                      event.eventId,
-                      plan.planId,
-                      ActionType.departed,
-                    ),
-                    onArrived: () => _reportArrived(event.eventId, plan.planId),
-                    onSnooze: () => _enqueueAndMaybeRefresh(
-                      event.eventId,
-                      plan.planId,
-                      ActionType.snoozed,
-                    ),
-                    onSkip: () => _enqueueAndMaybeRefresh(
-                      event.eventId,
-                      plan.planId,
-                      ActionType.excluded,
-                    ),
-                    onSelectRoute: () => context.push(
-                      "/plans/${plan.planId}/routes?eventId=${event.eventId}",
-                    ),
-                    onToggleChecklistItem: (item, completed) async {
-                      try {
-                        await controller.toggleChecklistItem(item, completed);
-                      } catch (_) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("처리하지 못했어요. 다시 시도해주세요."),
-                          ),
-                        );
-                      }
-                    },
-                    onResolveWellnessAction: (action, status) async {
-                      try {
-                        await controller.resolveWellnessAction(action, status);
-                      } catch (_) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("처리하지 못했어요. 다시 시도해주세요."),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  if (plan.eventStatus == EventLifecycleStatus.arrived ||
-                      plan.eventStatus == EventLifecycleStatus.closed) ...[
-                    const SizedBox(height: 16),
-                    ArrivalResultCard(eventId: event.eventId),
-                    const SizedBox(height: 12),
-                    _DailySummaryRow(onTap: () => context.push("/summary/daily")),
-                  ],
-                ],
-              );
-            },
-          );
-        },
-      );
+          const SizedBox(height: 10),
+        ],
+      ],
+    );
   }
 }
 
 class _IconAction extends StatelessWidget {
-  const _IconAction({required this.icon, required this.tooltip, required this.onTap});
+  const _IconAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String tooltip;
@@ -331,8 +467,15 @@ class _DailySummaryRow extends StatelessWidget {
               Container(
                 width: 34,
                 height: 34,
-                decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
-                child: const Icon(Icons.nightlight_round_outlined, size: 15, color: EnsomColors.ink),
+                decoration: const BoxDecoration(
+                  color: EnsomColors.surface2,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.nightlight_round_outlined,
+                  size: 15,
+                  color: EnsomColors.ink,
+                ),
               ),
               const SizedBox(width: 11),
               const Expanded(
@@ -341,17 +484,29 @@ class _DailySummaryRow extends StatelessWidget {
                   children: [
                     Text(
                       "오늘의 마무리",
-                      style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, letterSpacing: -.2, color: EnsomColors.ink),
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: -.2,
+                        color: EnsomColors.ink,
+                      ),
                     ),
                     SizedBox(height: 2),
                     Text(
                       "하루를 돌아보세요",
-                      style: TextStyle(fontSize: 11.5, color: EnsomColors.inkFaint),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: EnsomColors.inkFaint,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, size: 16, color: EnsomColors.inkFaint),
+              const Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: EnsomColors.inkFaint,
+              ),
             ],
           ),
         ),

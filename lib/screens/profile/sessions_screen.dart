@@ -115,14 +115,22 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
         elevation: 0,
         title: const Text(
           "로그인 기록",
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: EnsomColors.ink),
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+            color: EnsomColors.ink,
+          ),
         ),
         actions: [
           TextButton(
             onPressed: _deleteAllSessions,
             child: const Text(
               "전체 로그아웃",
-              style: TextStyle(fontSize: 12.5, color: EnsomColors.caution, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 12.5,
+                color: EnsomColors.caution,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -143,7 +151,11 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: EnsomColors.inkMuted)),
+              Text(
+                _error!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: EnsomColors.inkMuted),
+              ),
               const SizedBox(height: 16),
               EnsomPillButton(label: "다시 시도", expand: false, onPressed: _load),
             ],
@@ -154,7 +166,12 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
 
     final sessions = _sessions ?? [];
     if (sessions.isEmpty) {
-      return const Center(child: Text("세션 정보가 없어요.", style: TextStyle(color: EnsomColors.inkMuted)));
+      return const Center(
+        child: Text(
+          "세션 정보가 없어요.",
+          style: TextStyle(color: EnsomColors.inkMuted),
+        ),
+      );
     }
 
     return ListView.builder(
@@ -169,10 +186,15 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
 
         return Dismissible(
           key: Key(id),
-          direction: isCurrent ? DismissDirection.none : DismissDirection.endToStart,
+          direction: isCurrent
+              ? DismissDirection.none
+              : DismissDirection.endToStart,
           background: Container(
             margin: const EdgeInsets.only(bottom: 9),
-            decoration: BoxDecoration(color: EnsomColors.caution, borderRadius: BorderRadius.circular(16)),
+            decoration: BoxDecoration(
+              color: EnsomColors.caution,
+              borderRadius: BorderRadius.circular(16),
+            ),
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: 20),
             child: const Icon(Icons.logout, color: Colors.white, size: 18),
@@ -192,7 +214,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
                 Container(
                   width: 34,
                   height: 34,
-                  decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: EnsomColors.surface2,
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(
                     isCurrent ? Icons.phone_android : Icons.devices_other,
                     size: 15,
@@ -211,17 +236,31 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
                               deviceName,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: EnsomColors.ink),
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: EnsomColors.ink,
+                              ),
                             ),
                           ),
                           if (isCurrent) ...[
                             const SizedBox(width: 7),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(color: EnsomColors.limeSoft, borderRadius: BorderRadius.circular(999)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: EnsomColors.limeSoft,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
                               child: const Text(
                                 "현재 기기",
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: EnsomColors.limeInk),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: EnsomColors.limeInk,
+                                ),
                               ),
                             ),
                           ],
@@ -229,7 +268,13 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
                       ),
                       if (lastActive.isNotEmpty) ...[
                         const SizedBox(height: 2),
-                        Text(lastActive, style: const TextStyle(fontSize: 11, color: EnsomColors.inkFaint)),
+                        Text(
+                          lastActive,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: EnsomColors.inkFaint,
+                          ),
+                        ),
                       ],
                     ],
                   ),

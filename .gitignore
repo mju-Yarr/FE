@@ -56,3 +56,7 @@ lib/firebase_options.dart
 # 배포 시크릿 메모 — OpenAI/OAuth/JWT/SMTP 키와 인프라 계정 비밀번호가
 # 평문으로 들어있어 Git에 절대 기록하지 않는다.
 docs/env.md
+
+# 로컬 전용 환경변수. 서버 비밀값이 섞여 있어 절대 커밋하지 않는다.
+.env
+.env.local

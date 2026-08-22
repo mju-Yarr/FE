@@ -35,8 +35,9 @@ class LocalNotificationService {
 
     tz_data.initializeTimeZones();
 
-    const androidSettings =
-        AndroidInitializationSettings("@mipmap/ic_launcher");
+    const androidSettings = AndroidInitializationSettings(
+      "@mipmap/ic_launcher",
+    );
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
@@ -45,6 +46,7 @@ class LocalNotificationService {
     const settings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
+      macOS: iosSettings,
     );
 
     await _plugin.initialize(
@@ -79,8 +81,10 @@ class LocalNotificationService {
     final now = DateTime.now();
 
     // 표시명 마스킹 — 민감 항목명이 일정명에 포함됐을 경우 대비
-    final maskedDisplayName =
-        _maskSensitiveContent(eventDisplayName, sensitiveItemNames);
+    final maskedDisplayName = _maskSensitiveContent(
+      eventDisplayName,
+      sensitiveItemNames,
+    );
 
     // 슬롯 A: 준비 시작 알림
     if (prepStartAt.isAfter(now)) {
@@ -89,10 +93,7 @@ class LocalNotificationService {
         scheduledAt: prepStartAt,
         title: "준비를 시작할 시간이에요",
         body: "$maskedDisplayName — 지금부터 천천히 준비해 보세요.",
-        payload: jsonEncode({
-          "type": "prep_start",
-          "eventId": eventId,
-        }),
+        payload: jsonEncode({"type": "prep_start", "eventId": eventId}),
       );
     }
 
@@ -103,10 +104,7 @@ class LocalNotificationService {
         scheduledAt: recommendedDepartAt,
         title: "이제 출발할 시간이에요",
         body: "$maskedDisplayName — 현재 경로 기준으로 출발하세요.",
-        payload: jsonEncode({
-          "type": "depart",
-          "eventId": eventId,
-        }),
+        payload: jsonEncode({"type": "depart", "eventId": eventId}),
       );
     }
   }

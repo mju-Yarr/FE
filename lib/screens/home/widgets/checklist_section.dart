@@ -13,7 +13,11 @@ import "../../../theme/ensom_colors.dart";
 /// ensom_detail.html `.chk` 패턴 — 라운드 체크박스(21px, radius 7)가
 /// 켜지면 cta로 채워지고, 항목 이름은 취소선+연한 회색으로 바뀐다.
 class ChecklistSection extends StatelessWidget {
-  const ChecklistSection({super.key, required this.checklist, required this.onToggle});
+  const ChecklistSection({
+    super.key,
+    required this.checklist,
+    required this.onToggle,
+  });
 
   final List<ChecklistItem> checklist;
   final void Function(ChecklistItem item, bool completed) onToggle;
@@ -29,7 +33,12 @@ class ChecklistSection extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: 8),
           child: Text(
             "준비물",
-            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, letterSpacing: -.2, color: EnsomColors.ink),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.2,
+              color: EnsomColors.ink,
+            ),
           ),
         ),
         Container(
@@ -56,7 +65,11 @@ class ChecklistSection extends StatelessWidget {
 }
 
 class _ChecklistRow extends StatelessWidget {
-  const _ChecklistRow({required this.item, required this.isLast, required this.onToggle});
+  const _ChecklistRow({
+    required this.item,
+    required this.isLast,
+    required this.onToggle,
+  });
 
   final ChecklistItem item;
   final bool isLast;
@@ -72,7 +85,9 @@ class _ChecklistRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 11),
         decoration: BoxDecoration(
-          border: isLast ? null : const Border(bottom: BorderSide(color: EnsomColors.hairline)),
+          border: isLast
+              ? null
+              : const Border(bottom: BorderSide(color: EnsomColors.hairline)),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,21 +106,33 @@ class _ChecklistRow extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.w500,
-                            color: done ? EnsomColors.inkFaint : EnsomColors.ink,
-                            decoration: done ? TextDecoration.lineThrough : null,
+                            color: done
+                                ? EnsomColors.inkFaint
+                                : EnsomColors.ink,
+                            decoration: done
+                                ? TextDecoration.lineThrough
+                                : null,
                           ),
                         ),
                       ),
-                      if (item.actionType == PrepActionType.timedRoutine && item.appliedMinutes > 0) ...[
+                      if (item.actionType == PrepActionType.timedRoutine &&
+                          item.appliedMinutes > 0) ...[
                         const SizedBox(width: 6),
                         Text(
                           "+${item.appliedMinutes}분",
-                          style: const TextStyle(fontSize: 11.5, color: EnsomColors.inkFaint),
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: EnsomColors.inkFaint,
+                          ),
                         ),
                       ],
                       if (item.isSensitive) ...[
                         const SizedBox(width: 6),
-                        const Icon(Icons.lock_outline, size: 13, color: EnsomColors.inkFaint),
+                        const Icon(
+                          Icons.lock_outline,
+                          size: 13,
+                          color: EnsomColors.inkFaint,
+                        ),
                       ],
                     ],
                   ),
@@ -113,7 +140,10 @@ class _ChecklistRow extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       item.reason!,
-                      style: const TextStyle(fontSize: 11, color: EnsomColors.inkMuted),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: EnsomColors.inkMuted,
+                      ),
                     ),
                   ],
                 ],
@@ -142,9 +172,14 @@ class _CheckBox extends StatelessWidget {
         decoration: BoxDecoration(
           color: checked ? EnsomColors.cta : Colors.white,
           borderRadius: BorderRadius.circular(7),
-          border: Border.all(color: checked ? EnsomColors.cta : EnsomColors.hairline, width: 1.8),
+          border: Border.all(
+            color: checked ? EnsomColors.cta : EnsomColors.hairline,
+            width: 1.8,
+          ),
         ),
-        child: checked ? const Icon(Icons.check, size: 13, color: Colors.white) : null,
+        child: checked
+            ? const Icon(Icons.check, size: 13, color: Colors.white)
+            : null,
       ),
     );
   }

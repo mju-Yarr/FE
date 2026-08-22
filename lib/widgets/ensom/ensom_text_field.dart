@@ -42,13 +42,19 @@ class EnsomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = helperTone == EnsomFieldTone.bad ? EnsomColors.caution : EnsomColors.hairline;
+    final borderColor = helperTone == EnsomFieldTone.bad
+        ? EnsomColors.caution
+        : EnsomColors.hairline;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: EnsomColors.inkMuted),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: EnsomColors.inkMuted,
+          ),
         ),
         const SizedBox(height: 6),
         TextField(
@@ -65,7 +71,10 @@ class EnsomTextField extends StatelessWidget {
             isDense: true,
             filled: true,
             fillColor: EnsomColors.surface1,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 13),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 13,
+              vertical: 13,
+            ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(color: borderColor, width: 1.4),

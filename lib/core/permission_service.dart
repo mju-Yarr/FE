@@ -71,9 +71,7 @@ class PermissionService {
   Future<bool> isAllGranted() async {
     final notification = await Permission.notification.isGranted;
     final location = kIsWeb
-        ? _mapGeolocatorPermission(
-            await Geolocator.checkPermission(),
-          ).isGranted
+        ? _mapGeolocatorPermission(await Geolocator.checkPermission()).isGranted
         : await Permission.location.isGranted;
     return notification && location;
   }

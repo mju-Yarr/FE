@@ -7,6 +7,7 @@ import "../../network/api_client.dart";
 import "../../providers/auth_providers.dart";
 import "../../providers/bootstrap_provider.dart";
 import "../../providers/calendar_providers.dart";
+import "widgets/classification_review_sheet.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_wordmark.dart";
 import "../../widgets/permission_degraded_banner.dart";
@@ -69,7 +70,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Future<void> _syncIfConnected() async {
     final api = ref.read(apiClientProvider);
     try {
-      final status = await api.get<Map<String, dynamic>>("/calendar/google/status");
+      final status = await api.get<Map<String, dynamic>>(
+        "/calendar/google/status",
+      );
       if (status["connected"] != true) return;
     } on ApiException catch (_) {
       return;
@@ -97,18 +100,29 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     });
   }
 
-  void _shiftWeek(int deltaWeeks) => _selectDate(_selectedDate.add(Duration(days: 7 * deltaWeeks)));
+  void _shiftWeek(int deltaWeeks) =>
+      _selectDate(_selectedDate.add(Duration(days: 7 * deltaWeeks)));
 
   void _shiftMonth(int deltaMonths) {
     setState(() {
-      _focusedMonth = DateTime(_focusedMonth.year, _focusedMonth.month + deltaMonths, 1);
-      final lastDay = DateTime(_focusedMonth.year, _focusedMonth.month + 1, 0).day;
+      _focusedMonth = DateTime(
+        _focusedMonth.year,
+        _focusedMonth.month + deltaMonths,
+        1,
+      );
+      final lastDay = DateTime(
+        _focusedMonth.year,
+        _focusedMonth.month + 1,
+        0,
+      ).day;
       final day = _selectedDate.day.clamp(1, lastDay);
       _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, day);
     });
   }
 
-  void _toggleView() => setState(() => _view = _view == _CalView.week ? _CalView.month : _CalView.week);
+  void _toggleView() => setState(
+    () => _view = _view == _CalView.week ? _CalView.month : _CalView.week,
+  );
 
   bool _matchesFilter(Event e) {
     switch (_filter) {
@@ -131,7 +145,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final calendarDenied =
         calendarStatuses?.any(
           (permission) =>
-              permission.status == "denied" || permission.status == "restricted",
+              permission.status == "denied" ||
+              permission.status == "restricted",
         ) ??
         false;
 
@@ -194,6 +209,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     onRetry: _syncIfConnected,
                   ),
                 ],
+                // S-11 — 동기화가 분류를 확신하지 못한 일정. 배너는 다크 패널
+                // 위쪽 흰 영역에 둔다(§3 S-09).
+                _PendingReviewBanner(range: _fetchRange),
                 const SizedBox(height: 14),
                 _CalendarPanel(
                   view: _view,
@@ -201,15 +219,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   selectedDate: _selectedDate,
                   eventCountOf: (d) => eventsByDay[d]?.length ?? 0,
                   onSelectDate: _selectDate,
-                  onPrev: () => _view == _CalView.week ? _shiftWeek(-1) : _shiftMonth(-1),
-                  onNext: () => _view == _CalView.week ? _shiftWeek(1) : _shiftMonth(1),
+                  onPrev: () =>
+                      _view == _CalView.week ? _shiftWeek(-1) : _shiftMonth(-1),
+                  onNext: () =>
+                      _view == _CalView.week ? _shiftWeek(1) : _shiftMonth(1),
                   onToggleView: _toggleView,
                   onDragToView: (v) => setState(() => _view = v),
                 ),
                 const SizedBox(height: 16),
                 _filterRow(),
                 const SizedBox(height: 12),
-                _ReportCard(onTap: () => context.push("/calendar/weekly-report")),
+                _ReportCard(
+                  onTap: () => context.push(
+                    "/calendar/weekly-report?date=${DateFormat("yyyy-MM-dd").format(_selectedDate)}",
+                  ),
+                ),
                 const SizedBox(height: 4),
                 PermissionDegradedBanner(
                   type: DegradedPermissionType.calendar,
@@ -233,7 +257,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   event: selectedEvents[i],
                   isLast: i == selectedEvents.length - 1,
                   hot: _isHot(selectedEvents, i),
-                  onTap: () => context.push("/events/${selectedEvents[i].eventId}"),
+                  onTap: () =>
+                      context.push("/events/${selectedEvents[i].eventId}"),
                 ),
                 childCount: selectedEvents.length,
               ),
@@ -246,7 +271,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   bool _isHot(List<Event> dayEvents, int index) {
     if (_selectedDate != _dateOnly(DateTime.now())) return false;
     final now = DateTime.now();
-    final nextIndex = dayEvents.indexWhere((e) => e.endsAt.isAfter(now));
+    // 종료 시각이 없으면 시작 시각을 기준으로 본다.
+    final nextIndex = dayEvents.indexWhere(
+      (e) => (e.endsAt ?? e.startsAt).isAfter(now),
+    );
     return nextIndex == index;
   }
 
@@ -272,7 +300,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             _IconAction(
               icon: Icons.sync,
               tooltip: "캘린더 연동 관리",
-              onTap: () => context.push("/calendar/sync"),
+              onTap: () => context.push("/calendar/connections"),
             ),
           ],
         ),
@@ -347,7 +375,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 }
 
 class _IconAction extends StatelessWidget {
-  const _IconAction({required this.icon, required this.tooltip, required this.onTap});
+  const _IconAction({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
 
   final IconData icon;
   final String tooltip;
@@ -377,7 +409,11 @@ class _IconAction extends StatelessWidget {
 /// ensom_calendar_syncbanner.html — "동기화 중" 스피너 배너와 "일부 실패"
 /// 재시도 배너 2종(정상 상태는 배너 자체가 없는 것으로 표현).
 class _SyncBanner extends StatelessWidget {
-  const _SyncBanner({required this.status, required this.failedAt, required this.onRetry});
+  const _SyncBanner({
+    required this.status,
+    required this.failedAt,
+    required this.onRetry,
+  });
 
   final _SyncBannerStatus status;
   final DateTime? failedAt;
@@ -387,19 +423,29 @@ class _SyncBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
-      decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(15)),
+      decoration: BoxDecoration(
+        color: EnsomColors.surface2,
+        borderRadius: BorderRadius.circular(15),
+      ),
       child: status == _SyncBannerStatus.syncing
           ? Row(
               children: const [
                 SizedBox(
                   width: 13,
                   height: 13,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: EnsomColors.inkMuted),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: EnsomColors.inkMuted,
+                  ),
                 ),
                 SizedBox(width: 9),
                 Text(
                   "일정을 가져오는 중",
-                  style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: EnsomColors.inkMuted),
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: EnsomColors.inkMuted,
+                  ),
                 ),
               ],
             )
@@ -410,7 +456,11 @@ class _SyncBanner extends StatelessWidget {
                   child: Text(
                     "일부 일정을 가져오지 못했어요"
                     "${failedAt == null ? '' : ' · ${failedAt!.hour.toString().padLeft(2, '0')}:${failedAt!.minute.toString().padLeft(2, '0')} 기준'}",
-                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: EnsomColors.inkMuted),
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: EnsomColors.inkMuted,
+                    ),
                   ),
                 ),
                 GestureDetector(
@@ -432,7 +482,11 @@ class _SyncBanner extends StatelessWidget {
 }
 
 class _FilterChip extends StatelessWidget {
-  const _FilterChip({required this.label, required this.selected, required this.onTap});
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -495,7 +549,10 @@ class _ReportCard extends StatelessWidget {
                     SizedBox(height: 3),
                     Text(
                       "도착 흐름을 돌아보는 기록이에요",
-                      style: TextStyle(fontSize: 11, color: EnsomColors.inkMuted),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: EnsomColors.inkMuted,
+                      ),
                     ),
                   ],
                 ),
@@ -563,7 +620,10 @@ class _CalendarPanelState extends State<_CalendarPanel> {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 4),
-      decoration: BoxDecoration(color: EnsomColors.panel, borderRadius: BorderRadius.circular(30)),
+      decoration: BoxDecoration(
+        color: EnsomColors.panel,
+        borderRadius: BorderRadius.circular(30),
+      ),
       child: Column(
         children: [
           Row(
@@ -600,9 +660,17 @@ class _CalendarPanelState extends State<_CalendarPanel> {
               ),
               Row(
                 children: [
-                  _PanelNavButton(icon: Icons.chevron_left, solid: false, onTap: widget.onPrev),
+                  _PanelNavButton(
+                    icon: Icons.chevron_left,
+                    solid: false,
+                    onTap: widget.onPrev,
+                  ),
                   const SizedBox(width: 6),
-                  _PanelNavButton(icon: Icons.chevron_right, solid: true, onTap: widget.onNext),
+                  _PanelNavButton(
+                    icon: Icons.chevron_right,
+                    solid: true,
+                    onTap: widget.onNext,
+                  ),
                 ],
               ),
             ],
@@ -621,7 +689,9 @@ class _CalendarPanelState extends State<_CalendarPanel> {
               _dragAccum += details.delta.dy;
               if (_dragAccum.abs() < 22) return;
               _dragTriggered = true;
-              widget.onDragToView(_dragAccum > 0 ? _CalView.month : _CalView.week);
+              widget.onDragToView(
+                _dragAccum > 0 ? _CalView.month : _CalView.week,
+              );
             },
             onVerticalDragEnd: (_) {
               _dragAccum = 0;
@@ -714,9 +784,17 @@ class _CalendarPanelState extends State<_CalendarPanel> {
   }
 
   Widget _monthGrid(DateTime today) {
-    final monthStart = DateTime(widget.focusedMonth.year, widget.focusedMonth.month, 1);
+    final monthStart = DateTime(
+      widget.focusedMonth.year,
+      widget.focusedMonth.month,
+      1,
+    );
     final leading = monthStart.weekday % 7;
-    final daysInMonth = DateTime(widget.focusedMonth.year, widget.focusedMonth.month + 1, 0).day;
+    final daysInMonth = DateTime(
+      widget.focusedMonth.year,
+      widget.focusedMonth.month + 1,
+      0,
+    ).day;
     final gridStart = monthStart.subtract(Duration(days: leading));
     final totalCells = leading + daysInMonth;
     final cellCount = (totalCells / 7).ceil() * 7;
@@ -760,7 +838,11 @@ class _CalendarPanelState extends State<_CalendarPanel> {
 }
 
 class _PanelNavButton extends StatelessWidget {
-  const _PanelNavButton({required this.icon, required this.solid, required this.onTap});
+  const _PanelNavButton({
+    required this.icon,
+    required this.solid,
+    required this.onTap,
+  });
 
   final IconData icon;
   final bool solid;
@@ -777,7 +859,11 @@ class _PanelNavButton extends StatelessWidget {
         child: SizedBox(
           width: 30,
           height: 30,
-          child: Icon(icon, size: 16, color: solid ? EnsomColors.ink : Colors.white),
+          child: Icon(
+            icon,
+            size: 16,
+            color: solid ? EnsomColors.ink : Colors.white,
+          ),
         ),
       ),
     );
@@ -837,7 +923,10 @@ class _DayDot extends StatelessWidget {
               shape: BoxShape.circle,
               border: Border.all(color: border, width: 1.4),
             ),
-            child: Text("${date.day}", style: TextStyle(fontSize: 12.5, fontWeight: weight, color: fg)),
+            child: Text(
+              "${date.day}",
+              style: TextStyle(fontSize: 12.5, fontWeight: weight, color: fg),
+            ),
           ),
           if (count > 1)
             Positioned(
@@ -848,7 +937,9 @@ class _DayDot extends StatelessWidget {
                 height: 13,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: (isToday || isSelected) ? EnsomColors.cta : EnsomColors.lime,
+                  color: (isToday || isSelected)
+                      ? EnsomColors.cta
+                      : EnsomColors.lime,
                   shape: BoxShape.circle,
                   border: Border.all(color: EnsomColors.panel, width: 1.5),
                 ),
@@ -857,7 +948,9 @@ class _DayDot extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 8,
                     fontWeight: FontWeight.w700,
-                    color: (isToday || isSelected) ? Colors.white : EnsomColors.ink,
+                    color: (isToday || isSelected)
+                        ? Colors.white
+                        : EnsomColors.ink,
                   ),
                 ),
               ),
@@ -944,7 +1037,10 @@ class _TimelineRow extends StatelessWidget {
                             ? LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [EnsomColors.hairline, EnsomColors.hairline.withValues(alpha: 0)],
+                                colors: [
+                                  EnsomColors.hairline,
+                                  EnsomColors.hairline.withValues(alpha: 0),
+                                ],
                               )
                             : null,
                       ),
@@ -992,17 +1088,24 @@ class _TimelineRow extends StatelessWidget {
                               Row(
                                 children: [
                                   Icon(
-                                    isOnline ? Icons.videocam_outlined : Icons.place_outlined,
+                                    isOnline
+                                        ? Icons.videocam_outlined
+                                        : Icons.place_outlined,
                                     size: 11,
                                     color: EnsomColors.inkFaint,
                                   ),
                                   const SizedBox(width: 4),
                                   Expanded(
                                     child: Text(
-                                      isOnline ? "온라인" : (event.destinationName ?? "장소 미정"),
+                                      isOnline
+                                          ? "온라인"
+                                          : (event.destinationName ?? "장소 미정"),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 11.5, color: EnsomColors.inkMuted),
+                                      style: const TextStyle(
+                                        fontSize: 11.5,
+                                        color: EnsomColors.inkMuted,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -1012,8 +1115,14 @@ class _TimelineRow extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                          decoration: BoxDecoration(color: pillBg, borderRadius: BorderRadius.circular(999)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: pillBg,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
                           child: Text(
                             pillLabel,
                             style: TextStyle(
@@ -1041,7 +1150,11 @@ class _TimelineRow extends StatelessWidget {
 /// 안에서만 이름/장소로 실시간 필터링한다 — 서버 검색 엔드포인트가
 /// 없어서 전체 기간 검색은 지원하지 않는다.
 class _SearchOverlay extends StatefulWidget {
-  const _SearchOverlay({required this.events, required this.onClose, required this.onPick});
+  const _SearchOverlay({
+    required this.events,
+    required this.onClose,
+    required this.onPick,
+  });
 
   final List<Event> events;
   final VoidCallback onClose;
@@ -1086,11 +1199,19 @@ class _SearchOverlayState extends State<_SearchOverlay> {
               children: [
                 Row(
                   children: [
-                    _IconAction(icon: Icons.arrow_back, tooltip: "닫기", onTap: widget.onClose),
+                    _IconAction(
+                      icon: Icons.arrow_back,
+                      tooltip: "닫기",
+                      onTap: widget.onClose,
+                    ),
                     const SizedBox(width: 10),
                     const Text(
                       "일정 검색",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -.2),
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.2,
+                      ),
                     ),
                   ],
                 ),
@@ -1098,17 +1219,27 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                 Container(
                   height: 42,
                   padding: const EdgeInsets.symmetric(horizontal: 14),
-                  decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(999)),
+                  decoration: BoxDecoration(
+                    color: EnsomColors.surface2,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
                   child: Row(
                     children: [
-                      const Icon(Icons.search, size: 15, color: EnsomColors.inkFaint),
+                      const Icon(
+                        Icons.search,
+                        size: 15,
+                        color: EnsomColors.inkFaint,
+                      ),
                       const SizedBox(width: 9),
                       Expanded(
                         child: TextField(
                           controller: _controller,
                           autofocus: true,
                           onChanged: (v) => setState(() => _query = v),
-                          style: const TextStyle(fontSize: 13.5, color: EnsomColors.ink),
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            color: EnsomColors.ink,
+                          ),
                           decoration: const InputDecoration(
                             border: InputBorder.none,
                             hintText: "일정 이름, 장소",
@@ -1125,20 +1256,29 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                       ? Center(
                           child: Text(
                             q.isEmpty ? "등록된 일정이 없어요" : "'$q'와 맞는 일정이 없어요",
-                            style: const TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted),
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              color: EnsomColors.inkMuted,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                         )
                       : ListView.separated(
                           itemCount: hits.length,
-                          separatorBuilder: (_, _) => const Divider(height: 1, color: EnsomColors.hairline),
+                          separatorBuilder: (_, _) => const Divider(
+                            height: 1,
+                            color: EnsomColors.hairline,
+                          ),
                           itemBuilder: (context, i) {
                             final e = hits[i];
-                            final isOnline = e.locationState == LocationState.notRequired;
+                            final isOnline =
+                                e.locationState == LocationState.notRequired;
                             return InkWell(
                               onTap: () => widget.onPick(e.startsAt),
                               child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 11),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 11,
+                                ),
                                 child: Row(
                                   children: [
                                     SizedBox(
@@ -1156,7 +1296,8 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                                     const SizedBox(width: 11),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             e.displayName,
@@ -1170,7 +1311,10 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                                           const SizedBox(height: 3),
                                           Text(
                                             "${DateFormat("HH:mm").format(e.startsAt)} · ${isOnline ? '온라인' : (e.destinationName ?? '장소 미정')}",
-                                            style: const TextStyle(fontSize: 11, color: EnsomColors.inkFaint),
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              color: EnsomColors.inkFaint,
+                                            ),
                                           ),
                                         ],
                                       ),
@@ -1181,6 +1325,65 @@ class _SearchOverlayState extends State<_SearchOverlay> {
                             );
                           },
                         ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// S-11 진입점 — 동기화가 분류를 확신하지 못한 일정을 알린다.
+///
+/// §3 S-09 "동기화 일부 실패 시 전면 오류 화면을 쓰지 않는다"와 같은 이유로,
+/// 목록을 못 읽으면 조용히 아무것도 그리지 않는다. 캘린더 자체는 계속 쓸 수 있다.
+class _PendingReviewBanner extends ConsumerWidget {
+  const _PendingReviewBanner({required this.range});
+
+  final EventRange range;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final reviews = ref.watch(pendingReviewsProvider(range)).value;
+    if (reviews == null || reviews.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Material(
+        color: EnsomColors.surface2,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => showClassificationReviewSheet(context, reviews.first),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.help_outline,
+                  size: 16,
+                  color: EnsomColors.inkMuted,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    reviews.length == 1
+                        ? "확인이 필요한 일정이 하나 있어요"
+                        : "확인이 필요한 일정이 ${reviews.length}개 있어요",
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -.2,
+                      color: EnsomColors.ink,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: EnsomColors.inkFaint,
                 ),
               ],
             ),

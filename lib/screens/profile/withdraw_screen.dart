@@ -34,7 +34,13 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.warning_amber_rounded, size: 48, color: EnsomColors.caution),
+        // §3 S-14F 탈퇴 영역에는 강조색을 쓰지 않는다. §12 느낌표·경고 아이콘도
+        // 쓰지 않는다 — 문구만으로 충분히 무겁다.
+        const Icon(
+          Icons.person_remove_outlined,
+          size: 40,
+          color: EnsomColors.inkMuted,
+        ),
         const SizedBox(height: 16),
         Text("정말 탈퇴하시겠어요?", style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
@@ -62,8 +68,9 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
               child: ElevatedButton(
                 onPressed: () => setState(() => _step = 2),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: EnsomColors.caution,
-                  foregroundColor: EnsomColors.canvas,
+                  backgroundColor: EnsomColors.surface2,
+                  foregroundColor: EnsomColors.ink,
+                  elevation: 0,
                 ),
                 child: const Text("탈퇴할게요"),
               ),
@@ -92,11 +99,12 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.delete_forever),
+                : const Icon(Icons.person_remove_outlined, size: 17),
             label: Text(_processing ? "처리 중..." : "탈퇴 확인"),
             style: ElevatedButton.styleFrom(
-              backgroundColor: EnsomColors.caution,
-              foregroundColor: EnsomColors.canvas,
+              backgroundColor: EnsomColors.surface2,
+              foregroundColor: EnsomColors.ink,
+              elevation: 0,
             ),
           ),
         ),
@@ -111,9 +119,9 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
       final account = await googleSignIn.signIn();
       if (account == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("본인 확인이 필요해요.")),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("본인 확인이 필요해요.")));
           setState(() => _processing = false);
         }
         return;
@@ -143,9 +151,9 @@ class _WithdrawScreenState extends ConsumerState<WithdrawScreen> {
       }
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message)));
         setState(() => _processing = false);
       }
     } catch (_) {

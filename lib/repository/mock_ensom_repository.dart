@@ -1,17 +1,34 @@
 import "ensom_repository.dart";
 import "../models/place.dart";
+import "../models/calendar_connection.dart";
+import "../models/bookmark.dart";
 import "../models/event.dart";
+import "../models/pending_event_review.dart";
 import "../models/plan.dart";
+import "../models/today_plan.dart";
 import "../models/prep_item.dart";
 import "../models/notification.dart";
 import "../models/action_log.dart";
 import "../models/daily_wellness_summary.dart";
+import "../models/weekly_summary.dart";
 import "../models/prep_estimate.dart";
 import "../models/wellness_pref.dart";
 import "../models/execution.dart";
 
 class MockEnsomRepository implements EnsomRepository {
   // -- 일정 --------------------------------------------------------
+  @override
+  Future<TodayPlan> fetchTodayPlan() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final event = await fetchEvent("mock-event-1");
+    return TodayPlan(
+      serverNow: DateTime.now(),
+      date: DateTime.now().toIso8601String().substring(0, 10),
+      homeState: HomeCardState.start,
+      cards: [TodayPlanCard(state: HomeCardState.start, event: event)],
+    );
+  }
+
   @override
   Future<Event?> fetchNextEvent() async {
     await Future.delayed(const Duration(milliseconds: 300));
@@ -71,10 +88,17 @@ class MockEnsomRepository implements EnsomRepository {
   }
 
   @override
+  Future<List<PendingEventReview>> fetchPendingReviews({
+    required DateTime from,
+    required DateTime to,
+  }) async => const [];
+
+  @override
   Future<void> reviewEventClassification(
     String eventId,
-    EventClassificationReview review,
-  ) async {
+    EventClassificationReview review, {
+    String? reviewId,
+  }) async {
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
@@ -392,6 +416,37 @@ class MockEnsomRepository implements EnsomRepository {
   }
 
   @override
+  Future<WeeklySummary> fetchWeeklySummary(String date) async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    final anchor = DateTime.parse(date);
+    final monday = anchor.subtract(Duration(days: anchor.weekday - 1));
+    return WeeklySummary(
+      weekStart: monday,
+      weekEnd: monday.add(const Duration(days: 6)),
+      managedEventCount: 8,
+      onTimeRate: .75,
+      onTimeSampleCount: 8,
+      averageSlackMinutes: 7,
+      averageSlackSampleCount: 8,
+      prepAccuracy: List.generate(
+        5,
+        (index) => PrepAccuracyPoint(
+          date: monday.add(Duration(days: index)),
+          predictedMinutes: 28 + index,
+          actualMinutes: 25 + index * 2,
+          sampleCount: 1,
+        ),
+      ),
+      wellnessCompletionRate: .75,
+      wellnessProposedCount: 8,
+      wellnessCompletedCount: 6,
+      outdoorMinutes: 260,
+      outdoorSampleCount: 8,
+      outdoorSource: "estimated",
+    );
+  }
+
+  @override
   Future<void> markDailySummaryViewed(String summaryId) async {
     await Future.delayed(const Duration(milliseconds: 100));
   }
@@ -517,6 +572,56 @@ class MockEnsomRepository implements EnsomRepository {
   }
 
   @override
+  Future<List<Bookmark>> fetchBookmarks({String? folder}) async => const [];
+
+  @override
+  Future<Bookmark> createBookmark({
+    required String placeName,
+    String? address,
+    required double lat,
+    required double lng,
+    String? folder,
+  }) async => Bookmark(
+    bookmarkId: "mock-bookmark",
+    placeName: placeName,
+    address: address,
+    lat: lat,
+    lng: lng,
+    folder: folder,
+  );
+
+  @override
+  Future<Bookmark> patchBookmark(
+    String bookmarkId, {
+    String? placeName,
+    String? address,
+    String? folder,
+    int? sortOrder,
+  }) async => Bookmark(
+    bookmarkId: bookmarkId,
+    placeName: placeName ?? "북마크",
+    address: address,
+    lat: 37.5,
+    lng: 127.0,
+    folder: folder,
+    sortOrder: sortOrder ?? 0,
+  );
+
+  @override
+  Future<void> bulkDeleteBookmarks(List<String> bookmarkIds) async {}
+
+  @override
+  Future<void> deleteBookmark(String bookmarkId) async {}
+
+  @override
+  Future<List<RecentDestination>> fetchRecentDestinations({
+    int limit = 20,
+  }) async => const [];
+
+  @override
+  Future<void> clearRecentDestinations() async {}
+
+  @override
   Future<Place> registerPlace(Place place) async {
     await Future.delayed(const Duration(milliseconds: 300));
     return place;
@@ -532,6 +637,31 @@ class MockEnsomRepository implements EnsomRepository {
   Future<void> syncCalendar() async {
     await Future.delayed(const Duration(milliseconds: 400));
   }
+
+  @override
+  Future<List<CalendarConnection>> fetchCalendarConnections() async => const [];
+
+  @override
+  Future<CalendarSource> setCalendarSourceSync(
+    String sourceId,
+    bool enabled,
+  ) async => CalendarSource(
+    calendarSourceId: sourceId,
+    displayName: "내 캘린더",
+    writable: true,
+    defaultSource: true,
+    syncEnabled: enabled,
+  );
+
+  @override
+  Future<CalendarSource> setDefaultCalendarSource(String sourceId) async =>
+      CalendarSource(
+        calendarSourceId: sourceId,
+        displayName: "내 캘린더",
+        writable: true,
+        defaultSource: true,
+        syncEnabled: true,
+      );
 
   // -- 계정 --------------------------------------------------------
   @override

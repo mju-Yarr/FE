@@ -12,7 +12,9 @@ _Event _$EventFromJson(Map<String, dynamic> json) => _Event(
   displayLabel: json['displayLabel'] as String?,
   displayName: json['displayName'] as String,
   startsAt: DateTime.parse(json['startsAt'] as String),
-  endsAt: DateTime.parse(json['endsAt'] as String),
+  endsAt: json['endsAt'] == null
+      ? null
+      : DateTime.parse(json['endsAt'] as String),
   locationState: $enumDecode(_$LocationStateEnumMap, json['locationState']),
   destinationName: json['destinationName'] as String?,
   destinationLat: (json['destinationLat'] as num?)?.toDouble(),
@@ -33,7 +35,7 @@ Map<String, dynamic> _$EventToJson(_Event instance) => <String, dynamic>{
   'displayLabel': instance.displayLabel,
   'displayName': instance.displayName,
   'startsAt': instance.startsAt.toIso8601String(),
-  'endsAt': instance.endsAt.toIso8601String(),
+  'endsAt': instance.endsAt?.toIso8601String(),
   'locationState': _$LocationStateEnumMap[instance.locationState]!,
   'destinationName': instance.destinationName,
   'destinationLat': instance.destinationLat,

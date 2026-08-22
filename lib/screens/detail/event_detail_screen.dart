@@ -5,6 +5,8 @@ import "../../models/event.dart";
 import "../../models/plan.dart";
 import "../../network/api_client.dart";
 import "../../providers/auth_providers.dart";
+import "../../providers/calendar_providers.dart";
+import "../calendar/widgets/classification_review_sheet.dart";
 import "../../providers/home_providers.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_error_banner.dart";
@@ -107,10 +109,8 @@ class EventDetailScreen extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (_) => PlanEditSheet(
-        eventId: eventId,
-        initialPrepStartAt: plan.prepStartAt,
-      ),
+      builder: (_) =>
+          PlanEditSheet(eventId: eventId, initialPrepStartAt: plan.prepStartAt),
     );
     if (saved == true) ref.invalidate(planControllerProvider(eventId));
   }
@@ -207,6 +207,9 @@ class EventDetailScreen extends ConsumerWidget {
                 type: DegradedPermissionType.location,
               ),
               _Header(event: event),
+              // §3 S-11 진입 3경로 중 하나. 분류가 미정인 일정은 상세에서도
+              // 확인할 수 있어야 한다.
+              _ClassificationPrompt(event: event),
               const SizedBox(height: 18),
               Consumer(
                 builder: (context, ref, _) {
@@ -435,9 +438,11 @@ class _Header extends StatelessWidget {
 
   String _formatMeta(Event event) {
     final start = event.startsAt.toLocal();
-    final end = event.endsAt.toLocal();
     final h1 = start.hour.toString().padLeft(2, "0");
     final m1 = start.minute.toString().padLeft(2, "0");
+    final end = event.endsAt?.toLocal();
+    // 종료 시각이 없으면 범위 대신 시작 시각만 적는다. 없는 시각을 지어내지 않는다.
+    if (end == null) return "${start.month}월 ${start.day}일 · $h1:$m1";
     final h2 = end.hour.toString().padLeft(2, "0");
     final m2 = end.minute.toString().padLeft(2, "0");
     return "${start.month}월 ${start.day}일 · $h1:$m1–$h2:$m2";
@@ -931,6 +936,82 @@ class _RouteSummaryCard extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// S-12 → S-11. 장소 필요 여부가 미정(undecided)인 일정에만 나온다.
+///
+/// 캘린더가 만든 미해결 질문을 찾아 시트를 연다. 질문이 없으면(사용자가 직접
+/// 만든 미정 일정) 아무것도 그리지 않는다 — 답할 대상이 없는데 물으면
+/// 서버가 REVIEW_NOT_FOUND로 되돌린다.
+class _ClassificationPrompt extends ConsumerWidget {
+  const _ClassificationPrompt({required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (event.locationState != LocationState.undecided) {
+      return const SizedBox.shrink();
+    }
+    // 이 일정의 시작 시각을 포함하는 하루를 조회 범위로 잡는다.
+    final day = DateTime(
+      event.startsAt.year,
+      event.startsAt.month,
+      event.startsAt.day,
+    );
+    final reviews = ref
+        .watch(
+          pendingReviewsProvider(
+            EventRange(from: day, to: day.add(const Duration(days: 1))),
+          ),
+        )
+        .value;
+    final review = reviews
+        ?.where((r) => r.eventId == event.eventId)
+        .firstOrNull;
+    if (review == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Material(
+        color: EnsomColors.surface2,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => showClassificationReviewSheet(context, review),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.help_outline,
+                  size: 16,
+                  color: EnsomColors.inkMuted,
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    "이 일정에 이동이 필요한지 알려주세요",
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -.2,
+                      color: EnsomColors.ink,
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: EnsomColors.inkFaint,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -42,7 +42,8 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
     _ConsentItem(type: "marketing", name: "마케팅 정보 수신 동의", required: false),
   ];
 
-  bool get _allRequiredAgreed => _items.where((i) => i.required).every((i) => i.agreed);
+  bool get _allRequiredAgreed =>
+      _items.where((i) => i.required).every((i) => i.agreed);
 
   bool get _allAgreed => _items.every((i) => i.agreed);
 
@@ -112,7 +113,8 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
   void _openDetail(_ConsentItem item) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ConsentDetailScreen(consentType: item.type, title: item.name),
+        builder: (_) =>
+            ConsentDetailScreen(consentType: item.type, title: item.name),
       ),
     );
   }
@@ -132,7 +134,13 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                   children: [
                     const Text(
                       "서비스 이용을 위해\n약관에 동의해 주세요",
-                      style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: -.3, height: 1.35, color: EnsomColors.ink),
+                      style: TextStyle(
+                        fontSize: 19,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -.3,
+                        height: 1.35,
+                        color: EnsomColors.ink,
+                      ),
                     ),
                     const SizedBox(height: 20),
                     Material(
@@ -142,7 +150,10 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                         onTap: _toggleAll,
                         borderRadius: BorderRadius.circular(16),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 15,
+                          ),
                           child: Row(
                             children: [
                               _Checkbox(checked: _allAgreed),
@@ -153,12 +164,20 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                                   children: [
                                     Text(
                                       "전체 동의",
-                                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -.3, color: EnsomColors.ink),
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                        letterSpacing: -.3,
+                                        color: EnsomColors.ink,
+                                      ),
                                     ),
                                     SizedBox(height: 3),
                                     Text(
                                       "선택 항목 동의를 포함합니다",
-                                      style: TextStyle(fontSize: 11, color: EnsomColors.inkFaint),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: EnsomColors.inkFaint,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -169,15 +188,30 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                       ),
                     ),
                     const Divider(height: 29, color: EnsomColors.hairline),
-                    for (final item in _items) _ConsentRow(item: item, onToggle: () => _toggleItem(item), onView: () => _openDetail(item)),
+                    for (final item in _items)
+                      _ConsentRow(
+                        item: item,
+                        onToggle: () => _toggleItem(item),
+                        onView: () => _openDetail(item),
+                      ),
                     const SizedBox(height: 14),
                     const Text(
                       "필수 항목에 동의하셔야 서비스를 시작할 수 있어요. 선택 항목은 나중에 설정에서 바꿀 수 있습니다.",
-                      style: TextStyle(fontSize: 10.5, color: EnsomColors.inkFaint, height: 1.5),
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: EnsomColors.inkFaint,
+                        height: 1.5,
+                      ),
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 14),
-                      Text(_error!, style: const TextStyle(color: EnsomColors.caution, fontSize: 12.5)),
+                      Text(
+                        _error!,
+                        style: const TextStyle(
+                          color: EnsomColors.caution,
+                          fontSize: 12.5,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -190,7 +224,9 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
                 ),
                 child: EnsomPillButton(
                   label: _submitting ? "처리 중..." : "동의하고 시작하기",
-                  onPressed: (_allRequiredAgreed && !_submitting) ? _submit : null,
+                  onPressed: (_allRequiredAgreed && !_submitting)
+                      ? _submit
+                      : null,
                 ),
               ),
             ],
@@ -202,7 +238,11 @@ class _ConsentScreenState extends ConsumerState<ConsentScreen> {
 }
 
 class _ConsentRow extends StatelessWidget {
-  const _ConsentRow({required this.item, required this.onToggle, required this.onView});
+  const _ConsentRow({
+    required this.item,
+    required this.onToggle,
+    required this.onView,
+  });
 
   final _ConsentItem item;
   final VoidCallback onToggle;
@@ -224,18 +264,33 @@ class _ConsentRow extends StatelessWidget {
                     _Checkbox(checked: item.agreed),
                     const SizedBox(width: 10),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(999)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: EnsomColors.surface2,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                       child: Text(
                         item.required ? "필수" : "선택",
-                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: EnsomColors.inkMuted),
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: EnsomColors.inkMuted,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         item.name,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: -.2, color: EnsomColors.ink),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: -.2,
+                          color: EnsomColors.ink,
+                        ),
                       ),
                     ),
                   ],
@@ -252,7 +307,11 @@ class _ConsentRow extends StatelessWidget {
               child: const SizedBox(
                 width: 26,
                 height: 26,
-                child: Icon(Icons.chevron_right, size: 15, color: EnsomColors.inkFaint),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 15,
+                  color: EnsomColors.inkFaint,
+                ),
               ),
             ),
           ),
@@ -276,9 +335,14 @@ class _Checkbox extends StatelessWidget {
       decoration: BoxDecoration(
         color: checked ? EnsomColors.cta : Colors.white,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: checked ? EnsomColors.cta : EnsomColors.hairline, width: 1.8),
+        border: Border.all(
+          color: checked ? EnsomColors.cta : EnsomColors.hairline,
+          width: 1.8,
+        ),
       ),
-      child: checked ? const Icon(Icons.check, size: 14, color: Colors.white) : null,
+      child: checked
+          ? const Icon(Icons.check, size: 14, color: Colors.white)
+          : null,
     );
   }
 }

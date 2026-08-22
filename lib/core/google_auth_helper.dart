@@ -1,3 +1,4 @@
+import "package:flutter/foundation.dart" show kIsWeb;
 import "package:google_sign_in/google_sign_in.dart";
 import "app_config.dart";
 
@@ -14,15 +15,28 @@ class GoogleAuthHelper {
 
   /// 로그인 전용 — email 스코프만 요청.
   final _loginSignIn = GoogleSignIn(
-    serverClientId:
-        kGoogleServerClientId.isEmpty ? null : kGoogleServerClientId,
+    // 웹은 clientId로만 GIS를 초기화한다 — serverClientId를 같이 넘기면
+    // google_sign_in_web의 assert(params.serverClientId == null)에 걸린다.
+    clientId: kIsWeb && kGoogleServerClientId.isNotEmpty
+        ? kGoogleServerClientId
+        : null,
+    serverClientId: !kIsWeb && kGoogleServerClientId.isNotEmpty
+        ? kGoogleServerClientId
+        : null,
     scopes: const ["email"],
   );
 
   /// 캘린더 연동 전용 — email + calendar.readonly 스코프 요청.
-  final _calendarSignIn = GoogleSignIn(
-    serverClientId:
-        kGoogleServerClientId.isEmpty ? null : kGoogleServerClientId,
+  /// late: 로그인 시점에 같이 생성하면 웹에서 GIS initialize()가 두 번
+  /// 불려 "Bad state: Future already completed"가 난다. 캘린더 연동을
+  /// 실제로 쓸 때(signInForCalendar)까지 생성을 미룬다.
+  late final _calendarSignIn = GoogleSignIn(
+    clientId: kIsWeb && kGoogleServerClientId.isNotEmpty
+        ? kGoogleServerClientId
+        : null,
+    serverClientId: !kIsWeb && kGoogleServerClientId.isNotEmpty
+        ? kGoogleServerClientId
+        : null,
     scopes: const [
       "email",
       "https://www.googleapis.com/auth/calendar.readonly",

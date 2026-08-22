@@ -258,7 +258,9 @@ class ApiClient {
 
     final http.Response response;
     try {
-      response = await request(session?.accessToken);
+      response = await request(
+        session?.accessToken,
+      ).timeout(const Duration(seconds: 20));
     } on SocketException {
       throw ApiException(
         code: "NETWORK_ERROR",
@@ -357,11 +359,29 @@ class ApiClient {
     }
 
     // ─── 응답 파싱 ──────────────────────────────────────────────
-    // BE가 JSON object 또는 array를 직접 반환할 수 있으므로
-    // 먼저 dynamic으로 디코딩한 뒤 타입에 따라 분기한다.
-    final dynamic decoded = response.body.isEmpty
-        ? <String, dynamic>{}
-        : jsonDecode(response.body);
+    // 프록시/게이트웨이가 HTML 오류 페이지를 반환해도 FormatException을
+    // 그대로 흘리지 않고 진단 가능한 API 오류로 정규화한다. 응답 본문은
+    // 토큰이나 내부 정보가 섞일 수 있어 로그에 남기지 않는다.
+    dynamic decoded = <String, dynamic>{};
+    if (response.body.isNotEmpty) {
+      try {
+        decoded = jsonDecode(response.body);
+      } on FormatException catch (error, stackTrace) {
+        developer.log(
+          "non-JSON response: status=${response.statusCode}, "
+          "contentType=${response.headers["content-type"]}",
+          name: "ApiClient",
+          error: error,
+          stackTrace: stackTrace,
+        );
+        throw ApiException(
+          code: "INVALID_SERVER_RESPONSE",
+          message: "서버 응답을 확인하지 못했어요. 잠시 후 다시 시도해주세요.",
+          retryable: response.statusCode >= 500,
+          statusCode: response.statusCode,
+        );
+      }
+    }
 
     if (response.statusCode >= 200 && response.statusCode < 300) {
       // Case 1: {"data": ...} wrapper가 있으면 unwrap
@@ -406,14 +426,16 @@ class ApiClient {
 
     final refreshIdempotencyKey = _uuid.v4();
     try {
-      final response = await _http.post(
-        _uri("/auth/refresh"),
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": refreshIdempotencyKey,
-        },
-        body: jsonEncode({"refreshToken": refreshToken}),
-      );
+      final response = await _http
+          .post(
+            _uri("/auth/refresh"),
+            headers: {
+              "Content-Type": "application/json",
+              "Idempotency-Key": refreshIdempotencyKey,
+            },
+            body: jsonEncode({"refreshToken": refreshToken}),
+          )
+          .timeout(const Duration(seconds: 20));
       if (!isCurrentSessionGeneration(session.generation)) {
         return const _RefreshOutcome(_RefreshStatus.stale);
       }
@@ -502,6 +524,9 @@ class ApiClient {
 
   Future<T> postPublic<T>(String path, {Map<String, dynamic>? body}) =>
       post<T>(path, body: body, requiresAuth: false);
+
+  Future<T> getPublic<T>(String path, {Map<String, dynamic>? query}) =>
+      get<T>(path, query: query, requiresAuth: false);
 
   Future<T> patch<T>(
     String path, {

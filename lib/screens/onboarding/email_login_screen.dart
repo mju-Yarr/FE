@@ -85,6 +85,7 @@ class _EmailLoginScreenState extends ConsumerState<EmailLoginScreen> {
     } on ApiException catch (e) {
       setState(() {
         switch (e.code) {
+          case "INVALID_CREDENTIALS":
           case "AUTH_INVALID_CREDENTIALS":
             _error = "이메일 또는 비밀번호를 확인해주세요.";
           case "ACCOUNT_LOCKED":

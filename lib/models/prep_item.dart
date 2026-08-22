@@ -3,12 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'prep_item.freezed.dart';
 
 /// 챙기기 / 사용·섭취하기 / 구매하기 / 시간이 필요한 루틴 (PRD §11.3, ERD prep_kind).
-enum PrepKind {
-  carry,
-  consume,
-  purchase,
-  routine,
-}
+enum PrepKind { carry, consume, purchase, routine }
 
 /// 맞춤 준비 항목. 준비시간 화면 안의 한 섹션에서 등록되며
 /// 별도 온보딩 단계로 분리하지 않는다 (PRD §11.3).
@@ -47,14 +42,14 @@ abstract class PrepItem with _$PrepItem {
   /// (ApiEnsomRepository._prepItemToRequestBody()가 API 명세 필드명으로
   /// 별도 변환하므로, 여기서는 FE 모델 그대로 직렬화.)
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'label': label,
-        'kind': kind.name,
-        'extraMin': extraMin,
-        'sensitive': sensitive,
-        'fromChip': fromChip,
-        'active': active,
-      };
+    'id': id,
+    'label': label,
+    'kind': kind.name,
+    'extraMin': extraMin,
+    'sensitive': sensitive,
+    'fromChip': fromChip,
+    'active': active,
+  };
 
   /// 서버 검증 규칙과 동일한 클라이언트측 가드.
   bool get isInvalidChipCombination => fromChip && sensitive;

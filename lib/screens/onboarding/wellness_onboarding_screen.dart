@@ -19,7 +19,7 @@ class WellnessOnboardingScreen extends ConsumerWidget {
   const WellnessOnboardingScreen({super.key});
 
   void _finish(WidgetRef ref, BuildContext context) {
-    ref.read(secureStorageProvider).setOnboardingStep("permissions");
+    ref.read(authNotifierProvider.notifier).advanceOnboarding("wellness");
     context.go("/onboarding/complete");
   }
 

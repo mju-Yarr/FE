@@ -105,13 +105,21 @@ class _RouteChangeSheetState extends ConsumerState<RouteChangeSheet> {
             child: Container(
               width: 36,
               height: 4,
-              decoration: BoxDecoration(color: EnsomColors.hairline, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: EnsomColors.hairline,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
           ),
           const SizedBox(height: 18),
           const Text(
             "경로 변경",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -.2, color: EnsomColors.ink),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.2,
+              color: EnsomColors.ink,
+            ),
           ),
           const SizedBox(height: 14),
           if (_loading)
@@ -122,19 +130,31 @@ class _RouteChangeSheetState extends ConsumerState<RouteChangeSheet> {
           else if (_error != null)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Center(child: Text(_error!, style: const TextStyle(color: EnsomColors.inkMuted))),
+              child: Center(
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: EnsomColors.inkMuted),
+                ),
+              ),
             )
           else if (_options == null || _options!.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 20),
-              child: Center(child: Text("대안 경로가 없어요.", style: TextStyle(color: EnsomColors.inkMuted))),
+              child: Center(
+                child: Text(
+                  "대안 경로가 없어요.",
+                  style: TextStyle(color: EnsomColors.inkMuted),
+                ),
+              ),
             )
           else
             for (final opt in _options!) ...[
               EnsomRouteOptionCard(
                 option: opt,
                 selected: _selectedId == opt.routeOptionId,
-                onSelect: _selecting ? null : () => _selectRoute(opt.routeOptionId),
+                onSelect: _selecting
+                    ? null
+                    : () => _selectRoute(opt.routeOptionId),
               ),
               const SizedBox(height: 10),
             ],

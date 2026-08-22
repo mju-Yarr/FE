@@ -166,7 +166,11 @@ class _ProvidersScreenState extends ConsumerState<ProvidersScreen> {
       children: [
         const Text(
           "계정에 연결된 로그인 방법이에요. 최소 한 개는 남겨두어야 해요.",
-          style: TextStyle(fontSize: 11, color: EnsomColors.inkFaint, height: 1.5),
+          style: TextStyle(
+            fontSize: 11,
+            color: EnsomColors.inkFaint,
+            height: 1.5,
+          ),
         ),
         const SizedBox(height: 10),
         ...providers.map((p) {
@@ -186,7 +190,11 @@ class _ProvidersScreenState extends ConsumerState<ProvidersScreen> {
             padding: EdgeInsets.symmetric(vertical: 6),
             child: Text(
               "마지막 로그인 수단은 해제할 수 없어요. 다른 수단을 먼저 연결해주세요.",
-              style: TextStyle(fontSize: 11, color: EnsomColors.inkFaint, height: 1.5),
+              style: TextStyle(
+                fontSize: 11,
+                color: EnsomColors.inkFaint,
+                height: 1.5,
+              ),
             ),
           ),
         ],
@@ -202,7 +210,11 @@ class _ProvidersScreenState extends ConsumerState<ProvidersScreen> {
                 SizedBox(width: 13),
                 Text(
                   "Google 계정 연결",
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: EnsomColors.ink),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: EnsomColors.ink,
+                  ),
                 ),
               ],
             ),
@@ -259,7 +271,10 @@ class _ProviderRow extends StatelessWidget {
           Container(
             width: 34,
             height: 34,
-            decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: EnsomColors.surface2,
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, size: 15, color: EnsomColors.inkMuted),
           ),
           const SizedBox(width: 12),
@@ -267,32 +282,60 @@ class _ProviderRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: EnsomColors.ink)),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: EnsomColors.ink,
+                  ),
+                ),
                 if (sub != null) ...[
                   const SizedBox(height: 2),
-                  Text(sub!, style: const TextStyle(fontSize: 11, color: EnsomColors.inkFaint)),
+                  Text(
+                    sub!,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: EnsomColors.inkFaint,
+                    ),
+                  ),
                 ],
               ],
             ),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-            decoration: BoxDecoration(color: EnsomColors.limeSoft, borderRadius: BorderRadius.circular(999)),
+            decoration: BoxDecoration(
+              color: EnsomColors.limeSoft,
+              borderRadius: BorderRadius.circular(999),
+            ),
             child: const Text(
               "연결됨",
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: EnsomColors.limeInk),
-            ),
-          ),
-          if (!locked) ...[
-            const SizedBox(width: 8),
-            InkWell(
-              onTap: onDisconnect,
-              child: const Text(
-                "해제",
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: EnsomColors.inkMuted, decoration: TextDecoration.underline),
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                color: EnsomColors.limeInk,
               ),
             ),
-          ],
+          ),
+          // §13 마지막 로그인 수단은 해제 버튼을 숨기지 않고 비활성으로 둔다.
+          // 숨기면 왜 못 하는지 알 수 없다(§8).
+          const SizedBox(width: 8),
+          Opacity(
+            opacity: locked ? .4 : 1,
+            child: InkWell(
+              onTap: locked ? null : onDisconnect,
+              child: const Text(
+                "해제",
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: EnsomColors.inkMuted,
+                  decoration: TextDecoration.underline,
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -3,7 +3,10 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 import "../../models/event.dart";
 import "../../network/kakao_local_search_service.dart";
+import "../../models/calendar_connection.dart";
+import "../../providers/calendar_providers.dart";
 import "../../providers/map_providers.dart";
+import "../map/widgets/place_quick_pick_sheet.dart";
 import "../../repository/providers.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_chip.dart";
@@ -33,6 +36,10 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
   final _labelController = TextEditingController();
   DateTime _startsAt = DateTime.now().add(const Duration(hours: 1));
   LocationState _locationState = LocationState.undecided;
+
+  /// §3 S-10 "저장할 캘린더 선택". 연동된 쓰기 가능 캘린더가 있을 때만 보인다.
+  /// null이면 서버가 기본 기록 캘린더를 쓴다.
+  String? _writeToCalendarSourceId;
   String? _destinationName;
   double? _destinationLat;
   double? _destinationLng;
@@ -46,6 +53,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         ? draft.at
         : draft.at.subtract(const Duration(hours: 1));
     _locationState = LocationState.requiredResolved;
+    // §13 "S-45 프리필 — 다시 입력받지 않는다". 시트에서 고른 캘린더를 잇는다.
+    _writeToCalendarSourceId = draft.calendarSourceId;
     _destinationName = draft.destName;
     _destinationLat = draft.destLat;
     _destinationLng = draft.destLng;
@@ -74,6 +83,17 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     }
   }
 
+  /// S-32 공통 시트 재사용. 시트는 값만 돌려주고 화면 전환은 하지 않는다.
+  Future<void> _pickSavedDestination() async {
+    final picked = await showPlaceQuickPickSheet(context);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _destinationName = picked.name;
+      _destinationLat = picked.lat;
+      _destinationLng = picked.lng;
+    });
+  }
+
   Future<void> _pickTime() async {
     final date = await EnsomDatePickerSheet.show(context, initial: _startsAt);
     if (date == null || !mounted) return;
@@ -85,7 +105,13 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     if (time == null) return;
 
     setState(() {
-      _startsAt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _startsAt = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
     });
   }
 
@@ -107,7 +133,12 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
             children: [
               const Text(
                 "이 일정에 장소가 필요한가요?",
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.3, color: EnsomColors.ink),
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.3,
+                  color: EnsomColors.ink,
+                ),
               ),
               const SizedBox(height: 7),
               const Text(
@@ -117,18 +148,21 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
               const SizedBox(height: 20),
               EnsomPillButton(
                 label: "네, 장소가 있어요",
-                onPressed: () => Navigator.pop(sheetContext, LocationState.requiredMissing),
+                onPressed: () =>
+                    Navigator.pop(sheetContext, LocationState.requiredMissing),
               ),
               const SizedBox(height: 8),
               EnsomPillButton(
                 label: "아니요, 온라인·재택이에요",
                 variant: EnsomPillVariant.secondary,
-                onPressed: () => Navigator.pop(sheetContext, LocationState.notRequired),
+                onPressed: () =>
+                    Navigator.pop(sheetContext, LocationState.notRequired),
               ),
               EnsomPillButton(
                 label: "잘 모르겠어요",
                 variant: EnsomPillVariant.text,
-                onPressed: () => Navigator.pop(sheetContext, LocationState.undecided),
+                onPressed: () =>
+                    Navigator.pop(sheetContext, LocationState.undecided),
               ),
             ],
           ),
@@ -153,7 +187,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     if (label.isEmpty || _saving) return;
 
     if (!await _confirmClassificationIfNeeded()) return;
-    if (_locationState == LocationState.requiredMissing && _destinationName == null) {
+    if (_locationState == LocationState.requiredMissing &&
+        _destinationName == null) {
       await _pickDestination();
       if (_destinationName == null) return;
     }
@@ -180,27 +215,36 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
     setState(() => _saving = true);
     try {
-      final endsAt = draft?.anchorMode == EventAnchor.arriveBy ? draft!.at : _startsAt.add(const Duration(hours: 1));
+      final endsAt = draft?.anchorMode == EventAnchor.arriveBy
+          ? draft!.at
+          : _startsAt.add(const Duration(hours: 1));
       final event = Event(
         eventId: "",
         displayLabel: label,
         displayName: label,
         startsAt: _startsAt,
         endsAt: endsAt,
-        locationState: _locationState == LocationState.requiredMissing && _destinationName != null
+        locationState:
+            _locationState == LocationState.requiredMissing &&
+                _destinationName != null
             ? LocationState.requiredResolved
             : _locationState,
         destinationName: _destinationName,
         destinationLat: _destinationLat,
         destinationLng: _destinationLng,
         anchor: draft?.anchorMode ?? EventAnchor.arriveBy,
-        sourceType: draft == null ? EventSourceType.internal : EventSourceType.mapSearch,
+        sourceType: draft == null
+            ? EventSourceType.internal
+            : EventSourceType.mapSearch,
       );
 
-      final created = await ref.read(ensomRepositoryProvider).createEvent(
+      final created = await ref
+          .read(ensomRepositoryProvider)
+          .createEvent(
             event,
             originPlaceId: draft?.originPlaceId,
             selectedRouteOptionId: draft?.selectedRoute.routeOptionId,
+            writeToCalendarSourceId: _writeToCalendarSourceId,
           );
 
       if (draft != null) {
@@ -209,7 +253,10 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("일정을 저장했어요."), duration: Duration(seconds: 2)),
+        const SnackBar(
+          content: Text("일정을 저장했어요."),
+          duration: Duration(seconds: 2),
+        ),
       );
       context.pushReplacement("/events/${created.eventId}");
     } catch (_) {
@@ -225,30 +272,48 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
   Widget _buildMapPrefill(MapDraftEvent draft) {
     return Container(
       padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(color: EnsomColors.lime, borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(
+        color: EnsomColors.lime,
+        borderRadius: BorderRadius.circular(18),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             draft.destName,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, letterSpacing: -.3, color: EnsomColors.ink),
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.3,
+              color: EnsomColors.ink,
+            ),
           ),
           const SizedBox(height: 5),
           Text(
             "${draft.selectedRoute.totalMinutes}분 · 도보 ${draft.selectedRoute.walkMinutes}분 · 환승 ${draft.selectedRoute.transferCount}회",
-            style: TextStyle(fontSize: 12, color: EnsomColors.ink.withValues(alpha: .72)),
+            style: TextStyle(
+              fontSize: 12,
+              color: EnsomColors.ink.withValues(alpha: .72),
+            ),
           ),
           const SizedBox(height: 3),
           Text(
             draft.anchorMode == EventAnchor.arriveBy
                 ? "도착 ${_formatDateTime(draft.at)}"
                 : "출발 ${_formatDateTime(draft.at)}",
-            style: TextStyle(fontSize: 12, color: EnsomColors.ink.withValues(alpha: .72)),
+            style: TextStyle(
+              fontSize: 12,
+              color: EnsomColors.ink.withValues(alpha: .72),
+            ),
           ),
           const SizedBox(height: 9),
           Text(
             "지도에서 선택한 장소·시각·경로가 적용됐어요.",
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: EnsomColors.limeInk),
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: EnsomColors.limeInk,
+            ),
           ),
         ],
       ),
@@ -284,12 +349,20 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
               children: [
                 const Text(
                   "선택한 경로가 만료됐어요.",
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, letterSpacing: -.3, color: EnsomColors.ink),
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.3,
+                    color: EnsomColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Text(
                   "${draft.destName} 경로를 다시 검색해주세요.",
-                  style: const TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted),
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: EnsomColors.inkMuted,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 EnsomPillButton(
@@ -321,7 +394,10 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         backgroundColor: EnsomColors.canvas,
         appBar: EnsomTopBar(title: "일정 만들기"),
         body: Center(
-          child: Text("선택한 경로 정보를 찾을 수 없어요.", style: TextStyle(color: EnsomColors.inkMuted)),
+          child: Text(
+            "선택한 경로 정보를 찾을 수 없어요.",
+            style: TextStyle(color: EnsomColors.inkMuted),
+          ),
         ),
       );
     }
@@ -352,14 +428,25 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                     const SizedBox(height: 16),
                     const Text(
                       "시작 시각",
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: EnsomColors.inkMuted),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: EnsomColors.inkMuted,
+                      ),
                     ),
                     const SizedBox(height: 6),
-                    _ValueRow(value: _formatDateTime(_startsAt), onTap: _pickTime),
+                    _ValueRow(
+                      value: _formatDateTime(_startsAt),
+                      onTap: _pickTime,
+                    ),
                     const SizedBox(height: 16),
                     const Text(
                       "장소",
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: EnsomColors.inkMuted),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: EnsomColors.inkMuted,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -368,7 +455,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                       children: [
                         EnsomChip(
                           label: "장소 필요",
-                          selected: _locationState == LocationState.requiredMissing,
+                          selected:
+                              _locationState == LocationState.requiredMissing,
                           onTap: () => setState(() {
                             _locationState = LocationState.requiredMissing;
                           }),
@@ -404,8 +492,30 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                         trailing: Icons.search,
                         onTap: _pickDestination,
                       ),
+                      // §3 S-10 "목적지 필드 → [시트] S-32 또는 [푸시] S-38".
+                      // 자주 가는 곳은 검색을 거치지 않고 바로 고른다.
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton(
+                          onPressed: _pickSavedDestination,
+                          style: TextButton.styleFrom(
+                            minimumSize: const Size(44, 44),
+                            foregroundColor: EnsomColors.inkMuted,
+                            textStyle: const TextStyle(
+                              fontSize: 11.5,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                          child: const Text("북마크·최근에서 고르기"),
+                        ),
+                      ),
                     ],
                   ],
+                  _CalendarTargetPicker(
+                    selectedId: _writeToCalendarSourceId,
+                    onSelected: (id) =>
+                        setState(() => _writeToCalendarSourceId = id),
+                  ),
                 ],
               ),
             ),
@@ -490,6 +600,59 @@ class _ValueRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// §3 S-10 "저장할 캘린더 선택 — 라디오. 이동 없음".
+///
+/// 연동한 캘린더가 없으면 아무것도 그리지 않는다. 고를 게 하나뿐인데 선택지를
+/// 보여주면 결정할 일이 있는 것처럼 보인다.
+class _CalendarTargetPicker extends ConsumerWidget {
+  const _CalendarTargetPicker({
+    required this.selectedId,
+    required this.onSelected,
+  });
+
+  final String? selectedId;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final connections = ref.watch(calendarConnectionsProvider);
+    // 목록을 못 읽어도 일정 저장은 막지 않는다. 서버가 기본 캘린더에 기록한다.
+    final sources = connections.asData?.value.writableSources ?? const [];
+    if (sources.length < 2) return const SizedBox.shrink();
+
+    final defaultSource = connections.asData!.value.defaultWritableSource;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 18),
+        const Text(
+          "저장할 캘린더",
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: EnsomColors.inkMuted,
+          ),
+        ),
+        const SizedBox(height: 8),
+        for (final source in sources)
+          RadioListTile<String?>(
+            value: source.calendarSourceId,
+            // 아직 고르지 않았으면 서버 기본값이 선택된 것으로 보여준다.
+            groupValue: selectedId ?? defaultSource?.calendarSourceId,
+            onChanged: onSelected,
+            dense: true,
+            contentPadding: EdgeInsets.zero,
+            activeColor: EnsomColors.cta,
+            title: Text(
+              source.displayName,
+              style: const TextStyle(fontSize: 12.5, color: EnsomColors.ink),
+            ),
+          ),
+      ],
     );
   }
 }

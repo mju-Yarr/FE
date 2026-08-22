@@ -46,12 +46,15 @@ class GeofenceManager {
   /// 계획이 바뀔 때마다(다음 일정 전환, 리비전 갱신 등) 호출한다.
   /// 활성 창(준비 시작 30분 전) 진입 여부를 스스로 판단해 등록/해제한다.
   Future<void> syncActivePlan(Event event, Plan plan) async {
+    if (kIsWeb) return;
     _ensureListener();
 
     final now = DateTime.now();
-    final withinActiveWindow =
-        now.isAfter(plan.prepStartAt.subtract(const Duration(minutes: 30)));
-    final isActive = withinActiveWindow && !_closedStatuses.contains(plan.eventStatus);
+    final withinActiveWindow = now.isAfter(
+      plan.prepStartAt.subtract(const Duration(minutes: 30)),
+    );
+    final isActive =
+        withinActiveWindow && !_closedStatuses.contains(plan.eventStatus);
 
     if (!isActive) {
       await clear();
@@ -134,11 +137,14 @@ class GeofenceManager {
     final now = DateTime.now();
     final lastChange = _lastStatusChangeAt[region.id];
     final isFlicker =
-        lastChange != null && now.difference(lastChange) < const Duration(seconds: 60);
+        lastChange != null &&
+        now.difference(lastChange) < const Duration(seconds: 60);
     _lastStatusChangeAt[region.id] = now;
 
     if (region.id == _exitRegionId && status == GeofenceStatus.exit) {
-      await _ref.read(offlineActionQueueServiceProvider).enqueue(
+      await _ref
+          .read(offlineActionQueueServiceProvider)
+          .enqueue(
             planId: planId,
             actionType: ActionType.departed,
             actionSource: ActionSource.geo,
@@ -153,7 +159,8 @@ class GeofenceManager {
       var confidence = 0.5 + 0.20; // 체류 조건은 dwell 상태 자체로 이미 충족
       if (location.accuracy < 50) confidence += 0.15;
       final expected = _expectedArrival;
-      if (expected != null && now.difference(expected).abs() <= const Duration(minutes: 20)) {
+      if (expected != null &&
+          now.difference(expected).abs() <= const Duration(minutes: 20)) {
         confidence += 0.15;
       }
       if (isFlicker) confidence -= 0.30;
@@ -164,7 +171,9 @@ class GeofenceManager {
       // 사용자 확인이 안전하다.
       if (confidence >= 0.6) {
         try {
-          await _ref.read(ensomRepositoryProvider).reportArrival(
+          await _ref
+              .read(ensomRepositoryProvider)
+              .reportArrival(
                 eventId,
                 planId,
                 clientEventId: _uuid.v4(),
@@ -180,8 +189,10 @@ class GeofenceManager {
   }
 
   Future<void> clear() async {
-    Geofencing.instance.removeRegionById(_exitRegionId);
-    Geofencing.instance.removeRegionById(_enterRegionId);
+    if (!kIsWeb) {
+      Geofencing.instance.removeRegionById(_exitRegionId);
+      Geofencing.instance.removeRegionById(_enterRegionId);
+    }
     _activePlanId = null;
     _activeEventId = null;
     _expectedArrival = null;

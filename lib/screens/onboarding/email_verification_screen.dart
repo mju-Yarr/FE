@@ -20,10 +20,12 @@ class EmailVerificationScreen extends ConsumerStatefulWidget {
   final String email;
 
   @override
-  ConsumerState<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
+  ConsumerState<EmailVerificationScreen> createState() =>
+      _EmailVerificationScreenState();
 }
 
-class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScreen> {
+class _EmailVerificationScreenState
+    extends ConsumerState<EmailVerificationScreen> {
   bool _resending = false;
   String? _message;
   bool _messageIsError = false;
@@ -31,7 +33,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
 
   Future<void> _resendEmail() async {
     // 60초 쿨다운 (§2.3)
-    if (_lastResendAt != null && DateTime.now().difference(_lastResendAt!) < const Duration(seconds: 60)) {
+    if (_lastResendAt != null &&
+        DateTime.now().difference(_lastResendAt!) <
+            const Duration(seconds: 60)) {
       setState(() {
         _message = "60초 후에 다시 시도할 수 있어요.";
         _messageIsError = true;
@@ -56,7 +60,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
       if (!mounted) return;
       // TR-14: 계정 유무와 무관하게 항상 200 반환이므로 에러면 네트워크 문제
       setState(() {
-        _message = e.retryable ? "네트워크에 연결할 수 없어요. 잠시 후 다시 시도해주세요." : "메일 재발송에 실패했어요.";
+        _message = e.retryable
+            ? "네트워크에 연결할 수 없어요. 잠시 후 다시 시도해주세요."
+            : "메일 재발송에 실패했어요.";
         _messageIsError = true;
       });
     } catch (_) {
@@ -88,15 +94,28 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               Container(
                 width: 64,
                 height: 64,
-                decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: EnsomColors.surface2,
+                  shape: BoxShape.circle,
+                ),
                 alignment: Alignment.center,
-                child: const Icon(Icons.mark_email_unread_outlined, size: 26, color: EnsomColors.ink),
+                child: const Icon(
+                  Icons.mark_email_unread_outlined,
+                  size: 26,
+                  color: EnsomColors.ink,
+                ),
               ),
               const SizedBox(height: 16),
               RichText(
                 textAlign: TextAlign.center,
                 text: TextSpan(
-                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: -.45, height: 1.35, color: EnsomColors.ink),
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.45,
+                    height: 1.35,
+                    color: EnsomColors.ink,
+                  ),
                   children: [
                     TextSpan(text: widget.email),
                     const TextSpan(text: "로\n인증 메일을 보냈어요."),
@@ -107,7 +126,11 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
               const Text(
                 "메일함에서 인증 링크를 눌러주세요.",
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted, height: 1.6),
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: EnsomColors.inkMuted,
+                  height: 1.6,
+                ),
               ),
               if (_message != null) ...[
                 const SizedBox(height: 14),
@@ -116,7 +139,9 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 12,
-                    color: _messageIsError ? EnsomColors.caution : EnsomColors.limeInk,
+                    color: _messageIsError
+                        ? EnsomColors.caution
+                        : EnsomColors.limeInk,
                   ),
                 ),
               ],
@@ -127,7 +152,11 @@ class _EmailVerificationScreenState extends ConsumerState<EmailVerificationScree
                 onPressed: _resending ? null : _resendEmail,
                 child: Text(
                   _resending ? "재발송 중..." : "인증 메일 다시 받기",
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, decoration: TextDecoration.underline),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    decoration: TextDecoration.underline,
+                  ),
                 ),
               ),
               TextButton(

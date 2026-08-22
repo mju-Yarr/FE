@@ -17,8 +17,8 @@ class OfflineActionQueueService {
   OfflineActionQueueService({
     required AppDatabase db,
     required EnsomRepository repo,
-  })  : _db = db,
-        _repo = repo;
+  }) : _db = db,
+       _repo = repo;
 
   final AppDatabase _db;
   final EnsomRepository _repo;
@@ -46,7 +46,9 @@ class OfflineActionQueueService {
       confidence: confidence,
     );
 
-    await _db.into(_db.offlineActionQueue).insert(
+    await _db
+        .into(_db.offlineActionQueue)
+        .insert(
           OfflineActionQueueCompanion.insert(
             clientEventId: entry.clientEventId,
             planId: planId,
@@ -68,14 +70,17 @@ class OfflineActionQueueService {
   }
 
   Future<bool> _flushPlan(String planId) async {
-    final rows = await (_db.select(_db.offlineActionQueue)
-          ..where((t) => t.planId.equals(planId)))
-        .get();
+    final rows = await (_db.select(
+      _db.offlineActionQueue,
+    )..where((t) => t.planId.equals(planId))).get();
     if (rows.isEmpty) return false;
 
     final actions = rows
-        .map((r) => ActionLogEntry.fromJson(
-            jsonDecode(r.payloadJson) as Map<String, dynamic>))
+        .map(
+          (r) => ActionLogEntry.fromJson(
+            jsonDecode(r.payloadJson) as Map<String, dynamic>,
+          ),
+        )
         .toList();
 
     // API v5.0 §1.7: 행동 배치 최대 100건. chunk 단위로 전송하고
@@ -96,9 +101,9 @@ class OfflineActionQueueService {
 
         // chunk 성공 → 해당 행 삭제
         for (final row in chunkRows) {
-          await (_db.delete(_db.offlineActionQueue)
-                ..where((t) => t.clientEventId.equals(row.clientEventId)))
-              .go();
+          await (_db.delete(
+            _db.offlineActionQueue,
+          )..where((t) => t.clientEventId.equals(row.clientEventId))).go();
         }
       }
       return true;
@@ -136,7 +141,9 @@ class OfflineActionQueueService {
       "clientEventId": clientEventId,
     };
 
-    await _db.into(_db.offlineActionQueue).insert(
+    await _db
+        .into(_db.offlineActionQueue)
+        .insert(
           OfflineActionQueueCompanion.insert(
             clientEventId: clientEventId,
             planId: planId,
@@ -162,20 +169,24 @@ class OfflineActionQueueService {
 
       if (resolveType == "checklist") {
         await _repo.resolveChecklistItem(
-          planId, itemId, _parseChecklistStatus(status),
+          planId,
+          itemId,
+          _parseChecklistStatus(status),
           clientEventId: ceid,
         );
       } else {
         await _repo.resolveWellnessAction(
-          planId, itemId, _parseWellnessStatus(status),
+          planId,
+          itemId,
+          _parseWellnessStatus(status),
           clientEventId: ceid,
         );
       }
 
       // 성공 → 큐에서 삭제
-      await (_db.delete(_db.offlineActionQueue)
-            ..where((t) => t.clientEventId.equals(clientEventId)))
-          .go();
+      await (_db.delete(
+        _db.offlineActionQueue,
+      )..where((t) => t.clientEventId.equals(clientEventId))).go();
       return true;
     } catch (_) {
       return false;

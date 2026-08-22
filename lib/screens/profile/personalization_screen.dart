@@ -16,8 +16,7 @@ class PersonalizationScreen extends ConsumerStatefulWidget {
       _PersonalizationScreenState();
 }
 
-class _PersonalizationScreenState
-    extends ConsumerState<PersonalizationScreen> {
+class _PersonalizationScreenState extends ConsumerState<PersonalizationScreen> {
   bool _loading = true;
   bool _busy = false;
   int? _seedMinutes;
@@ -40,15 +39,20 @@ class _PersonalizationScreenState
         setState(() {
           // 시드(처음 입력한 준비 시간)는 개인화 응답이 아니라 사용자 설정값이다
           // (API §4.1 initialPrepMinutes). bootstrap의 settings에서 읽는다.
-          _seedMinutes =
-              ref.read(bootstrapProvider).value?.settings.initialPrepMinutes;
+          _seedMinutes = ref
+              .read(bootstrapProvider)
+              .value
+              ?.settings
+              .initialPrepMinutes;
           _currentMinutes = (latest?["estimatedMinutes"] ?? 30) as int;
           _history = estimates
               .take(5)
-              .map((e) => _AdjustmentRecord(
-                    description: e["adjustmentReason"] ?? "",
-                    date: e["validFrom"]?.toString().substring(0, 10) ?? "",
-                  ))
+              .map(
+                (e) => _AdjustmentRecord(
+                  description: e["adjustmentReason"] ?? "",
+                  date: e["validFrom"]?.toString().substring(0, 10) ?? "",
+                ),
+              )
               .toList();
           _loading = false;
         });
@@ -71,16 +75,16 @@ class _PersonalizationScreenState
       // 원본 event 제외는 estimate에 source event를 저장하는 migration 이후에 지원한다.
       await ref.read(ensomRepositoryProvider).revertPersonalization();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("직전 보정을 되돌렸어요.")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("직전 보정을 되돌렸어요.")));
         await _load();
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("되돌리지 못했어요. 다시 시도해주세요.")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("되돌리지 못했어요. 다시 시도해주세요.")));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -118,17 +122,23 @@ class _PersonalizationScreenState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: EnsomColors.ink)),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: EnsomColors.ink,
+                ),
+              ),
               const SizedBox(height: 8),
-              Text(description,
-                  style: TextStyle(
-                      fontSize: 12.5,
-                      color: EnsomColors.inkMuted,
-                      height: 1.55)),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  color: EnsomColors.inkMuted,
+                  height: 1.55,
+                ),
+              ),
               const SizedBox(height: 14),
               Row(
                 children: [
@@ -192,9 +202,7 @@ class _PersonalizationScreenState
                       ),
                     ),
                   ),
-                  _HistoryCard(
-                    records: _history,
-                  ),
+                  _HistoryCard(records: _history),
 
                   // 되돌리기는 서버가 '직전 보정 1건'만 취소한다(API §15).
                   // 목업처럼 줄마다 버튼을 두지 않고 버튼 하나로 통합한다.
@@ -279,14 +287,19 @@ class _CompareCard extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                Text("처음 입력한 준비 시간",
-                    style: TextStyle(fontSize: 10, color: EnsomColors.inkFaint)),
+                Text(
+                  "처음 입력한 준비 시간",
+                  style: TextStyle(fontSize: 10, color: EnsomColors.inkFaint),
+                ),
                 const SizedBox(height: 4),
-                Text(seedMinutes != null ? "${seedMinutes}분" : "미설정",
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: EnsomColors.ink)),
+                Text(
+                  seedMinutes != null ? "${seedMinutes}분" : "미설정",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: EnsomColors.ink,
+                  ),
+                ),
               ],
             ),
           ),
@@ -294,14 +307,19 @@ class _CompareCard extends StatelessWidget {
           Expanded(
             child: Column(
               children: [
-                Text("최근 학습된 준비 시간",
-                    style: TextStyle(fontSize: 10, color: EnsomColors.inkFaint)),
+                Text(
+                  "최근 학습된 준비 시간",
+                  style: TextStyle(fontSize: 10, color: EnsomColors.inkFaint),
+                ),
                 const SizedBox(height: 4),
-                Text("${currentMinutes}분",
-                    style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                        color: EnsomColors.ink)),
+                Text(
+                  "${currentMinutes}분",
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: EnsomColors.ink,
+                  ),
+                ),
               ],
             ),
           ),
@@ -327,8 +345,10 @@ class _HistoryCard extends StatelessWidget {
           border: Border.all(color: EnsomColors.hairline),
           borderRadius: BorderRadius.circular(18),
         ),
-        child: Text("아직 보정 이력이 없어요",
-            style: TextStyle(fontSize: 12, color: EnsomColors.inkMuted)),
+        child: Text(
+          "아직 보정 이력이 없어요",
+          style: TextStyle(fontSize: 12, color: EnsomColors.inkMuted),
+        ),
       );
     }
     return Container(
@@ -361,11 +381,15 @@ class _HistoryRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(record.description,
-              style: TextStyle(fontSize: 12, color: EnsomColors.ink)),
+          Text(
+            record.description,
+            style: TextStyle(fontSize: 12, color: EnsomColors.ink),
+          ),
           const SizedBox(height: 2),
-          Text(record.date,
-              style: TextStyle(fontSize: 10, color: EnsomColors.inkFaint)),
+          Text(
+            record.date,
+            style: TextStyle(fontSize: 10, color: EnsomColors.inkFaint),
+          ),
         ],
       ),
     );
@@ -390,9 +414,14 @@ class _PrimaryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
         ),
         alignment: Alignment.center,
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w700, color: Colors.white)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
@@ -420,11 +449,14 @@ class _SecondaryButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(999),
         ),
         alignment: Alignment.center,
-        child: Text(label,
-            style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: EnsomColors.ink)),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w700,
+            color: EnsomColors.ink,
+          ),
+        ),
       ),
     );
   }

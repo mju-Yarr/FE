@@ -15,5 +15,6 @@ abstract class ActionItem with _$ActionItem {
     String? description,
   }) = _ActionItem;
 
-  factory ActionItem.fromJson(Map<String, dynamic> json) => _$ActionItemFromJson(json);
+  factory ActionItem.fromJson(Map<String, dynamic> json) =>
+      _$ActionItemFromJson(json);
 }

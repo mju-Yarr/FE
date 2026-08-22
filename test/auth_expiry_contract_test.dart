@@ -932,7 +932,6 @@ http.Response _loginResponse(String owner) => http.Response(
         "timezone": "Asia/Seoul",
         "isNew": false,
       },
-      "emailVerificationRequired": false,
       "consentRequired": <String>[],
     },
   }),
@@ -1045,7 +1044,6 @@ class _AuthenticatedAuthService extends AuthService {
       nickname: "tester",
       timezone: "Asia/Seoul",
       isNew: false,
-      emailVerificationRequired: false,
       consentRequired: [],
     );
   }
@@ -1074,7 +1072,6 @@ class _ConsentAuthService extends AuthService {
       nickname: "tester",
       timezone: "Asia/Seoul",
       isNew: false,
-      emailVerificationRequired: false,
       consentRequired: ["terms"],
     );
   }

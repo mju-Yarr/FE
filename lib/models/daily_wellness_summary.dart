@@ -21,6 +21,10 @@ abstract class DailyWellnessSummary with _$DailyWellnessSummary {
     required String summaryDate, // yyyy-MM-dd
     required int eventCount,
     required int totalOutdoorMinutes,
+    // 홈 wrap 카드의 "정시 도착" 칸. arrivalSampleCount가 0이면 도착 결과를
+    // 하나도 모르는 것이므로 0회로 표시하지 않고 칸을 감춘다.
+    @Default(0) int onTimeCount,
+    @Default(0) int arrivalSampleCount,
     required DwlBand dwlBand,
     required String cardScenario, // default|exposure|density|rushed|stable
     required String message, // 서버 템플릿 문구. 클라이언트가 재구성하지 않는다

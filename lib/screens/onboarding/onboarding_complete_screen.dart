@@ -26,19 +26,31 @@ class OnboardingCompleteScreen extends ConsumerWidget {
                 Container(
                   width: 72,
                   height: 72,
-                  decoration: const BoxDecoration(color: EnsomColors.lime, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: EnsomColors.lime,
+                    shape: BoxShape.circle,
+                  ),
                   child: const Icon(Icons.check, size: 32, color: Colors.white),
                 ),
                 const SizedBox(height: 20),
                 const Text(
                   "준비됐어요",
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -.4, color: EnsomColors.ink),
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -.4,
+                    color: EnsomColors.ink,
+                  ),
                 ),
                 const SizedBox(height: 12),
                 const Text(
                   "이제 일정을 추가하면 언제부터\n준비해야 할지 알려드릴게요.",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted, height: 1.65),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: EnsomColors.inkMuted,
+                    height: 1.65,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 const Text(
@@ -49,9 +61,11 @@ class OnboardingCompleteScreen extends ConsumerWidget {
                 const Spacer(flex: 4),
                 EnsomPillButton(
                   label: "시작하기",
-                  onPressed: () {
-                    ref.read(authNotifierProvider.notifier).onOnboardingCompleted();
-                    context.go("/home");
+                  onPressed: () async {
+                    await ref
+                        .read(authNotifierProvider.notifier)
+                        .onOnboardingCompleted();
+                    if (context.mounted) context.go("/home");
                   },
                 ),
               ],

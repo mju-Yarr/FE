@@ -105,8 +105,10 @@ class _DurationPickerSheetState extends State<_DurationPickerSheet> {
               return GestureDetector(
                 onTap: () => setState(() => _minutes = min),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 13,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: isSelected ? EnsomColors.cta : EnsomColors.surface2,
                     borderRadius: BorderRadius.circular(12),

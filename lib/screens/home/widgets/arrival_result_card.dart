@@ -112,7 +112,12 @@ class _ArrivalResultCardState extends ConsumerState<ArrivalResultCard> {
         children: [
           const Text(
             "오늘 이동은 어땠나요?",
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: -.2, color: EnsomColors.ink),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.2,
+              color: EnsomColors.ink,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -123,7 +128,11 @@ class _ArrivalResultCardState extends ConsumerState<ArrivalResultCard> {
             const SizedBox(height: 14),
             const Text(
               "준비 시간은 어땠나요?",
-              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: EnsomColors.inkMuted),
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: EnsomColors.inkMuted,
+              ),
             ),
             const SizedBox(height: 6),
             Wrap(
@@ -133,24 +142,34 @@ class _ArrivalResultCardState extends ConsumerState<ArrivalResultCard> {
                 EnsomChip(
                   label: "너무 일렀어요",
                   selected: _prepTiming == PrepTimingAssessment.tooEarly,
-                  onTap: () => setState(() => _prepTiming = PrepTimingAssessment.tooEarly),
+                  onTap: () => setState(
+                    () => _prepTiming = PrepTimingAssessment.tooEarly,
+                  ),
                 ),
                 EnsomChip(
                   label: "적절했어요",
                   selected: _prepTiming == PrepTimingAssessment.appropriate,
-                  onTap: () => setState(() => _prepTiming = PrepTimingAssessment.appropriate),
+                  onTap: () => setState(
+                    () => _prepTiming = PrepTimingAssessment.appropriate,
+                  ),
                 ),
                 EnsomChip(
                   label: "촉박했어요",
                   selected: _prepTiming == PrepTimingAssessment.tooLate,
-                  onTap: () => setState(() => _prepTiming = PrepTimingAssessment.tooLate),
+                  onTap: () => setState(
+                    () => _prepTiming = PrepTimingAssessment.tooLate,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             const Text(
               "서두른 정도는요?",
-              style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: EnsomColors.inkMuted),
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: EnsomColors.inkMuted,
+              ),
             ),
             const SizedBox(height: 6),
             Wrap(
@@ -172,7 +191,9 @@ class _ArrivalResultCardState extends ConsumerState<ArrivalResultCard> {
             const SizedBox(height: 14),
             EnsomPillButton(
               label: _submitting ? "저장 중..." : "저장",
-              onPressed: (_prepTiming != null && _rush != null && !_submitting) ? _submit : null,
+              onPressed: (_prepTiming != null && _rush != null && !_submitting)
+                  ? _submit
+                  : null,
             ),
           ],
         ],

@@ -268,8 +268,10 @@ class _PrepTimeEntryScreenState extends ConsumerState<PrepTimeEntryScreen> {
       // 온보딩이면 다음 단계로 진행, 설정 편집이면 온보딩 마커를 건드리지
       // 않고 이전 화면으로 돌아간다(완료된 온보딩이 되감기지 않도록).
       if (widget.isOnboarding) {
-        ref.read(secureStorageProvider).setOnboardingStep("places");
-        context.go("/onboarding/places");
+        await ref
+            .read(authNotifierProvider.notifier)
+            .advanceOnboarding("places");
+        if (mounted) context.go("/onboarding/places");
       } else {
         context.pop();
       }
@@ -289,11 +291,11 @@ class _PrepTimeEntryScreenState extends ConsumerState<PrepTimeEntryScreen> {
     }
   }
 
-  void _skip() {
+  Future<void> _skip() async {
     // 맞춤 항목은 선택 사항 — 건너뛰어도 온보딩 완료를 막지 않음 (PRD §11.3)
     if (widget.isOnboarding) {
-      ref.read(secureStorageProvider).setOnboardingStep("places");
-      context.go("/onboarding/places");
+      await ref.read(authNotifierProvider.notifier).advanceOnboarding("places");
+      if (mounted) context.go("/onboarding/places");
     } else {
       context.pop();
     }

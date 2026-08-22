@@ -1,10 +1,15 @@
 import "../models/place.dart";
+import "../models/calendar_connection.dart";
+import "../models/bookmark.dart";
 import "../models/event.dart";
+import "../models/pending_event_review.dart";
 import "../models/plan.dart";
+import "../models/today_plan.dart";
 import "../models/prep_item.dart";
 import "../models/notification.dart";
 import "../models/action_log.dart";
 import "../models/daily_wellness_summary.dart";
+import "../models/weekly_summary.dart";
 import "../models/prep_estimate.dart";
 import "../models/wellness_pref.dart";
 import "../models/execution.dart";
@@ -13,6 +18,9 @@ import "../models/execution.dart";
 /// resolveChecklistItem/resolveWellnessAction 분리(§12.2, 서로 다른
 /// 테이블·enum이라 엔드포인트도 분리됨).
 abstract class EnsomRepository {
+  // 홈 (S-06) — 히어로 카드 상태는 서버가 판정한다(명세 §7.2).
+  Future<TodayPlan> fetchTodayPlan();
+
   // 일정 (CAL-01, 03, 04, 05)
   Future<Event?> fetchNextEvent();
   Future<Event> fetchEvent(String eventId);
@@ -28,10 +36,20 @@ abstract class EnsomRepository {
   });
   Future<Event> updateEvent(String eventId, Event event);
   Future<void> deleteEvent(String eventId);
+
+  /// S-11 — 동기화가 만든 미해결 분류 질문. 답하지 않은 것만 온다.
+  Future<List<PendingEventReview>> fetchPendingReviews({
+    required DateTime from,
+    required DateTime to,
+  });
+
+  /// [reviewId]를 넘기면 서버가 그 질문의 최신 여부를 검증한다(REVIEW_STALE·
+  /// REVIEW_ALREADY_CLOSED). 안 넘기면 이 일정의 미답변 질문을 서버가 고른다.
   Future<void> reviewEventClassification(
     String eventId,
-    EventClassificationReview review,
-  );
+    EventClassificationReview review, {
+    String? reviewId,
+  });
 
   // 계획 (PLAN-01~05)
   Future<Plan> fetchLatestPlan(String eventId);
@@ -91,6 +109,7 @@ abstract class EnsomRepository {
     required String clientEventId,
   });
   Future<DailyWellnessSummary?> fetchDailySummary(String date);
+  Future<WeeklySummary> fetchWeeklySummary(String date);
   Future<void> markDailySummaryViewed(String summaryId);
 
   // 웰니스 관심 항목 설정 (WELL-06) — GET/PATCH /me/wellness-prefs
@@ -131,11 +150,40 @@ abstract class EnsomRepository {
 
   // 장소 (SET-01)
   Future<List<Place>> fetchPlaces();
+  // 북마크 (S-30/31) · 최근 목적지 (S-08/S-32)
+  Future<List<Bookmark>> fetchBookmarks({String? folder});
+  Future<Bookmark> createBookmark({
+    required String placeName,
+    String? address,
+    required double lat,
+    required double lng,
+    String? folder,
+  });
+
+  /// null인 필드는 건드리지 않는다. lat/lng는 둘 다 주거나 둘 다 빼야 한다.
+  Future<Bookmark> patchBookmark(
+    String bookmarkId, {
+    String? placeName,
+    String? address,
+    String? folder,
+    int? sortOrder,
+  });
+
+  /// S-31 다중 삭제. 하나라도 남의 것이면 서버가 아무것도 지우지 않고 404다.
+  Future<void> bulkDeleteBookmarks(List<String> bookmarkIds);
+  Future<void> deleteBookmark(String bookmarkId);
+
+  Future<List<RecentDestination>> fetchRecentDestinations({int limit});
+  Future<void> clearRecentDestinations();
+
   Future<Place> registerPlace(Place place);
   Future<void> deletePlace(String placeId);
 
-  // 캘린더 연동 (CAL-02)
+  // 캘린더 연동 (CAL-02) · S-41 연동 관리
   Future<void> syncCalendar();
+  Future<List<CalendarConnection>> fetchCalendarConnections();
+  Future<CalendarSource> setCalendarSourceSync(String sourceId, bool enabled);
+  Future<CalendarSource> setDefaultCalendarSource(String sourceId);
 
   // 계정 (AUTH-04, DATA-01)
   // 로그아웃은 AuthNotifier.logout()(lib/providers/auth_providers.dart)이

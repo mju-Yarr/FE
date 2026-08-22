@@ -33,46 +33,46 @@ class EnsomPillButton extends StatelessWidget {
 
     final button = switch (variant) {
       EnsomPillVariant.primary => FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: EnsomColors.cta,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: EnsomColors.cta.withValues(alpha: .4),
-            disabledForegroundColor: Colors.white.withValues(alpha: .8),
-            minimumSize: const Size.fromHeight(50),
-            shape: const StadiumBorder(),
-            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-            elevation: 0,
-          ),
-          onPressed: onPressed,
-          child: child,
+        style: FilledButton.styleFrom(
+          backgroundColor: EnsomColors.cta,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: EnsomColors.cta.withValues(alpha: .4),
+          disabledForegroundColor: Colors.white.withValues(alpha: .8),
+          minimumSize: const Size.fromHeight(50),
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          elevation: 0,
         ),
+        onPressed: onPressed,
+        child: child,
+      ),
       EnsomPillVariant.secondary => FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: EnsomColors.surface2,
-            foregroundColor: EnsomColors.ink,
-            disabledBackgroundColor: EnsomColors.surface2,
-            disabledForegroundColor: EnsomColors.ink.withValues(alpha: .4),
-            minimumSize: const Size.fromHeight(50),
-            shape: const StadiumBorder(),
-            textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-            elevation: 0,
-          ),
-          onPressed: onPressed,
-          child: child,
+        style: FilledButton.styleFrom(
+          backgroundColor: EnsomColors.surface2,
+          foregroundColor: EnsomColors.ink,
+          disabledBackgroundColor: EnsomColors.surface2,
+          disabledForegroundColor: EnsomColors.ink.withValues(alpha: .4),
+          minimumSize: const Size.fromHeight(50),
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          elevation: 0,
         ),
+        onPressed: onPressed,
+        child: child,
+      ),
       EnsomPillVariant.text => TextButton(
-          style: TextButton.styleFrom(
-            foregroundColor: EnsomColors.inkMuted,
-            minimumSize: const Size.fromHeight(44),
-            textStyle: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              decoration: TextDecoration.underline,
-            ),
+        style: TextButton.styleFrom(
+          foregroundColor: EnsomColors.inkMuted,
+          minimumSize: const Size.fromHeight(44),
+          textStyle: const TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            decoration: TextDecoration.underline,
           ),
-          onPressed: onPressed,
-          child: child,
         ),
+        onPressed: onPressed,
+        child: child,
+      ),
     };
 
     return expand ? SizedBox(width: double.infinity, child: button) : button;

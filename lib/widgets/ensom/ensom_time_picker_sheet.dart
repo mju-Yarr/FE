@@ -7,11 +7,16 @@ import "ensom_pill_button.dart";
 /// 같은 느낌을 내는 Flutter 기본 위젯인 `ListWheelScrollView`로
 /// 구현했다(휠 스냅·중앙 강조가 이미 내장돼 있어 더 자연스럽다).
 class EnsomTimePickerSheet {
-  static Future<TimeOfDay?> show(BuildContext context, {required TimeOfDay initial}) {
+  static Future<TimeOfDay?> show(
+    BuildContext context, {
+    required TimeOfDay initial,
+  }) {
     return showModalBottomSheet<TimeOfDay>(
       context: context,
       backgroundColor: EnsomColors.canvas,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(26))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
       builder: (context) => _TimePickerSheetBody(initial: initial),
     );
   }
@@ -34,8 +39,12 @@ class _TimePickerSheetBodyState extends State<_TimePickerSheetBody> {
   }();
   late int _minute = widget.initial.minute;
 
-  late final _hourController = FixedExtentScrollController(initialItem: _hour12 - 1);
-  late final _minuteController = FixedExtentScrollController(initialItem: _minute);
+  late final _hourController = FixedExtentScrollController(
+    initialItem: _hour12 - 1,
+  );
+  late final _minuteController = FixedExtentScrollController(
+    initialItem: _minute,
+  );
 
   @override
   void dispose() {
@@ -53,15 +62,32 @@ class _TimePickerSheetBodyState extends State<_TimePickerSheetBody> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).padding.bottom + 20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        10,
+        20,
+        MediaQuery.of(context).padding.bottom + 20,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 36, height: 4, decoration: BoxDecoration(color: EnsomColors.surfaceNeutral, borderRadius: BorderRadius.circular(999))),
+          Container(
+            width: 36,
+            height: 4,
+            decoration: BoxDecoration(
+              color: EnsomColors.surfaceNeutral,
+              borderRadius: BorderRadius.circular(999),
+            ),
+          ),
           const SizedBox(height: 14),
           const Text(
             "시작 시각",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -.2, color: EnsomColors.ink),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.2,
+              color: EnsomColors.ink,
+            ),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -72,7 +98,10 @@ class _TimePickerSheetBodyState extends State<_TimePickerSheetBody> {
                 Container(
                   height: 34,
                   margin: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(14)),
+                  decoration: BoxDecoration(
+                    color: EnsomColors.surface2,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -85,7 +114,14 @@ class _TimePickerSheetBodyState extends State<_TimePickerSheetBody> {
                     ),
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 4),
-                      child: Text(":", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: EnsomColors.inkFaint)),
+                      child: Text(
+                        ":",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: EnsomColors.inkFaint,
+                        ),
+                      ),
                     ),
                     _Wheel(
                       controller: _minuteController,
@@ -101,11 +137,26 @@ class _TimePickerSheetBodyState extends State<_TimePickerSheetBody> {
           const SizedBox(height: 6),
           Container(
             padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(13)),
+            decoration: BoxDecoration(
+              color: EnsomColors.surface2,
+              borderRadius: BorderRadius.circular(13),
+            ),
             child: Row(
               children: [
-                Expanded(child: _AmPmSegment(label: "오전", selected: !_isPm, onTap: () => setState(() => _isPm = false))),
-                Expanded(child: _AmPmSegment(label: "오후", selected: _isPm, onTap: () => setState(() => _isPm = true))),
+                Expanded(
+                  child: _AmPmSegment(
+                    label: "오전",
+                    selected: !_isPm,
+                    onTap: () => setState(() => _isPm = false),
+                  ),
+                ),
+                Expanded(
+                  child: _AmPmSegment(
+                    label: "오후",
+                    selected: _isPm,
+                    onTap: () => setState(() => _isPm = true),
+                  ),
+                ),
               ],
             ),
           ),
@@ -174,7 +225,11 @@ class _WheelState extends State<_Wheel> {
 }
 
 class _AmPmSegment extends StatelessWidget {
-  const _AmPmSegment({required this.label, required this.selected, required this.onTap});
+  const _AmPmSegment({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -186,11 +241,18 @@ class _AmPmSegment extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 9),
-        decoration: BoxDecoration(color: selected ? EnsomColors.cta : Colors.transparent, borderRadius: BorderRadius.circular(10)),
+        decoration: BoxDecoration(
+          color: selected ? EnsomColors.cta : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
         alignment: Alignment.center,
         child: Text(
           label,
-          style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: selected ? Colors.white : EnsomColors.inkMuted),
+          style: TextStyle(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : EnsomColors.inkMuted,
+          ),
         ),
       ),
     );

@@ -34,7 +34,9 @@ class GeofenceSync extends ConsumerWidget {
     }
 
     final planAsync = ref.watch(planControllerProvider(event.eventId));
-    planAsync.whenData((plan) => ref.read(geofenceManagerProvider).syncActivePlan(event, plan));
+    planAsync.whenData(
+      (plan) => ref.read(geofenceManagerProvider).syncActivePlan(event, plan),
+    );
 
     return const SizedBox.shrink();
   }

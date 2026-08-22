@@ -36,7 +36,7 @@ flutter run \
 
 ```bash
 flutter run \
-  --dart-define=GOOGLE_SERVER_CLIENT_ID=xxx
+  --dart-define=OAUTH_GOOGLE_CLIENT_ID=xxx
 ```
 
 - 비어 있으면 Google 로그인 버튼이 숨겨지고 이메일 로그인만 노출
@@ -45,10 +45,16 @@ flutter run \
 
 ```bash
 flutter run \
+  --dart-define=API_BASE_URL=https://api.ensom.shop/v1 \
   --dart-define=KAKAO_NATIVE_APP_KEY=xxx \
   --dart-define=KAKAO_REST_API_KEY=yyy \
-  --dart-define=GOOGLE_SERVER_CLIENT_ID=zzz
+  --dart-define=KAKAO_JAVASCRIPT_APP_KEY=www \
+  --dart-define=OAUTH_GOOGLE_CLIENT_ID=zzz
 ```
+
+키 이름은 `lib/core/app_config.dart`의 `String.fromEnvironment`와 정확히
+같아야 합니다. Google client ID는 BE의 `OAUTH_GOOGLE_CLIENT_ID`와 이름을
+맞췄습니다(FE에는 공개 가능한 client ID만 주입).
 
 ## CI 빌드 시 Firebase 설정 주입
 
@@ -74,4 +80,27 @@ flutter test
 
 # APK 빌드 (google-services.json 필요)
 flutter build apk --debug
+
+# 웹 릴리스 빌드
+flutter build web --release --pwa-strategy=none --no-wasm-dry-run \
+  --dart-define=API_BASE_URL=https://api.ensom.shop/v1 \
+  --dart-define=OAUTH_GOOGLE_CLIENT_ID=zzz \
+  --dart-define=KAKAO_REST_API_KEY=yyy \
+  --dart-define=KAKAO_JAVASCRIPT_APP_KEY=www \
+  --dart-define=KAKAO_NATIVE_APP_KEY=xxx
 ```
+
+두 플래그 모두 의도가 있으니 빼지 마세요.
+
+`--no-wasm-dry-run`은 wasm 호환성 사전 검사를 끕니다(`flutter build web --help`가
+"Disable to suppress warnings"로 안내하는 용도). 이 앱은 JS로 빌드해 Firebase
+Hosting에 올리므로 wasm은 대상이 아닌데, 검사를 켜 두면 의존 패키지
+`kakao_map_sdk`(1.2.6, 현재 최신) 내부의 static interop 경고가 매 빌드마다 수십
+줄씩 나옵니다. 우리 코드로는 고칠 수 없고 산출물에도 영향이 없습니다. 이 패키지가
+wasm을 지원하면 플래그를 빼고 `--wasm` 전환을 검토할 수 있습니다.
+
+`--pwa-strategy=none`은 deprecated 경고가 뜨지만 **아직 실제로 동작합니다.**
+붙이면 `flutter_service_worker.js`가 0바이트로 비고, 빼면 784바이트짜리 실제
+service worker가 생성돼 캐싱 동작이 달라집니다. 배포 후 구버전이 캐시에 남는 것을
+막으려면 유지해야 합니다. Flutter가 이 옵션을 제거하면(flutter/flutter#156910)
+service worker를 비우는 다른 방법을 찾아야 합니다.

@@ -51,12 +51,19 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
   bool get _hasLength => _next.length >= 10;
   bool get _hasLetter => RegExp(r"[A-Za-z]").hasMatch(_next);
   bool get _hasDigit => RegExp(r"[0-9]").hasMatch(_next);
-  bool get _differsFromCurrent => _next.isNotEmpty && _current.isNotEmpty && _next != _current;
+  bool get _differsFromCurrent =>
+      _next.isNotEmpty && _current.isNotEmpty && _next != _current;
 
   bool get _confirmMatches => _confirm.isNotEmpty && _confirm == _next;
 
   bool get _canSubmit =>
-      !_submitting && _current.isNotEmpty && _hasLength && _hasLetter && _hasDigit && _differsFromCurrent && _confirmMatches;
+      !_submitting &&
+      _current.isNotEmpty &&
+      _hasLength &&
+      _hasLetter &&
+      _hasDigit &&
+      _differsFromCurrent &&
+      _confirmMatches;
 
   Future<void> _submit() async {
     if (!_canSubmit) return;
@@ -75,7 +82,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
         },
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("비밀번호를 변경했어요.")));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("비밀번호를 변경했어요.")));
         context.pop();
       }
     } on ApiException catch (e) {
@@ -127,18 +136,26 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                     helperText: _confirm.isEmpty
                         ? null
                         : (_confirmMatches ? "비밀번호가 일치해요" : "비밀번호가 일치하지 않아요"),
-                    helperTone: _confirmMatches ? EnsomFieldTone.ok : EnsomFieldTone.bad,
+                    helperTone: _confirmMatches
+                        ? EnsomFieldTone.ok
+                        : EnsomFieldTone.bad,
                   ),
                   const SizedBox(height: 14),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _CheckLine(label: "10자 이상", ok: _hasLength),
                         _CheckLine(label: "영문 포함", ok: _hasLetter),
                         _CheckLine(label: "숫자 포함", ok: _hasDigit),
-                        _CheckLine(label: "현재 비밀번호와 다름", ok: _differsFromCurrent),
+                        _CheckLine(
+                          label: "현재 비밀번호와 다름",
+                          ok: _differsFromCurrent,
+                        ),
                       ],
                     ),
                   ),
@@ -149,7 +166,11 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   const SizedBox(height: 10),
                   const Text(
                     "비밀번호를 변경하면 다른 기기에서는 다시 로그인해야 해요",
-                    style: TextStyle(fontSize: 10.5, color: EnsomColors.inkFaint, height: 1.5),
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: EnsomColors.inkFaint,
+                      height: 1.5,
+                    ),
                   ),
                 ],
               ),
@@ -191,14 +212,22 @@ class _CheckLine extends StatelessWidget {
             decoration: BoxDecoration(
               color: ok ? EnsomColors.cta : Colors.transparent,
               shape: BoxShape.circle,
-              border: Border.all(color: ok ? EnsomColors.cta : EnsomColors.hairline, width: 1.7),
+              border: Border.all(
+                color: ok ? EnsomColors.cta : EnsomColors.hairline,
+                width: 1.7,
+              ),
             ),
-            child: ok ? const Icon(Icons.check, size: 11, color: Colors.white) : null,
+            child: ok
+                ? const Icon(Icons.check, size: 11, color: Colors.white)
+                : null,
           ),
           const SizedBox(width: 8),
           Text(
             label,
-            style: TextStyle(fontSize: 12, color: ok ? EnsomColors.ink : EnsomColors.inkFaint),
+            style: TextStyle(
+              fontSize: 12,
+              color: ok ? EnsomColors.ink : EnsomColors.inkFaint,
+            ),
           ),
         ],
       ),

@@ -60,8 +60,7 @@ class SecureStorageService {
       _storage.write(key: _kOnboardingCompleted, value: value.toString());
 
   /// 온보딩 진행 단계 저장. 앱 강제 종료 후 복귀 시 마지막 단계로 복원한다.
-  Future<String?> get onboardingStep =>
-      _storage.read(key: _kOnboardingStep);
+  Future<String?> get onboardingStep => _storage.read(key: _kOnboardingStep);
 
   Future<void> setOnboardingStep(String step) =>
       _storage.write(key: _kOnboardingStep, value: step);

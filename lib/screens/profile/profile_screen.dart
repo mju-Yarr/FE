@@ -22,7 +22,9 @@ class ProfileScreen extends ConsumerWidget {
     final authState = ref.watch(authNotifierProvider);
     final bootstrap = ref.watch(bootstrapProvider).value;
     final nickname = bootstrap?.user.nickname ?? "";
-    final grantedCount = bootstrap?.permissions.where((p) => p.status == "granted").length;
+    final grantedCount = bootstrap?.permissions
+        .where((p) => p.status == "granted")
+        .length;
 
     return Scaffold(
       backgroundColor: EnsomColors.canvas,
@@ -119,11 +121,18 @@ class _ProfileHeader extends StatelessWidget {
           Container(
             width: 52,
             height: 52,
-            decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: EnsomColors.surface2,
+              shape: BoxShape.circle,
+            ),
             alignment: Alignment.center,
             child: Text(
               initial,
-              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: EnsomColors.inkMuted),
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w700,
+                color: EnsomColors.inkMuted,
+              ),
             ),
           ),
           const SizedBox(width: 13),
@@ -132,11 +141,22 @@ class _ProfileHeader extends StatelessWidget {
             children: [
               Text(
                 nickname.isNotEmpty ? "$nickname님" : "회원님",
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -.2, color: EnsomColors.ink),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.2,
+                  color: EnsomColors.ink,
+                ),
               ),
               if (email != null) ...[
                 const SizedBox(height: 2),
-                Text(email!, style: const TextStyle(fontSize: 11.5, color: EnsomColors.inkMuted)),
+                Text(
+                  email!,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: EnsomColors.inkMuted,
+                  ),
+                ),
               ],
             ],
           ),
@@ -161,7 +181,12 @@ class _ProfileSection extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(2, 18, 2, 4),
           child: Text(
             title,
-            style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: EnsomColors.inkFaint, letterSpacing: .4),
+            style: const TextStyle(
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+              color: EnsomColors.inkFaint,
+              letterSpacing: .4,
+            ),
           ),
         ),
         ...items,
@@ -197,7 +222,10 @@ class _ProfileItem extends StatelessWidget {
             Container(
               width: 34,
               height: 34,
-              decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
+              decoration: const BoxDecoration(
+                color: EnsomColors.surface2,
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, size: 15, color: EnsomColors.inkMuted),
             ),
             const SizedBox(width: 12),
@@ -207,11 +235,21 @@ class _ProfileItem extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: EnsomColors.ink),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: EnsomColors.ink,
+                    ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 2),
-                    Text(subtitle!, style: const TextStyle(fontSize: 11, color: EnsomColors.inkFaint)),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: EnsomColors.inkFaint,
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -219,15 +257,26 @@ class _ProfileItem extends StatelessWidget {
             if (valuePill != null) ...[
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                decoration: BoxDecoration(color: EnsomColors.limeSoft, borderRadius: BorderRadius.circular(999)),
+                decoration: BoxDecoration(
+                  color: EnsomColors.limeSoft,
+                  borderRadius: BorderRadius.circular(999),
+                ),
                 child: Text(
                   valuePill!,
-                  style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700, color: EnsomColors.limeInk),
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: EnsomColors.limeInk,
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
             ],
-            const Icon(Icons.chevron_right, size: 15, color: EnsomColors.inkFaint),
+            const Icon(
+              Icons.chevron_right,
+              size: 15,
+              color: EnsomColors.inkFaint,
+            ),
           ],
         ),
       ),

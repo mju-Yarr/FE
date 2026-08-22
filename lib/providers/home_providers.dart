@@ -2,11 +2,19 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_riverpod/legacy.dart";
 import "../models/event.dart";
 import "../models/plan.dart";
+import "../models/today_plan.dart";
 import "../models/action_log.dart";
 import "../local/offline_action_queue_service.dart";
 import "../repository/ensom_repository.dart";
 import "../repository/providers.dart";
 import "offline_queue_providers.dart";
+
+/// S-06 홈의 단일 데이터 출처. 서버가 카드 상태(ease~wrap)와 히어로 상태를
+/// 판정해 내려주므로 클라이언트는 그리기만 한다(명세 §7.2).
+final todayPlanProvider = FutureProvider.autoDispose<TodayPlan>((ref) async {
+  final repo = ref.watch(ensomRepositoryProvider);
+  return repo.fetchTodayPlan();
+});
 
 final nextEventProvider = FutureProvider.autoDispose<Event?>((ref) async {
   final repo = ref.watch(ensomRepositoryProvider);
@@ -16,31 +24,37 @@ final nextEventProvider = FutureProvider.autoDispose<Event?>((ref) async {
 /// DTL-01 일정 상세(event_detail_screen.dart)에서 사용. Plan은
 /// planControllerProvider가 별도로 관리하므로(오프라인 큐·낙관적
 /// 갱신), 여기서는 Event 단건만 담당한다.
-final eventDetailProvider = FutureProvider.autoDispose.family<Event, String>((ref, eventId) async {
+final eventDetailProvider = FutureProvider.autoDispose.family<Event, String>((
+  ref,
+  eventId,
+) async {
   final repo = ref.watch(ensomRepositoryProvider);
   return repo.fetchEvent(eventId);
 });
 
 final routeOptionsProvider = FutureProvider.autoDispose
     .family<List<RouteOption>, String>((ref, planId) async {
-  final repo = ref.watch(ensomRepositoryProvider);
-  return repo.fetchRouteOptions(planId);
-});
+      final repo = ref.watch(ensomRepositoryProvider);
+      return repo.fetchRouteOptions(planId);
+    });
 
 final planControllerProvider = StateNotifierProvider.autoDispose
     .family<PlanController, AsyncValue<Plan>, String>((ref, eventId) {
-  final repo = ref.watch(ensomRepositoryProvider);
-  final queue = ref.watch(offlineActionQueueServiceProvider);
-  return PlanController(repo: repo, queue: queue, eventId: eventId);
-});
+      final repo = ref.watch(ensomRepositoryProvider);
+      final queue = ref.watch(offlineActionQueueServiceProvider);
+      return PlanController(repo: repo, queue: queue, eventId: eventId);
+    });
 
 /// 계획의 단일 진실원천.
 /// previousPlan을 추적해서 리비전 변경 시 UI가 "무엇이 바뀌었는지"를 표시한다.
 /// resolve 호출은 OfflineActionQueueService.enqueueResolve()를 경유해
 /// clientEventId가 DB에 영속 저장되고, 재시도 시 동일 ID가 재사용된다.
 class PlanController extends StateNotifier<AsyncValue<Plan>> {
-  PlanController({required this.repo, required this.queue, required this.eventId})
-      : super(const AsyncValue.loading()) {
+  PlanController({
+    required this.repo,
+    required this.queue,
+    required this.eventId,
+  }) : super(const AsyncValue.loading()) {
     _load();
   }
 
@@ -86,7 +100,10 @@ class PlanController extends StateNotifier<AsyncValue<Plan>> {
   }
 
   /// PLAN-04. 사용자 직접 수정은 새 리비전을 만든다 (docs/API.md §9.5).
-  Future<void> updatePlan({DateTime? prepStartAt, String? originPlaceId}) async {
+  Future<void> updatePlan({
+    DateTime? prepStartAt,
+    String? originPlaceId,
+  }) async {
     final plan = state.value;
     if (plan == null) return;
     final updated = await repo.updatePlan(

@@ -10,8 +10,9 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return db;
 });
 
-final offlineActionQueueServiceProvider =
-    Provider<OfflineActionQueueService>((ref) {
+final offlineActionQueueServiceProvider = Provider<OfflineActionQueueService>((
+  ref,
+) {
   final db = ref.watch(appDatabaseProvider);
   final repo = ref.watch(ensomRepositoryProvider);
   return OfflineActionQueueService(db: db, repo: repo);

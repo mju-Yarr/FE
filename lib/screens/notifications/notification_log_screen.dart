@@ -30,11 +30,12 @@ class NotificationLogScreen extends ConsumerWidget {
             _buildTopBar(context),
             Expanded(
               child: notificationsAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, st) => Center(
-                  child: Text("불러오지 못했어요",
-                      style: TextStyle(color: EnsomColors.inkMuted)),
+                  child: Text(
+                    "불러오지 못했어요",
+                    style: TextStyle(color: EnsomColors.inkMuted),
+                  ),
                 ),
                 data: (notifications) {
                   if (notifications.isEmpty) {
@@ -42,16 +43,22 @@ class NotificationLogScreen extends ConsumerWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: const [
-                          Text("오늘 발송된 알림이 없어요",
-                              style: TextStyle(
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: EnsomColors.ink)),
+                          Text(
+                            "오늘 발송된 알림이 없어요",
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              color: EnsomColors.ink,
+                            ),
+                          ),
                           SizedBox(height: 6),
-                          Text("알림이 오면 여기에 표시돼요",
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: EnsomColors.inkMuted)),
+                          Text(
+                            "알림이 오면 여기에 표시돼요",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: EnsomColors.inkMuted,
+                            ),
+                          ),
                         ],
                       ),
                     );
@@ -66,8 +73,10 @@ class NotificationLogScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
                     itemCount: sorted.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 9),
-                    itemBuilder: (context, index) =>
-                        _NotificationCard(notification: sorted[index], timeFormat: timeFormat),
+                    itemBuilder: (context, index) => _NotificationCard(
+                      notification: sorted[index],
+                      timeFormat: timeFormat,
+                    ),
                   );
                 },
               ),
@@ -94,8 +103,11 @@ class NotificationLogScreen extends ConsumerWidget {
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child:
-                  const Icon(Icons.chevron_left, size: 14, color: EnsomColors.ink),
+              child: const Icon(
+                Icons.chevron_left,
+                size: 14,
+                color: EnsomColors.ink,
+              ),
             ),
           ),
           const SizedBox(width: 10),
@@ -144,7 +156,11 @@ class _NotificationCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             alignment: Alignment.center,
-            child: const Icon(Icons.access_time, size: 15, color: EnsomColors.ink),
+            child: const Icon(
+              Icons.access_time,
+              size: 15,
+              color: EnsomColors.ink,
+            ),
           ),
           const SizedBox(width: 10),
           // 텍스트

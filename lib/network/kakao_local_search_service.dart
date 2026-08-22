@@ -19,14 +19,51 @@ class KakaoSearchResult {
   factory KakaoSearchResult.fromJson(Map<String, dynamic> json) {
     return KakaoSearchResult(
       name: json["place_name"] as String,
-      addressName:
-          (json["road_address_name"] as String?)?.isNotEmpty == true
-              ? json["road_address_name"] as String
-              : json["address_name"] as String,
+      addressName: (json["road_address_name"] as String?)?.isNotEmpty == true
+          ? json["road_address_name"] as String
+          : json["address_name"] as String,
       lat: double.parse(json["y"] as String),
       lng: double.parse(json["x"] as String),
     );
   }
+}
+
+class KakaoLocalSearchException implements Exception {
+  const KakaoLocalSearchException({
+    required this.statusCode,
+    this.errorType,
+    this.apiMessage,
+  });
+
+  factory KakaoLocalSearchException.fromResponse(http.Response response) {
+    String? errorType;
+    String? apiMessage;
+    try {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      errorType = body["errorType"] as String?;
+      apiMessage = body["message"] as String?;
+    } catch (_) {
+      // HTML 등 JSON이 아닌 오류 응답은 상태 코드만 사용한다.
+    }
+    return KakaoLocalSearchException(
+      statusCode: response.statusCode,
+      errorType: errorType,
+      apiMessage: apiMessage,
+    );
+  }
+
+  final int statusCode;
+  final String? errorType;
+  final String? apiMessage;
+
+  bool get isMapAndLocalServiceDisabled =>
+      statusCode == 403 &&
+      errorType == "NotAuthorizedError" &&
+      (apiMessage?.contains("disabled OPEN_MAP_AND_LOCAL") ?? false);
+
+  String get userMessage => isMapAndLocalServiceDisabled
+      ? "카카오 지도·장소 서비스가 비활성화되어 있어요. 관리자 설정 후 다시 시도해주세요."
+      : "장소 검색을 사용할 수 없어요. 잠시 후 다시 시도해주세요.";
 }
 
 /// 목적지 키워드 검색. REST API 키가 비어 있으면 항상 빈 리스트를
@@ -34,10 +71,11 @@ class KakaoSearchResult {
 /// 방식으로 저하 동작하게 한다.
 class KakaoLocalSearchService {
   KakaoLocalSearchService({required String restApiKey, http.Client? client})
-      : _restApiKey = restApiKey,
-        _http = client ?? http.Client();
+    : _restApiKey = restApiKey,
+      _http = client ?? http.Client();
 
-  static const _endpoint = "https://dapi.kakao.com/v2/local/search/keyword.json";
+  static const _endpoint =
+      "https://dapi.kakao.com/v2/local/search/keyword.json";
   static const _coord2addressEndpoint =
       "https://dapi.kakao.com/v2/local/geo/coord2address.json";
 
@@ -55,7 +93,9 @@ class KakaoLocalSearchService {
       headers: {"Authorization": "KakaoAK $_restApiKey"},
     );
 
-    if (response.statusCode != 200) return const [];
+    if (response.statusCode != 200) {
+      throw KakaoLocalSearchException.fromResponse(response);
+    }
 
     final body = jsonDecode(response.body) as Map<String, dynamic>;
     final documents = body["documents"] as List<dynamic>? ?? const [];
@@ -76,9 +116,9 @@ class KakaoLocalSearchService {
     if (!isAvailable) return null;
 
     // 카카오 좌표계는 x=경도(lng), y=위도(lat) 순서다.
-    final uri = Uri.parse(_coord2addressEndpoint).replace(
-      queryParameters: {"x": "$lng", "y": "$lat"},
-    );
+    final uri = Uri.parse(
+      _coord2addressEndpoint,
+    ).replace(queryParameters: {"x": "$lng", "y": "$lat"});
     final response = await _http.get(
       uri,
       headers: {"Authorization": "KakaoAK $_restApiKey"},

@@ -1,16 +1,20 @@
 import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
+import "../../models/calendar_connection.dart";
 import "../../models/event.dart";
 import "../../models/plan.dart";
+import "../../providers/calendar_providers.dart";
 import "../../theme/ensom_colors.dart";
+import "ensom_chip.dart";
 import "ensom_pill_button.dart";
 import "ensom_text_field.dart";
 
 /// S-45 간단 저장 시트. 지도에서 가져온 출발지·목적지·시각·선택 경로는
-/// 읽기 전용 요약으로만 보여주고(PRD §10.5), 사용자에게는 일정 이름만
-/// 받는다. 실제 API(`POST /events`)는 캘린더 소스 다중 선택(개인/업무/
-/// 가족)이 아니라 연결된 구글 캘린더 하나(`writeToCalendarSourceId`)뿐이고,
-/// 그 id를 얻어올 엔드포인트가 아직 없어 이번 시트에는 캘린더 선택 UI를
-/// 넣지 않았다 — 목업(ensom_map.html)과 달라진 부분.
+/// 읽기 전용 요약으로만 보여주고(PRD §10.5), 사용자가 입력하는 것은 일정
+/// 이름과 저장할 캘린더뿐이다(§3 S-45).
+///
+/// 목업의 개인/업무/가족 같은 고정 분류가 아니라 실제로 연동된 캘린더 소스를
+/// 보여준다. 쓰기 가능한 소스가 하나뿐이면 고를 게 없으므로 감춘다.
 class EnsomQuickSaveSheet {
   static Future<QuickSaveResult?> show(
     BuildContext context, {
@@ -39,15 +43,20 @@ class EnsomQuickSaveSheet {
 }
 
 class QuickSaveResult {
-  const QuickSaveResult.save(this.label) : detailedEdit = false;
+  const QuickSaveResult.save(this.label, {this.calendarSourceId})
+    : detailedEdit = false;
 
-  const QuickSaveResult.detailedEdit(this.label) : detailedEdit = true;
+  const QuickSaveResult.detailedEdit(this.label, {this.calendarSourceId})
+    : detailedEdit = true;
 
   final String? label;
   final bool detailedEdit;
+
+  /// 저장할 캘린더. null이면 서버가 기본 기록 캘린더를 쓴다.
+  final String? calendarSourceId;
 }
 
-class _QuickSaveSheetBody extends StatefulWidget {
+class _QuickSaveSheetBody extends ConsumerStatefulWidget {
   const _QuickSaveSheetBody({
     required this.destName,
     required this.anchorMode,
@@ -63,11 +72,16 @@ class _QuickSaveSheetBody extends StatefulWidget {
   final String? initialLabel;
 
   @override
-  State<_QuickSaveSheetBody> createState() => _QuickSaveSheetBodyState();
+  ConsumerState<_QuickSaveSheetBody> createState() =>
+      _QuickSaveSheetBodyState();
 }
 
-class _QuickSaveSheetBodyState extends State<_QuickSaveSheetBody> {
-  late final _labelController = TextEditingController(text: widget.initialLabel ?? "");
+class _QuickSaveSheetBodyState extends ConsumerState<_QuickSaveSheetBody> {
+  String? _calendarSourceId;
+
+  late final _labelController = TextEditingController(
+    text: widget.initialLabel ?? "",
+  );
 
   @override
   void dispose() {
@@ -95,12 +109,57 @@ class _QuickSaveSheetBodyState extends State<_QuickSaveSheetBody> {
     return "$m/$d $hh:$mm $anchorLabel";
   }
 
+  /// §3 S-45 "캘린더 선택 — 상태만 변경". 고를 게 둘 이상일 때만 보여준다.
+  Widget _buildCalendarPicker() {
+    final connections = ref.watch(calendarConnectionsProvider).asData?.value;
+    final sources = connections?.writableSources ?? const [];
+    if (sources.length < 2) return const SizedBox.shrink();
+    final defaultId = connections?.defaultWritableSource?.calendarSourceId;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 14),
+        const Text(
+          "저장할 캘린더",
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: EnsomColors.inkMuted,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: [
+            for (final source in sources)
+              EnsomChip(
+                label: source.displayName,
+                selected:
+                    (_calendarSourceId ?? defaultId) == source.calendarSourceId,
+                onTap: () =>
+                    setState(() => _calendarSourceId = source.calendarSourceId),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final label = _labelController.text.trim();
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 10, 20, MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 20),
+      padding: EdgeInsets.fromLTRB(
+        20,
+        10,
+        20,
+        MediaQuery.of(context).viewInsets.bottom +
+            MediaQuery.of(context).padding.bottom +
+            20,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,18 +168,29 @@ class _QuickSaveSheetBodyState extends State<_QuickSaveSheetBody> {
             child: Container(
               width: 36,
               height: 4,
-              decoration: BoxDecoration(color: EnsomColors.surfaceNeutral, borderRadius: BorderRadius.circular(999)),
+              decoration: BoxDecoration(
+                color: EnsomColors.surfaceNeutral,
+                borderRadius: BorderRadius.circular(999),
+              ),
             ),
           ),
           const SizedBox(height: 14),
           const Text(
             "일정으로 저장",
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -.2, color: EnsomColors.ink),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -.2,
+              color: EnsomColors.ink,
+            ),
           ),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(14)),
+            decoration: BoxDecoration(
+              color: EnsomColors.surface2,
+              borderRadius: BorderRadius.circular(14),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -130,7 +200,8 @@ class _QuickSaveSheetBodyState extends State<_QuickSaveSheetBody> {
                 const SizedBox(height: 8),
                 _SummaryRow(
                   icon: Icons.alt_route,
-                  text: "${_rankLabel(widget.route.routeType)} · ${widget.route.totalMinutes}분",
+                  text:
+                      "${_rankLabel(widget.route.routeType)} · ${widget.route.totalMinutes}분",
                 ),
               ],
             ),
@@ -143,12 +214,20 @@ class _QuickSaveSheetBodyState extends State<_QuickSaveSheetBody> {
             textInputAction: TextInputAction.done,
             onChanged: (_) => setState(() {}),
           ),
+          _buildCalendarPicker(),
           const SizedBox(height: 18),
           EnsomPillButton(
+            // §8 S-45 저장은 일정 이름이 있어야만 활성화된다.
             label: "저장",
             onPressed: label.isEmpty
                 ? null
-                : () => Navigator.pop(context, QuickSaveResult.save(label)),
+                : () => Navigator.pop(
+                    context,
+                    QuickSaveResult.save(
+                      label,
+                      calendarSourceId: _calendarSourceId,
+                    ),
+                  ),
           ),
           const SizedBox(height: 4),
           EnsomPillButton(
@@ -156,7 +235,10 @@ class _QuickSaveSheetBodyState extends State<_QuickSaveSheetBody> {
             variant: EnsomPillVariant.text,
             onPressed: () => Navigator.pop(
               context,
-              QuickSaveResult.detailedEdit(label.isEmpty ? null : label),
+              QuickSaveResult.detailedEdit(
+                label.isEmpty ? null : label,
+                calendarSourceId: _calendarSourceId,
+              ),
             ),
           ),
         ],
@@ -180,7 +262,11 @@ class _SummaryRow extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: EnsomColors.ink),
+            style: const TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              color: EnsomColors.ink,
+            ),
           ),
         ),
       ],

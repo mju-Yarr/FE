@@ -3,15 +3,31 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_riverpod/legacy.dart";
 import "package:hive_ce_flutter/hive_ce_flutter.dart";
 import "../core/app_config.dart";
+import "../models/bookmark.dart";
 import "../models/event.dart";
 import "../models/plan.dart";
 import "../network/kakao_local_search_service.dart";
+import "../repository/providers.dart";
 
 final kakaoLocalSearchServiceProvider = Provider<KakaoLocalSearchService>((
   ref,
 ) {
   return KakaoLocalSearchService(restApiKey: kKakaoRestApiKey);
 });
+
+/// S-30 북마크 목록. 폴더 필터는 서버가 아니라 화면에서 건다 — 세그먼트를
+/// 바꿀 때마다 재조회하면 목록이 깜빡인다.
+final bookmarksProvider = FutureProvider.autoDispose<List<Bookmark>>((
+  ref,
+) async {
+  return ref.watch(ensomRepositoryProvider).fetchBookmarks();
+});
+
+/// S-08 최근 목적지 · S-32 "최근" 탭.
+final recentDestinationsProvider =
+    FutureProvider.autoDispose<List<RecentDestination>>((ref) async {
+      return ref.watch(ensomRepositoryProvider).fetchRecentDestinations();
+    });
 
 /// 지도 화면에서 만든 "저장 대기" 일정 초안. 목적지·경로가 정해지면
 /// EventFormScreen의 지도 프리필 모드로 넘어가기 전에 여기 담아 둔다.
@@ -30,6 +46,7 @@ class MapDraftEvent {
     required this.at,
     required this.createdAt,
     this.label,
+    this.calendarSourceId,
   });
 
   static const routeOptionTtl = Duration(minutes: 30);
@@ -44,9 +61,14 @@ class MapDraftEvent {
   final EventAnchor anchorMode;
   final DateTime at;
   final DateTime createdAt;
+
   /// S-45 간단 저장 시트에서 사용자가 입력하다 만 일정 이름.
   /// "자세히 편집"으로 넘어갈 때 입력값을 잃지 않게 프리필한다.
   final String? label;
+
+  /// S-45에서 고른 저장 대상 캘린더. 자세히 편집으로 넘어가도 유지한다
+  /// (§13 "S-45 프리필 — 다시 입력받지 않는다").
+  final String? calendarSourceId;
 
   bool isExpiredAt(DateTime now) =>
       !now.isBefore(createdAt.add(routeOptionTtl));
@@ -63,6 +85,7 @@ class MapDraftEvent {
     "at": at.toIso8601String(),
     "createdAt": createdAt.toIso8601String(),
     "label": label,
+    "calendarSourceId": calendarSourceId,
   };
 
   factory MapDraftEvent.fromJson(Map<String, dynamic> json) => MapDraftEvent(
@@ -80,6 +103,7 @@ class MapDraftEvent {
       orElse: () => EventAnchor.arriveBy,
     ),
     at: DateTime.parse(json["at"] as String),
+    calendarSourceId: json["calendarSourceId"] as String?,
     // PR #57 이전 형식은 생성 시각이 없어 안전하게 만료 처리한다.
     createdAt:
         DateTime.tryParse(json["createdAt"] as String? ?? "") ??

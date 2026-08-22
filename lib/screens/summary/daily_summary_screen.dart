@@ -67,7 +67,10 @@ class _DailySummaryScreenState extends ConsumerState<DailySummaryScreen> {
         child: summaryAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (err, st) => const Center(
-            child: Text("불러오지 못했어요.", style: TextStyle(color: EnsomColors.inkMuted)),
+            child: Text(
+              "불러오지 못했어요.",
+              style: TextStyle(color: EnsomColors.inkMuted),
+            ),
           ),
           data: (summary) {
             // 관리 일정 0건이면 서버가 카드를 안 만들어준다 -- 숫자를
@@ -79,7 +82,10 @@ class _DailySummaryScreenState extends ConsumerState<DailySummaryScreen> {
                   child: Text(
                     "오늘은 아직 관리된 일정이 없어요.",
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 12.5, color: EnsomColors.inkFaint),
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      color: EnsomColors.inkFaint,
+                    ),
                   ),
                 ),
               );
@@ -94,13 +100,21 @@ class _DailySummaryScreenState extends ConsumerState<DailySummaryScreen> {
                     Container(
                       width: 10,
                       height: 10,
-                      decoration: BoxDecoration(color: _bandColor(summary.dwlBand), shape: BoxShape.circle),
+                      decoration: BoxDecoration(
+                        color: _bandColor(summary.dwlBand),
+                        shape: BoxShape.circle,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         "오늘의 웰니스 노출 — ${_bandLabel(summary.dwlBand)}",
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -.2, color: EnsomColors.ink),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -.2,
+                          color: EnsomColors.ink,
+                        ),
                       ),
                     ),
                   ],
@@ -108,15 +122,28 @@ class _DailySummaryScreenState extends ConsumerState<DailySummaryScreen> {
                 const SizedBox(height: 14),
                 Container(
                   padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(color: EnsomColors.surface2, borderRadius: BorderRadius.circular(18)),
+                  decoration: BoxDecoration(
+                    color: EnsomColors.surface2,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
                   child: Row(
                     children: [
                       Expanded(
-                        child: _StatBox(label: "관리된 일정", value: "${summary.eventCount}개"),
+                        child: _StatBox(
+                          label: "관리된 일정",
+                          value: "${summary.eventCount}개",
+                        ),
                       ),
-                      Container(width: 1, height: 30, color: EnsomColors.hairline),
+                      Container(
+                        width: 1,
+                        height: 30,
+                        color: EnsomColors.hairline,
+                      ),
                       Expanded(
-                        child: _StatBox(label: "야외 이동", value: "${summary.totalOutdoorMinutes}분"),
+                        child: _StatBox(
+                          label: "야외 이동",
+                          value: "${summary.totalOutdoorMinutes}분",
+                        ),
                       ),
                     ],
                   ),
@@ -127,7 +154,11 @@ class _DailySummaryScreenState extends ConsumerState<DailySummaryScreen> {
                 // 문구다 (PRD §14.8) -- 클라이언트가 재구성하지 않는다.
                 Text(
                   summary.message,
-                  style: const TextStyle(fontSize: 14.5, color: EnsomColors.ink, height: 1.6),
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    color: EnsomColors.ink,
+                    height: 1.6,
+                  ),
                 ),
               ],
             );
@@ -148,9 +179,20 @@ class _StatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -.3, color: EnsomColors.ink)),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -.3,
+            color: EnsomColors.ink,
+          ),
+        ),
         const SizedBox(height: 3),
-        Text(label, style: const TextStyle(fontSize: 10.5, color: EnsomColors.inkFaint)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10.5, color: EnsomColors.inkFaint),
+        ),
       ],
     );
   }

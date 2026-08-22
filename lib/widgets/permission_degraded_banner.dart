@@ -100,7 +100,7 @@ class _PermissionDegradedBannerState extends State<PermissionDegradedBanner>
 
   Future<void> _showSettingsGuide() async {
     if (widget.type == DegradedPermissionType.calendar) {
-      await context.push("/calendar/sync");
+      await context.push("/calendar/connections");
       return;
     }
 

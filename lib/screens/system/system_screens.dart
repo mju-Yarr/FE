@@ -35,7 +35,10 @@ class _SystemScreenScaffold extends StatelessWidget {
               Container(
                 width: 56,
                 height: 56,
-                decoration: const BoxDecoration(color: EnsomColors.surface2, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: EnsomColors.surface2,
+                  shape: BoxShape.circle,
+                ),
                 alignment: Alignment.center,
                 child: Icon(icon, size: 24, color: EnsomColors.inkMuted),
               ),
@@ -43,17 +46,31 @@ class _SystemScreenScaffold extends StatelessWidget {
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700, letterSpacing: -.3, color: EnsomColors.ink),
+                style: const TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.3,
+                  color: EnsomColors.ink,
+                ),
               ),
               const SizedBox(height: 9),
               Text(
                 body,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted, height: 1.6),
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: EnsomColors.inkMuted,
+                  height: 1.6,
+                ),
               ),
               if (buttonLabel != null && onPressed != null) ...[
                 const SizedBox(height: 22),
-                EnsomPillButton(label: buttonLabel!, variant: buttonVariant, expand: false, onPressed: onPressed),
+                EnsomPillButton(
+                  label: buttonLabel!,
+                  variant: buttonVariant,
+                  expand: false,
+                  onPressed: onPressed,
+                ),
               ],
             ],
           ),

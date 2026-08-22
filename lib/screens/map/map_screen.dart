@@ -5,13 +5,14 @@ import "package:geolocator/geolocator.dart";
 import "package:go_router/go_router.dart";
 import "package:hive_ce_flutter/hive_ce_flutter.dart";
 import "package:kakao_map_sdk/kakao_map_sdk.dart";
+import "../../core/app_config.dart";
+import "../../core/kakao_web_loader.dart";
 import "../../local/place_cache_entry.dart";
 import "../../models/event.dart";
 import "../../models/plan.dart";
-import "../../network/api_client.dart";
 import "../../network/kakao_local_search_service.dart";
-import "../../providers/auth_providers.dart";
 import "../../providers/map_providers.dart";
+import "widgets/place_quick_pick_sheet.dart";
 import "../../repository/providers.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_quick_save_sheet.dart";
@@ -51,28 +52,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   double? _destLng;
   bool _searching = false;
   bool _routing = false;
-  List<Map<String, dynamic>>? _bookmarks;
 
   @override
   void initState() {
     super.initState();
     _applyInitialDestination();
-    _loadBookmarks();
-  }
-
-  Future<void> _loadBookmarks() async {
-    try {
-      final api = ref.read(apiClientProvider);
-      final data = await api.get<List<dynamic>>("/me/bookmarks");
-      if (mounted) {
-        setState(
-          () =>
-              _bookmarks = data.map((e) => e as Map<String, dynamic>).toList(),
-        );
-      }
-    } on ApiException catch (_) {
-      // 조용히 생략 — 칩 줄에 북마크가 안 보일 뿐 지도는 정상 동작한다.
-    }
   }
 
   /// 집·직장 등록 장소(§4.2 place_cache)에서 표시명이 일치하는 항목을 찾는다.
@@ -98,83 +82,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   }
 
   Future<void> _openBookmarkQuickPick() async {
-    if (_bookmarks == null || _bookmarks!.isEmpty) {
-      context.push("/map/bookmarks");
-      return;
-    }
-    final selected = await showModalBottomSheet<Map<String, dynamic>>(
-      context: context,
-      backgroundColor: EnsomColors.canvas,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
-      ),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: EnsomColors.surfaceNeutral,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                "북마크에서 선택",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: -.2, color: EnsomColors.ink),
-              ),
-              const SizedBox(height: 10),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 320),
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: _bookmarks!.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 6),
-                  itemBuilder: (context, index) {
-                    final b = _bookmarks![index];
-                    return Material(
-                      color: EnsomColors.surface2,
-                      borderRadius: BorderRadius.circular(14),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(14),
-                        onTap: () => Navigator.of(sheetContext).pop(b),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.bookmark_outline, size: 17, color: EnsomColors.inkFaint),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  b["placeName"]?.toString() ?? "이름 없음",
-                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: EnsomColors.ink),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-    if (selected == null) return;
-    final lat = (selected["lat"] as num?)?.toDouble();
-    final lng = (selected["lng"] as num?)?.toDouble();
-    if (lat == null || lng == null) return;
-    _selectDestination(selected["placeName"]?.toString() ?? "북마크", lat, lng);
+    // S-32는 값을 반환하는 시트다. 화면 전환은 호출한 이쪽이 한다(§13).
+    final picked = await showPlaceQuickPickSheet(context);
+    if (picked == null || !mounted) return;
+    _selectDestination(picked.name, picked.lat, picked.lng);
   }
 
   bool get _hasInitialDestination =>
@@ -252,6 +163,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
     final controller = TextEditingController();
     List<KakaoSearchResult> results = const [];
+    String? searchError;
 
     final selected = await showModalBottomSheet<KakaoSearchResult>(
       context: context,
@@ -260,10 +172,30 @@ class _MapScreenState extends ConsumerState<MapScreen> {
         return StatefulBuilder(
           builder: (sheetContext, setSheetState) {
             Future<void> runSearch(String query) async {
-              setSheetState(() => _searching = true);
-              final found = await search.search(query);
-              results = found;
-              setSheetState(() => _searching = false);
+              setSheetState(() {
+                _searching = true;
+                searchError = null;
+              });
+              try {
+                final found = await search.search(query);
+                if (!sheetContext.mounted) return;
+                setSheetState(() {
+                  results = found;
+                  if (found.isEmpty) searchError = "검색 결과가 없어요.";
+                });
+              } on KakaoLocalSearchException catch (e) {
+                if (!sheetContext.mounted) return;
+                setSheetState(() => searchError = e.userMessage);
+              } catch (_) {
+                if (!sheetContext.mounted) return;
+                setSheetState(
+                  () => searchError = "장소 검색 중 오류가 발생했어요. 다시 시도해주세요.",
+                );
+              } finally {
+                if (sheetContext.mounted) {
+                  setSheetState(() => _searching = false);
+                }
+              }
             }
 
             return Padding(
@@ -287,7 +219,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ),
                   const SizedBox(height: 12),
                   if (_searching) const CircularProgressIndicator(),
-                  if (!_searching)
+                  if (!_searching && searchError != null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(
+                        searchError!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: EnsomColors.inkMuted),
+                      ),
+                    ),
+                  if (!_searching && searchError == null)
                     Flexible(
                       child: ListView.separated(
                         shrinkWrap: true,
@@ -396,6 +337,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 at: anchor.$2,
                 createdAt: routesFetchedAt,
                 label: quickSave.label,
+                calendarSourceId: quickSave.calendarSourceId,
               ),
             );
         if (!mounted) return;
@@ -406,7 +348,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final endsAt = anchor.$1 == EventAnchor.arriveBy
           ? anchor.$2
           : anchor.$2.add(const Duration(hours: 1));
-      await ref.read(ensomRepositoryProvider).createEvent(
+      await ref
+          .read(ensomRepositoryProvider)
+          .createEvent(
             Event(
               eventId: "",
               displayLabel: quickSave.label!,
@@ -423,11 +367,12 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               sourceType: EventSourceType.mapSearch,
             ),
             selectedRouteOptionId: selectedRoute.routeOptionId,
+            writeToCalendarSourceId: quickSave.calendarSourceId,
           );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("일정으로 저장했어요.")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("일정으로 저장했어요.")));
       setState(() {
         _destName = null;
         _destLat = null;
@@ -562,6 +507,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Widget build(BuildContext context) {
     final search = ref.watch(kakaoLocalSearchServiceProvider);
     final destSelected = _destLat != null && _destLng != null;
+    final mapAvailable = kIsWeb
+        ? isKakaoWebSdkReady
+        : kKakaoNativeAppKey.isNotEmpty;
 
     // S-08 "검색 전" 화면 구성 원칙: 검색 바 우측에 아이콘을 두지 않고,
     // 북마크 전체 목록 진입구는 칩 줄 끝의 '전체보기' 하나뿐이다.
@@ -571,11 +519,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // kakao_map_sdk는 MethodChannel(네이티브 전용)이라 web에는 플러그인
-          // 핸들러가 없다. web에서 KakaoMap을 빌드하면 MissingPluginException으로
-          // 지도 화면이 크래시하므로, web에서는 지도 타일 대신 안내 플레이스홀더를
-          // 보여주고 검색·북마크·경로 저장 기능만 저하 동작하게 한다.
-          if (kIsWeb)
+          // kakao_map_sdk 1.2.6은 Web 플러그인을 제공한다. Web에서는
+          // main.dart가 JavaScript SDK 로드를 완료한 경우에만 공통 KakaoMap을
+          // 만들고, 키/도메인/네트워크 설정이 없으면 지도 영역만 저하한다.
+          if (!mapAvailable)
             const _WebMapPlaceholder()
           else
             KakaoMap(
@@ -652,11 +599,26 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     label: "회사",
                     onTap: () => _selectDestination("회사", work.lat, work.lng),
                   ),
+                // §3 S-08 칩 줄 — 집·직장 다음에 북마크 항목들이 온다.
+                // 다 넣으면 줄이 길어져 앞쪽 몇 개만 칩으로 두고 나머지는
+                // 빠른 선택 시트에서 고른다.
+                for (final bookmark
+                    in (ref.watch(bookmarksProvider).value ?? const []).take(4))
+                  _MapChip(
+                    label: bookmark.placeName,
+                    icon: Icons.bookmark_outline,
+                    onTap: () => _selectDestination(
+                      bookmark.placeName,
+                      bookmark.lat,
+                      bookmark.lng,
+                    ),
+                  ),
                 _MapChip(
                   label: "북마크",
                   icon: Icons.bookmark_outline,
                   onTap: _openBookmarkQuickPick,
                 ),
+                // §3 "북마크 전체 목록 진입구는 칩 줄 끝의 전체보기 하나뿐이다."
                 _MapChip(
                   label: "전체보기",
                   onTap: () => context.push("/map/bookmarks"),
@@ -811,10 +773,8 @@ class _MapChip extends StatelessWidget {
   }
 }
 
-
-/// 웹 전용 지도 자리표시. kakao_map_sdk가 네이티브 전용이라 웹에서는
-/// 지도 타일을 렌더할 수 없다. 검색·북마크·경로 저장은 상단/하단 UI로
-/// 계속 동작하므로, 배경만 안내 문구로 대체한다.
+/// 지도 SDK 키가 없거나 Web script/도메인 인증에 실패했을 때의 저하 화면.
+/// 검색·북마크·경로 저장은 가능한 범위에서 계속 동작한다.
 class _WebMapPlaceholder extends StatelessWidget {
   const _WebMapPlaceholder();
 
@@ -832,7 +792,7 @@ class _WebMapPlaceholder extends StatelessWidget {
               Icon(Icons.map_outlined, size: 44, color: EnsomColors.inkFaint),
               SizedBox(height: 12),
               Text(
-                "지도 미리보기는 앱에서 제공돼요",
+                "지도를 불러오지 못했어요",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
@@ -842,7 +802,7 @@ class _WebMapPlaceholder extends StatelessWidget {
               ),
               SizedBox(height: 6),
               Text(
-                "웹에서는 목적지 검색과 경로 저장을 이용할 수 있어요.",
+                "지도 키와 허용 도메인을 확인해 주세요.\n목적지 검색과 경로 저장은 계속 이용할 수 있어요.",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: EnsomColors.inkFaint),
               ),

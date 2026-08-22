@@ -38,7 +38,7 @@ class HomeEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () => context.push("/calendar/sync"),
+            onPressed: () => context.push("/calendar/connections"),
             style: OutlinedButton.styleFrom(
               foregroundColor: EnsomColors.ink,
               side: const BorderSide(color: EnsomColors.hairline),

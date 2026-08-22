@@ -12,5 +12,6 @@ abstract class UserEvent with _$UserEvent {
     String? placeText, // 좌표 아님, 문자열
   }) = _UserEvent;
 
-  factory UserEvent.fromJson(Map<String, dynamic> json) => _$UserEventFromJson(json);
+  factory UserEvent.fromJson(Map<String, dynamic> json) =>
+      _$UserEventFromJson(json);
 }
