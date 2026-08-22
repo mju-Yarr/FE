@@ -47,6 +47,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   late DateTime _selectedDate = _dateOnly(DateTime.now());
   _EventFilter _filter = _EventFilter.all;
   bool _searchOpen = false;
+  // 달만 넘기고 날짜를 직접 고른 적이 없을 때는 그리드에 "선택됨" 표시를
+  // 띄우지 않는다 — _shiftMonth가 _selectedDate를 유지하려고 날짜를
+  // 새 달로 옮기는 것과, 사용자가 실제로 그 날짜를 고른 것은 다르다.
+  bool _hasExplicitSelection = false;
   _SyncBannerStatus _syncStatus = _SyncBannerStatus.idle;
   DateTime? _syncFailedAt;
 
@@ -97,6 +101,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     setState(() {
       _selectedDate = _dateOnly(d);
       _focusedMonth = _monthOf(_selectedDate);
+      _hasExplicitSelection = true;
     });
   }
 
@@ -110,13 +115,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         _focusedMonth.month + deltaMonths,
         1,
       );
-      final lastDay = DateTime(
-        _focusedMonth.year,
-        _focusedMonth.month + 1,
-        0,
-      ).day;
-      final day = _selectedDate.day.clamp(1, lastDay);
-      _selectedDate = DateTime(_focusedMonth.year, _focusedMonth.month, day);
+      _selectedDate = _focusedMonth;
+      _hasExplicitSelection = false;
     });
   }
 
@@ -217,6 +217,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   view: _view,
                   focusedMonth: _focusedMonth,
                   selectedDate: _selectedDate,
+                  hasSelection: _hasExplicitSelection,
                   eventCountOf: (d) => eventsByDay[d]?.length ?? 0,
                   onSelectDate: _selectDate,
                   onPrev: () =>
@@ -574,6 +575,7 @@ class _CalendarPanel extends StatefulWidget {
     required this.view,
     required this.focusedMonth,
     required this.selectedDate,
+    required this.hasSelection,
     required this.eventCountOf,
     required this.onSelectDate,
     required this.onPrev,
@@ -585,6 +587,7 @@ class _CalendarPanel extends StatefulWidget {
   final _CalView view;
   final DateTime focusedMonth;
   final DateTime selectedDate;
+  final bool hasSelection;
   final int Function(DateTime) eventCountOf;
   final ValueChanged<DateTime> onSelectDate;
   final VoidCallback onPrev;
@@ -773,6 +776,7 @@ class _CalendarPanelState extends State<_CalendarPanel> {
                 date: d,
                 today: today,
                 selected: widget.selectedDate,
+                hasSelection: widget.hasSelection,
                 count: widget.eventCountOf(d),
                 onTap: () => widget.onSelectDate(d),
               ),
@@ -828,6 +832,7 @@ class _CalendarPanelState extends State<_CalendarPanel> {
             date: date,
             today: today,
             selected: widget.selectedDate,
+            hasSelection: widget.hasSelection,
             count: widget.eventCountOf(date),
             onTap: () => widget.onSelectDate(date),
           ),
@@ -875,6 +880,7 @@ class _DayDot extends StatelessWidget {
     required this.date,
     required this.today,
     required this.selected,
+    required this.hasSelection,
     required this.count,
     required this.onTap,
   });
@@ -882,13 +888,14 @@ class _DayDot extends StatelessWidget {
   final DateTime date;
   final DateTime today;
   final DateTime selected;
+  final bool hasSelection;
   final int count;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final isToday = date == today;
-    final isSelected = date == selected && !isToday;
+    final isSelected = hasSelection && date == selected && !isToday;
     final hasEvents = count > 0;
 
     Color bg = Colors.transparent;
