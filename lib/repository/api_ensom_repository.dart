@@ -47,7 +47,9 @@ class ApiEnsomRepository implements EnsomRepository {
       final json = await _client.get<Map<String, dynamic>>("/events/next");
       return Event.fromJson(json);
     } on ApiException catch (e) {
-      if (e.code == "EVENT_NOT_FOUND") return null;
+      if (e.code == "NEXT_EVENT_NOT_FOUND" || e.code == "EVENT_NOT_FOUND") {
+        return null;
+      }
       rethrow;
     }
   }
