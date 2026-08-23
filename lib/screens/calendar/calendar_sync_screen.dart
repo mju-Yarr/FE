@@ -67,7 +67,7 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
       final authCode = await GoogleAuthHelper.instance.signInForCalendar();
       if (authCode == null) return;
 
-      await ref
+      final result = await ref
           .read(apiClientProvider)
           .post<Map<String, dynamic>>(
             "/calendar/google/connect",
@@ -75,6 +75,23 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
           );
 
       if (!mounted) return;
+      // 2xx만으로 연결 완료를 낙관하지 않는다. 응답 또는 상태 조회에서
+      // 실제 연결이 확인돼야만 UI를 "연동됨"으로 전환한다.
+      var connected = result["connected"] == true;
+      if (!connected) {
+        final status = await ref
+            .read(apiClientProvider)
+            .get<Map<String, dynamic>>("/calendar/google/status");
+        if (!mounted) return;
+        connected = status["connected"] == true;
+      }
+      if (!connected) {
+        throw ApiException(
+          code: "CALENDAR_NOT_CONNECTED",
+          message: "Google 캘린더 연결을 확인하지 못했어요. 다시 시도해주세요.",
+          retryable: true,
+        );
+      }
       setState(() => _connected = true);
       ref.invalidate(bootstrapProvider);
       ScaffoldMessenger.of(
@@ -94,7 +111,7 @@ class _CalendarSyncScreenState extends ConsumerState<CalendarSyncScreen> {
       setState(() {
         _error = e.isNetworkError
             ? "네트워크에 연결할 수 없어요. 잠시 후 다시 시도해주세요."
-            : "캘린더를 연동하지 못했어요. 다시 시도해주세요.";
+            : e.message;
       });
     } catch (_) {
       if (!mounted) return;

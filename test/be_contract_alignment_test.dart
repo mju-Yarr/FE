@@ -2,6 +2,7 @@ import "dart:convert";
 
 import "package:ensom/core/secure_storage_service.dart";
 import "package:ensom/models/notification.dart";
+import "package:ensom/models/event.dart";
 import "package:ensom/network/api_client.dart";
 import "package:ensom/repository/api_ensom_repository.dart";
 import "package:flutter_test/flutter_test.dart";
@@ -82,5 +83,40 @@ void main() {
     expect(captured!.method, "PATCH");
     expect(captured!.url.path, "/v1/plans/plan-1");
     expect(jsonDecode(captured!.body), {"originPlaceId": "place-1"});
+  });
+
+  test("event creation sends timestamps with an explicit UTC offset", () async {
+    http.Request? captured;
+    final repository = await _repository((request) async {
+      captured = request;
+      return http.Response.bytes(
+        utf8.encode(
+          jsonEncode({
+            "eventId": "event-1",
+            "displayName": "회의",
+            "startsAt": "2026-08-23T05:00:00Z",
+            "endsAt": "2026-08-23T06:00:00Z",
+            "locationState": "not_required",
+          }),
+        ),
+        200,
+        headers: {"content-type": "application/json; charset=utf-8"},
+      );
+    });
+
+    await repository.createEvent(
+      Event(
+        eventId: "",
+        displayLabel: "회의",
+        displayName: "회의",
+        startsAt: DateTime(2026, 8, 23, 14),
+        endsAt: DateTime(2026, 8, 23, 15),
+        locationState: LocationState.notRequired,
+      ),
+    );
+
+    final body = jsonDecode(captured!.body) as Map<String, dynamic>;
+    expect(DateTime.parse(body["startsAt"] as String).isUtc, isTrue);
+    expect(DateTime.parse(body["endsAt"] as String).isUtc, isTrue);
   });
 }

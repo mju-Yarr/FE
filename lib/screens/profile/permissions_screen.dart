@@ -1,21 +1,25 @@
 import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 import "package:permission_handler/permission_handler.dart";
+import "../../core/permission_service.dart";
+import "../../providers/auth_providers.dart";
 import "../../theme/ensom_colors.dart";
 
 /// PRF-05 권한 관리 — v6 프로토타입 기준 redesign
 /// 디자인 기준: Ensom_프로토타입_v6_최종/05_설정/ensom_profile.html (v-perm)
-class PermissionsScreen extends StatefulWidget {
+class PermissionsScreen extends ConsumerStatefulWidget {
   const PermissionsScreen({super.key});
 
   @override
-  State<PermissionsScreen> createState() => _PermissionsScreenState();
+  ConsumerState<PermissionsScreen> createState() => _PermissionsScreenState();
 }
 
-class _PermissionsScreenState extends State<PermissionsScreen>
+class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
     with WidgetsBindingObserver {
   Map<Permission, PermissionStatus> _statuses = {};
   bool _alwaysLocation = false;
+  bool? _calendarConnected;
 
   @override
   void initState() {
@@ -36,17 +40,30 @@ class _PermissionsScreenState extends State<PermissionsScreen>
   }
 
   Future<void> _checkPermissions() async {
-    final current = <Permission, PermissionStatus>{};
-    for (final p in [
-      Permission.notification,
-      Permission.location,
-      Permission.locationAlways,
-    ]) {
-      current[p] = await p.status;
+    final service = PermissionService.instance;
+    final results = await Future.wait([
+      service.notificationStatus(),
+      service.locationStatus(),
+      service.locationAlwaysStatus(),
+    ]);
+    final current = <Permission, PermissionStatus>{
+      Permission.notification: results[0],
+      Permission.location: results[1],
+      Permission.locationAlways: results[2],
+    };
+    bool? calendarConnected;
+    try {
+      final data = await ref
+          .read(apiClientProvider)
+          .get<Map<String, dynamic>>("/calendar/google/status");
+      calendarConnected = data["connected"] == true;
+    } catch (_) {
+      calendarConnected = null;
     }
     if (mounted) {
       setState(() {
         _statuses = current;
+        _calendarConnected = calendarConnected;
         _alwaysLocation =
             current[Permission.locationAlways]?.isGranted ?? false;
       });
@@ -61,6 +78,29 @@ class _PermissionsScreenState extends State<PermissionsScreen>
   }
 
   bool _isGranted(PermissionStatus? status) => status?.isGranted ?? false;
+
+  Future<void> _requestLocation() async {
+    final status = await PermissionService.instance.requestLocation();
+    if (!mounted) return;
+    await _checkPermissions();
+    if (!mounted) return;
+    if (!status.isGranted) {
+      await PermissionService.instance.showRationale(
+        context,
+        PermissionRationaleType.location,
+      );
+    }
+  }
+
+  Future<void> _requestNotification() async {
+    await PermissionService.instance.requestNotification();
+    if (mounted) await _checkPermissions();
+  }
+
+  Future<void> _requestAlwaysLocation() async {
+    await PermissionService.instance.requestLocationAlways();
+    if (mounted) await _checkPermissions();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,8 +118,10 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                   // 캘린더 연동
                   _PermissionCard(
                     title: "캘린더 연동",
-                    pillText: "연동됨",
-                    isGranted: true,
+                    pillText: _calendarConnected == null
+                        ? "확인 필요"
+                        : (_calendarConnected! ? "연동됨" : "연동 안 됨"),
+                    isGranted: _calendarConnected == true,
                     onTap: () => context.push("/calendar/connections"),
                   ),
                   const SizedBox(height: 10),
@@ -88,7 +130,7 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                     title: "위치",
                     pillText: _pillText(_statuses[Permission.location]),
                     isGranted: _isGranted(_statuses[Permission.location]),
-                    onTap: openAppSettings,
+                    onTap: _requestLocation,
                   ),
                   const SizedBox(height: 10),
                   // 알림
@@ -96,7 +138,7 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                     title: "알림",
                     pillText: _pillText(_statuses[Permission.notification]),
                     isGranted: _isGranted(_statuses[Permission.notification]),
-                    onTap: openAppSettings,
+                    onTap: _requestNotification,
                   ),
 
                   // 구분선
@@ -123,7 +165,7 @@ class _PermissionsScreenState extends State<PermissionsScreen>
                     isEnabled: _alwaysLocation,
                     onChanged: (v) async {
                       if (v) {
-                        await openAppSettings();
+                        await _requestAlwaysLocation();
                       } else {
                         await openAppSettings();
                       }

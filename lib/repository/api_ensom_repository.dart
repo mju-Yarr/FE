@@ -304,8 +304,10 @@ class ApiEnsomRepository implements EnsomRepository {
     final json = await _client.post<Map<String, dynamic>>(
       "/events",
       body: {
-        "startsAt": ej["startsAt"],
-        "endsAt": ej["endsAt"],
+        // OffsetDateTime 계약을 확실히 만족하도록 UTC offset(Z)을 포함한다.
+        "startsAt": event.startsAt.toUtc().toIso8601String(),
+        if (event.endsAt != null)
+          "endsAt": event.endsAt!.toUtc().toIso8601String(),
         "locationState": ej["locationState"],
         if (event.destinationName != null)
           "destinationName": event.destinationName,
