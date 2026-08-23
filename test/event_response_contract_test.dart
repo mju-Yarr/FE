@@ -6,8 +6,8 @@ Map<String, dynamic> _eventJson({String? anchorMode, String? anchor}) => {
   "displayName": "회의",
   "startsAt": "2026-08-24T09:00:00Z",
   "locationState": "not_required",
-  if (anchorMode != null) "anchorMode": anchorMode,
-  if (anchor != null) "anchor": anchor,
+  "anchorMode": ?anchorMode,
+  "anchor": ?anchor,
 };
 
 void main() {

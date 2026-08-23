@@ -2,6 +2,7 @@ import "package:ensom/models/event.dart";
 import "package:ensom/models/place.dart";
 import "package:ensom/repository/ensom_repository.dart";
 import "package:ensom/screens/calendar/event_form_screen.dart";
+import "package:flutter/foundation.dart";
 import "package:flutter_test/flutter_test.dart";
 
 class _OriginRepo implements EnsomRepository {
@@ -93,6 +94,9 @@ void main() {
 
   test("일반 물리 일정은 장소 조회 실패에도 출발지를 비운다", () async {
     final repo = _OriginRepo(const [], fetchError: StateError("network"));
+    final originalDebugPrint = debugPrint;
+    debugPrint = (String? message, {int? wrapWidth}) {};
+    addTearDown(() => debugPrint = originalDebugPrint);
 
     final result = await resolveEventOriginPlaceId(
       repository: repo,
