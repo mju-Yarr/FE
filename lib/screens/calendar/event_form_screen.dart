@@ -13,10 +13,22 @@ import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_chip.dart";
 import "../../widgets/ensom/ensom_date_picker_sheet.dart";
 import "../../widgets/ensom/ensom_pill_button.dart";
-import "../../widgets/ensom/ensom_text_field.dart";
 import "../../widgets/ensom/ensom_time_picker_sheet.dart";
 import "../../widgets/ensom/ensom_top_bar.dart";
 import "../search/place_search_screen.dart";
+
+@visibleForTesting
+DateTime nextEventStartTime(DateTime now) {
+  final candidate = now.add(const Duration(hours: 1));
+  final roundedMinute = candidate.minute < 30 ? 30 : 0;
+  return DateTime(
+    candidate.year,
+    candidate.month,
+    candidate.day,
+    roundedMinute == 0 ? candidate.hour + 1 : candidate.hour,
+    roundedMinute,
+  );
+}
 
 /// S-10 일정 생성 폼.
 /// 캘린더의 빈 폼과 S-08R에서 넘어온 지도 프리필을 하나의 화면으로 처리한다.
@@ -35,8 +47,10 @@ class EventFormScreen extends ConsumerStatefulWidget {
 
 class _EventFormScreenState extends ConsumerState<EventFormScreen> {
   final _labelController = TextEditingController();
-  DateTime _startsAt = DateTime.now().add(const Duration(hours: 1));
+  DateTime _startsAt = nextEventStartTime(DateTime.now());
   LocationState _locationState = LocationState.undecided;
+  bool _timeExpanded = false;
+  bool _autoManageExcluded = false;
 
   /// §3 S-10 "저장할 캘린더 선택". 연동된 쓰기 가능 캘린더가 있을 때만 보인다.
   /// null이면 서버가 기본 기록 캘린더를 쓴다.
@@ -95,7 +109,36 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     });
   }
 
-  Future<void> _pickTime() async {
+  void _setDateOffset(int days) {
+    final today = DateTime.now();
+    setState(() {
+      _startsAt = DateTime(
+        today.year,
+        today.month,
+        today.day + days,
+        _startsAt.hour,
+        _startsAt.minute,
+      );
+    });
+  }
+
+  void _adjustTime(int minutes) {
+    setState(() => _startsAt = _startsAt.add(Duration(minutes: minutes)));
+  }
+
+  void _setSpecificTime(int hour, int minute) {
+    setState(() {
+      _startsAt = DateTime(
+        _startsAt.year,
+        _startsAt.month,
+        _startsAt.day,
+        hour,
+        minute,
+      );
+    });
+  }
+
+  Future<void> _pickCustomDateTime() async {
     final date = await EnsomDatePickerSheet.show(context, initial: _startsAt);
     if (date == null || !mounted) return;
 
@@ -237,6 +280,7 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         sourceType: draft == null
             ? EventSourceType.internal
             : EventSourceType.mapSearch,
+        autoManageExcluded: _autoManageExcluded,
       );
 
       final created = await ref
@@ -331,7 +375,11 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
   }
 
   String _formatDateTime(DateTime value) {
-    return "${value.month}/${value.day} ${value.hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')}";
+    const weekdays = ["월", "화", "수", "목", "금", "토", "일"];
+    final period = value.hour < 12 ? "오전" : "오후";
+    final hour = value.hour % 12 == 0 ? 12 : value.hour % 12;
+    final minute = value.minute.toString().padLeft(2, "0");
+    return "${value.month}월 ${value.day}일 ${weekdays[value.weekday - 1]} · $period $hour:$minute";
   }
 
   @override
@@ -416,7 +464,18 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
 
     return Scaffold(
       backgroundColor: EnsomColors.canvas,
-      appBar: const EnsomTopBar(title: "일정 만들기"),
+      appBar: EnsomTopBar(
+        title: "일정 만들기",
+        actions: [
+          TextButton(
+            onPressed: canSave ? _save : null,
+            child: Text(
+              _saving ? "저장 중" : "저장",
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
       body: SafeArea(
         top: false,
         child: Column(
@@ -429,25 +488,42 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                     _buildMapPrefill(draft),
                     const SizedBox(height: 18),
                   ],
-                  EnsomTextField(
-                    label: "일정 이름",
+                  TextField(
                     controller: _labelController,
                     onChanged: (_) => setState(() {}),
-                  ),
-                  if (draft == null) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      "시작 시각",
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: EnsomColors.inkMuted,
+                    style: const TextStyle(
+                      fontSize: 21,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -.3,
+                      color: EnsomColors.ink,
+                    ),
+                    decoration: const InputDecoration(
+                      hintText: "일정 제목",
+                      hintStyle: TextStyle(
+                        color: EnsomColors.inkFaint,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      contentPadding: EdgeInsets.fromLTRB(2, 14, 2, 12),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: EnsomColors.hairline),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: EnsomColors.cta),
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    _ValueRow(
-                      value: _formatDateTime(_startsAt),
-                      onTap: _pickTime,
+                  ),
+                  if (draft == null) ...[
+                    const SizedBox(height: 8),
+                    _EventTimeEditor(
+                      startsAt: _startsAt,
+                      expanded: _timeExpanded,
+                      formattedValue: _formatDateTime(_startsAt),
+                      onToggle: () =>
+                          setState(() => _timeExpanded = !_timeExpanded),
+                      onDateOffset: _setDateOffset,
+                      onAdjustMinutes: _adjustTime,
+                      onSpecificTime: _setSpecificTime,
+                      onCustom: _pickCustomDateTime,
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -526,6 +602,36 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                     onSelected: (id) =>
                         setState(() => _writeToCalendarSourceId = id),
                   ),
+                  const SizedBox(height: 22),
+                  Container(
+                    padding: const EdgeInsets.only(top: 16, bottom: 4),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        top: BorderSide(color: EnsomColors.hairline),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            "이 일정은 준비 알림에서 제외",
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: EnsomColors.ink,
+                            ),
+                          ),
+                        ),
+                        Switch(
+                          value: _autoManageExcluded,
+                          activeTrackColor: EnsomColors.cta,
+                          activeThumbColor: EnsomColors.lime,
+                          onChanged: (value) =>
+                              setState(() => _autoManageExcluded = value),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -556,6 +662,234 @@ class _LoadingScaffold extends StatelessWidget {
       backgroundColor: EnsomColors.canvas,
       appBar: EnsomTopBar(title: "일정 만들기"),
       body: Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
+class _EventTimeEditor extends StatelessWidget {
+  const _EventTimeEditor({
+    required this.startsAt,
+    required this.expanded,
+    required this.formattedValue,
+    required this.onToggle,
+    required this.onDateOffset,
+    required this.onAdjustMinutes,
+    required this.onSpecificTime,
+    required this.onCustom,
+  });
+
+  final DateTime startsAt;
+  final bool expanded;
+  final String formattedValue;
+  final VoidCallback onToggle;
+  final ValueChanged<int> onDateOffset;
+  final ValueChanged<int> onAdjustMinutes;
+  final void Function(int hour, int minute) onSpecificTime;
+  final VoidCallback onCustom;
+
+  int get _selectedOffset {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selected = DateTime(startsAt.year, startsAt.month, startsAt.day);
+    return selected.difference(today).inDays;
+  }
+
+  String _relativeDateLabel(String prefix, int offset) {
+    final now = DateTime.now();
+    final date = DateTime(now.year, now.month, now.day + offset);
+    return "$prefix · ${date.month}/${date.day}";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(bottom: 6),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: EnsomColors.hairline)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: onToggle,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: const BoxDecoration(
+                      color: EnsomColors.surface2,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.schedule,
+                      size: 14,
+                      color: EnsomColors.inkMuted,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "시작 시각",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: EnsomColors.ink,
+                    ),
+                  ),
+                  const Spacer(),
+                  Flexible(
+                    child: Text(
+                      formattedValue,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: EnsomColors.inkMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  AnimatedRotation(
+                    turns: expanded ? .25 : 0,
+                    duration: const Duration(milliseconds: 150),
+                    child: const Icon(
+                      Icons.chevron_right,
+                      size: 16,
+                      color: EnsomColors.inkFaint,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 180),
+            crossFadeState: expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Padding(
+              padding: const EdgeInsets.fromLTRB(2, 2, 2, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _FormSectionLabel("날짜"),
+                  Wrap(
+                    spacing: 7,
+                    runSpacing: 7,
+                    children: [
+                      _QuickTimeChip(
+                        label: _relativeDateLabel("오늘", 0),
+                        selected: _selectedOffset == 0,
+                        onTap: () => onDateOffset(0),
+                      ),
+                      _QuickTimeChip(
+                        label: _relativeDateLabel("내일", 1),
+                        selected: _selectedOffset == 1,
+                        onTap: () => onDateOffset(1),
+                      ),
+                      _QuickTimeChip(
+                        label: _relativeDateLabel("모레", 2),
+                        selected: _selectedOffset == 2,
+                        onTap: () => onDateOffset(2),
+                      ),
+                      _QuickTimeChip(label: "직접 선택", onTap: onCustom),
+                    ],
+                  ),
+                  const _FormSectionLabel("시각 빠르게 조정"),
+                  Wrap(
+                    spacing: 7,
+                    runSpacing: 7,
+                    children: [
+                      _QuickTimeChip(
+                        label: "+30분",
+                        onTap: () => onAdjustMinutes(30),
+                      ),
+                      _QuickTimeChip(
+                        label: "+1시간",
+                        onTap: () => onAdjustMinutes(60),
+                      ),
+                      _QuickTimeChip(
+                        label: "오전 9:00",
+                        onTap: () => onSpecificTime(9, 0),
+                      ),
+                      _QuickTimeChip(
+                        label: "오후 12:00",
+                        onTap: () => onSpecificTime(12, 0),
+                      ),
+                      _QuickTimeChip(
+                        label: "오후 6:00",
+                        onTap: () => onSpecificTime(18, 0),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FormSectionLabel extends StatelessWidget {
+  const _FormSectionLabel(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 14, bottom: 8),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 10.5,
+          fontWeight: FontWeight.w700,
+          letterSpacing: .4,
+          color: EnsomColors.inkFaint,
+        ),
+      ),
+    );
+  }
+}
+
+class _QuickTimeChip extends StatelessWidget {
+  const _QuickTimeChip({
+    required this.label,
+    required this.onTap,
+    this.selected = false,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? EnsomColors.cta : EnsomColors.surface2,
+      borderRadius: BorderRadius.circular(13),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(13),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : EnsomColors.ink,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
