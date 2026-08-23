@@ -54,11 +54,15 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   _SyncBannerStatus _syncStatus = _SyncBannerStatus.idle;
   DateTime? _syncFailedAt;
 
-  // 선택한 날이 있는 달의 앞뒤 한 달씩을 같이 불러온다 — 주간 뷰가 달
-  // 경계를 넘나들 때, 그리고 검색 오버레이가 뒤질 범위를 위해서다.
+  // API 명세 §8 GET /events는 [from, to) 범위를 최대 31일까지만 허용한다
+  // (초과 시 422 VALIDATION_ERROR). 이전엔 앞뒤 한 달씩 포함한 3개월치를
+  // 한 번에 요청해서 캘린더 화면이 항상 로드 실패했다 — 포커스된 달 하나만
+  // 요청한다(월 그리드는 달 밖 날짜에 eventCountOf를 호출하지 않으므로
+  // 이걸로 충분하다. 주간 뷰가 달 경계를 살짝 넘어갈 때만 그 며칠의
+  // 일정 점이 비어 보일 수 있다).
   EventRange get _fetchRange => EventRange(
-    from: DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1),
-    to: DateTime(_focusedMonth.year, _focusedMonth.month + 2, 1),
+    from: DateTime(_focusedMonth.year, _focusedMonth.month, 1),
+    to: DateTime(_focusedMonth.year, _focusedMonth.month + 1, 1),
   );
 
   @override
