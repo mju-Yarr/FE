@@ -40,6 +40,7 @@ class MapScreen extends ConsumerStatefulWidget {
 class _MapScreenState extends ConsumerState<MapScreen> {
   KakaoMapController? _controller;
   bool _locating = false;
+  bool _retryingMap = false;
   String? _error;
 
   // 위치 권한 거부/실패 시 기본 위치 (서울시청). 지도 자체는 여전히
@@ -139,6 +140,19 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       setState(() => _error = "현재 위치를 가져오지 못했어요. 위치 권한을 확인해주세요.");
     } finally {
       if (mounted) setState(() => _locating = false);
+    }
+  }
+
+  Future<void> _retryWebMap() async {
+    if (!kIsWeb || _retryingMap) return;
+    setState(() => _retryingMap = true);
+    final ready = await ensureKakaoWebSdk(kKakaoJavaScriptAppKey);
+    if (!mounted) return;
+    setState(() => _retryingMap = false);
+    if (!ready) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("지도 연결에 실패했어요. 허용 도메인과 네트워크를 확인해 주세요.")),
+      );
     }
   }
 
@@ -523,7 +537,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           // main.dart가 JavaScript SDK 로드를 완료한 경우에만 공통 KakaoMap을
           // 만들고, 키/도메인/네트워크 설정이 없으면 지도 영역만 저하한다.
           if (!mapAvailable)
-            const _WebMapPlaceholder()
+            _WebMapPlaceholder(retrying: _retryingMap, onRetry: _retryWebMap)
           else
             KakaoMap(
               option: KakaoMapOption(
@@ -776,7 +790,10 @@ class _MapChip extends StatelessWidget {
 /// 지도 SDK 키가 없거나 Web script/도메인 인증에 실패했을 때의 저하 화면.
 /// 검색·북마크·경로 저장은 가능한 범위에서 계속 동작한다.
 class _WebMapPlaceholder extends StatelessWidget {
-  const _WebMapPlaceholder();
+  const _WebMapPlaceholder({required this.retrying, required this.onRetry});
+
+  final bool retrying;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -788,10 +805,14 @@ class _WebMapPlaceholder extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.map_outlined, size: 44, color: EnsomColors.inkFaint),
-              SizedBox(height: 12),
-              Text(
+            children: [
+              const Icon(
+                Icons.map_outlined,
+                size: 44,
+                color: EnsomColors.inkFaint,
+              ),
+              const SizedBox(height: 12),
+              const Text(
                 "지도를 불러오지 못했어요",
                 textAlign: TextAlign.center,
                 style: TextStyle(
@@ -800,11 +821,16 @@ class _WebMapPlaceholder extends StatelessWidget {
                   color: EnsomColors.ink,
                 ),
               ),
-              SizedBox(height: 6),
-              Text(
+              const SizedBox(height: 6),
+              const Text(
                 "지도 키와 허용 도메인을 확인해 주세요.\n목적지 검색과 경로 저장은 계속 이용할 수 있어요.",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 12, color: EnsomColors.inkFaint),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.tonal(
+                onPressed: retrying ? null : onRetry,
+                child: Text(retrying ? "다시 연결하는 중..." : "지도 다시 연결"),
               ),
             ],
           ),

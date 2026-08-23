@@ -46,13 +46,17 @@ flutter run \
 검증하기 위한 콘솔 등록값입니다. 서명 인증서를 변경하면 새 키 해시도 콘솔에
 추가해야 합니다.
 
-카카오 개발자 콘솔의 Web 플랫폼에는 실제 배포 주소를 사이트 도메인으로
-등록해야 합니다. Firebase 기본 배포 주소는 다음 두 개입니다.
+카카오 개발자 콘솔의 `[앱] > [플랫폼 키] > [JavaScript 키] >
+[JavaScript SDK 도메인]`에는 실제 배포 origin을 등록해야 합니다.
+Firebase 기본 배포 주소는 다음 두 개입니다.
 
 - `https://ensom-10da2.web.app`
 - `https://ensom-10da2.firebaseapp.com`
 
 별도 커스텀 도메인으로 배포하면 해당 HTTPS origin도 추가해야 합니다.
+경로(`/map` 등)는 붙이지 않으며 `http`와 `https`는 서로 다른 origin으로
+취급됩니다. `[제품 링크 관리] > [웹 도메인]`은 카카오톡 공유 등의 링크용
+설정이므로 지도 JavaScript SDK 도메인 등록을 대신하지 않습니다.
 
 ### 3. Google OAuth (선택)
 
