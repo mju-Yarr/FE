@@ -25,6 +25,8 @@ class _DailySummaryScreenState extends ConsumerState<DailySummaryScreen> {
 
   Color _bandColor(DwlBand band) {
     switch (band) {
+      case DwlBand.unknown:
+        return EnsomColors.inkMuted;
       case DwlBand.low:
         return EnsomColors.limeInk;
       case DwlBand.mid:
@@ -36,6 +38,8 @@ class _DailySummaryScreenState extends ConsumerState<DailySummaryScreen> {
 
   String _bandLabel(DwlBand band) {
     switch (band) {
+      case DwlBand.unknown:
+        return "데이터 없음";
       case DwlBand.low:
         return "낮음";
       case DwlBand.mid:

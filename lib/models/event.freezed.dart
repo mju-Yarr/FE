@@ -15,9 +15,9 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Event {
 
- String get eventId; String? get title; String? get displayLabel; String get displayName; DateTime get startsAt;// BE EventResponse.endsAt은 nullable이다 — 종료 시각 없이 만든 일정이
+ String get eventId; String? get title; String? get displayLabel; String get displayName; DateTime get startsAt; String? get timezone;// BE EventResponse.endsAt은 nullable이다 — 종료 시각 없이 만든 일정이
 // 그대로 null로 내려온다.
- DateTime? get endsAt; LocationState get locationState; String? get destinationName; double? get destinationLat; double? get destinationLng; EventAnchor get anchor; EventSourceType get sourceType; EventLifecycleStatus? get status; bool? get autoManageExcluded;
+ DateTime? get endsAt; LocationState get locationState; String? get destinationName; String? get destinationAddress; double? get destinationLat; double? get destinationLng; String? get meetingUrl; String? get eventKind; String? get calendarSourceId; EventAnchor get anchor; EventSourceType get sourceType; EventLifecycleStatus? get status; bool? get autoManageExcluded;
 /// Create a copy of Event
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,16 +30,16 @@ $EventCopyWith<Event> get copyWith => _$EventCopyWithImpl<Event>(this as Event, 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Event&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.title, title) || other.title == title)&&(identical(other.displayLabel, displayLabel) || other.displayLabel == displayLabel)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.startsAt, startsAt) || other.startsAt == startsAt)&&(identical(other.endsAt, endsAt) || other.endsAt == endsAt)&&(identical(other.locationState, locationState) || other.locationState == locationState)&&(identical(other.destinationName, destinationName) || other.destinationName == destinationName)&&(identical(other.destinationLat, destinationLat) || other.destinationLat == destinationLat)&&(identical(other.destinationLng, destinationLng) || other.destinationLng == destinationLng)&&(identical(other.anchor, anchor) || other.anchor == anchor)&&(identical(other.sourceType, sourceType) || other.sourceType == sourceType)&&(identical(other.status, status) || other.status == status)&&(identical(other.autoManageExcluded, autoManageExcluded) || other.autoManageExcluded == autoManageExcluded));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Event&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.title, title) || other.title == title)&&(identical(other.displayLabel, displayLabel) || other.displayLabel == displayLabel)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.startsAt, startsAt) || other.startsAt == startsAt)&&(identical(other.timezone, timezone) || other.timezone == timezone)&&(identical(other.endsAt, endsAt) || other.endsAt == endsAt)&&(identical(other.locationState, locationState) || other.locationState == locationState)&&(identical(other.destinationName, destinationName) || other.destinationName == destinationName)&&(identical(other.destinationAddress, destinationAddress) || other.destinationAddress == destinationAddress)&&(identical(other.destinationLat, destinationLat) || other.destinationLat == destinationLat)&&(identical(other.destinationLng, destinationLng) || other.destinationLng == destinationLng)&&(identical(other.meetingUrl, meetingUrl) || other.meetingUrl == meetingUrl)&&(identical(other.eventKind, eventKind) || other.eventKind == eventKind)&&(identical(other.calendarSourceId, calendarSourceId) || other.calendarSourceId == calendarSourceId)&&(identical(other.anchor, anchor) || other.anchor == anchor)&&(identical(other.sourceType, sourceType) || other.sourceType == sourceType)&&(identical(other.status, status) || other.status == status)&&(identical(other.autoManageExcluded, autoManageExcluded) || other.autoManageExcluded == autoManageExcluded));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,eventId,title,displayLabel,displayName,startsAt,endsAt,locationState,destinationName,destinationLat,destinationLng,anchor,sourceType,status,autoManageExcluded);
+int get hashCode => Object.hashAll([runtimeType,eventId,title,displayLabel,displayName,startsAt,timezone,endsAt,locationState,destinationName,destinationAddress,destinationLat,destinationLng,meetingUrl,eventKind,calendarSourceId,anchor,sourceType,status,autoManageExcluded]);
 
 @override
 String toString() {
-  return 'Event(eventId: $eventId, title: $title, displayLabel: $displayLabel, displayName: $displayName, startsAt: $startsAt, endsAt: $endsAt, locationState: $locationState, destinationName: $destinationName, destinationLat: $destinationLat, destinationLng: $destinationLng, anchor: $anchor, sourceType: $sourceType, status: $status, autoManageExcluded: $autoManageExcluded)';
+  return 'Event(eventId: $eventId, title: $title, displayLabel: $displayLabel, displayName: $displayName, startsAt: $startsAt, timezone: $timezone, endsAt: $endsAt, locationState: $locationState, destinationName: $destinationName, destinationAddress: $destinationAddress, destinationLat: $destinationLat, destinationLng: $destinationLng, meetingUrl: $meetingUrl, eventKind: $eventKind, calendarSourceId: $calendarSourceId, anchor: $anchor, sourceType: $sourceType, status: $status, autoManageExcluded: $autoManageExcluded)';
 }
 
 
@@ -50,7 +50,7 @@ abstract mixin class $EventCopyWith<$Res>  {
   factory $EventCopyWith(Event value, $Res Function(Event) _then) = _$EventCopyWithImpl;
 @useResult
 $Res call({
- String eventId, String? title, String? displayLabel, String displayName, DateTime startsAt, DateTime? endsAt, LocationState locationState, String? destinationName, double? destinationLat, double? destinationLng, EventAnchor anchor, EventSourceType sourceType, EventLifecycleStatus? status, bool? autoManageExcluded
+ String eventId, String? title, String? displayLabel, String displayName, DateTime startsAt, String? timezone, DateTime? endsAt, LocationState locationState, String? destinationName, String? destinationAddress, double? destinationLat, double? destinationLng, String? meetingUrl, String? eventKind, String? calendarSourceId, EventAnchor anchor, EventSourceType sourceType, EventLifecycleStatus? status, bool? autoManageExcluded
 });
 
 
@@ -67,19 +67,24 @@ class _$EventCopyWithImpl<$Res>
 
 /// Create a copy of Event
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? eventId = null,Object? title = freezed,Object? displayLabel = freezed,Object? displayName = null,Object? startsAt = null,Object? endsAt = freezed,Object? locationState = null,Object? destinationName = freezed,Object? destinationLat = freezed,Object? destinationLng = freezed,Object? anchor = null,Object? sourceType = null,Object? status = freezed,Object? autoManageExcluded = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? eventId = null,Object? title = freezed,Object? displayLabel = freezed,Object? displayName = null,Object? startsAt = null,Object? timezone = freezed,Object? endsAt = freezed,Object? locationState = null,Object? destinationName = freezed,Object? destinationAddress = freezed,Object? destinationLat = freezed,Object? destinationLng = freezed,Object? meetingUrl = freezed,Object? eventKind = freezed,Object? calendarSourceId = freezed,Object? anchor = null,Object? sourceType = null,Object? status = freezed,Object? autoManageExcluded = freezed,}) {
   return _then(_self.copyWith(
 eventId: null == eventId ? _self.eventId : eventId // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,displayLabel: freezed == displayLabel ? _self.displayLabel : displayLabel // ignore: cast_nullable_to_non_nullable
 as String?,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,startsAt: null == startsAt ? _self.startsAt : startsAt // ignore: cast_nullable_to_non_nullable
-as DateTime,endsAt: freezed == endsAt ? _self.endsAt : endsAt // ignore: cast_nullable_to_non_nullable
+as DateTime,timezone: freezed == timezone ? _self.timezone : timezone // ignore: cast_nullable_to_non_nullable
+as String?,endsAt: freezed == endsAt ? _self.endsAt : endsAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,locationState: null == locationState ? _self.locationState : locationState // ignore: cast_nullable_to_non_nullable
 as LocationState,destinationName: freezed == destinationName ? _self.destinationName : destinationName // ignore: cast_nullable_to_non_nullable
+as String?,destinationAddress: freezed == destinationAddress ? _self.destinationAddress : destinationAddress // ignore: cast_nullable_to_non_nullable
 as String?,destinationLat: freezed == destinationLat ? _self.destinationLat : destinationLat // ignore: cast_nullable_to_non_nullable
 as double?,destinationLng: freezed == destinationLng ? _self.destinationLng : destinationLng // ignore: cast_nullable_to_non_nullable
-as double?,anchor: null == anchor ? _self.anchor : anchor // ignore: cast_nullable_to_non_nullable
+as double?,meetingUrl: freezed == meetingUrl ? _self.meetingUrl : meetingUrl // ignore: cast_nullable_to_non_nullable
+as String?,eventKind: freezed == eventKind ? _self.eventKind : eventKind // ignore: cast_nullable_to_non_nullable
+as String?,calendarSourceId: freezed == calendarSourceId ? _self.calendarSourceId : calendarSourceId // ignore: cast_nullable_to_non_nullable
+as String?,anchor: null == anchor ? _self.anchor : anchor // ignore: cast_nullable_to_non_nullable
 as EventAnchor,sourceType: null == sourceType ? _self.sourceType : sourceType // ignore: cast_nullable_to_non_nullable
 as EventSourceType,status: freezed == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as EventLifecycleStatus?,autoManageExcluded: freezed == autoManageExcluded ? _self.autoManageExcluded : autoManageExcluded // ignore: cast_nullable_to_non_nullable
@@ -168,10 +173,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  DateTime? endsAt,  LocationState locationState,  String? destinationName,  double? destinationLat,  double? destinationLng,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  String? timezone,  DateTime? endsAt,  LocationState locationState,  String? destinationName,  String? destinationAddress,  double? destinationLat,  double? destinationLng,  String? meetingUrl,  String? eventKind,  String? calendarSourceId,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Event() when $default != null:
-return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_that.startsAt,_that.endsAt,_that.locationState,_that.destinationName,_that.destinationLat,_that.destinationLng,_that.anchor,_that.sourceType,_that.status,_that.autoManageExcluded);case _:
+return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_that.startsAt,_that.timezone,_that.endsAt,_that.locationState,_that.destinationName,_that.destinationAddress,_that.destinationLat,_that.destinationLng,_that.meetingUrl,_that.eventKind,_that.calendarSourceId,_that.anchor,_that.sourceType,_that.status,_that.autoManageExcluded);case _:
   return orElse();
 
 }
@@ -189,10 +194,10 @@ return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  DateTime? endsAt,  LocationState locationState,  String? destinationName,  double? destinationLat,  double? destinationLng,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  String? timezone,  DateTime? endsAt,  LocationState locationState,  String? destinationName,  String? destinationAddress,  double? destinationLat,  double? destinationLng,  String? meetingUrl,  String? eventKind,  String? calendarSourceId,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)  $default,) {final _that = this;
 switch (_that) {
 case _Event():
-return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_that.startsAt,_that.endsAt,_that.locationState,_that.destinationName,_that.destinationLat,_that.destinationLng,_that.anchor,_that.sourceType,_that.status,_that.autoManageExcluded);case _:
+return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_that.startsAt,_that.timezone,_that.endsAt,_that.locationState,_that.destinationName,_that.destinationAddress,_that.destinationLat,_that.destinationLng,_that.meetingUrl,_that.eventKind,_that.calendarSourceId,_that.anchor,_that.sourceType,_that.status,_that.autoManageExcluded);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -209,10 +214,10 @@ return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  DateTime? endsAt,  LocationState locationState,  String? destinationName,  double? destinationLat,  double? destinationLng,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String eventId,  String? title,  String? displayLabel,  String displayName,  DateTime startsAt,  String? timezone,  DateTime? endsAt,  LocationState locationState,  String? destinationName,  String? destinationAddress,  double? destinationLat,  double? destinationLng,  String? meetingUrl,  String? eventKind,  String? calendarSourceId,  EventAnchor anchor,  EventSourceType sourceType,  EventLifecycleStatus? status,  bool? autoManageExcluded)?  $default,) {final _that = this;
 switch (_that) {
 case _Event() when $default != null:
-return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_that.startsAt,_that.endsAt,_that.locationState,_that.destinationName,_that.destinationLat,_that.destinationLng,_that.anchor,_that.sourceType,_that.status,_that.autoManageExcluded);case _:
+return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_that.startsAt,_that.timezone,_that.endsAt,_that.locationState,_that.destinationName,_that.destinationAddress,_that.destinationLat,_that.destinationLng,_that.meetingUrl,_that.eventKind,_that.calendarSourceId,_that.anchor,_that.sourceType,_that.status,_that.autoManageExcluded);case _:
   return null;
 
 }
@@ -224,7 +229,7 @@ return $default(_that.eventId,_that.title,_that.displayLabel,_that.displayName,_
 @JsonSerializable()
 
 class _Event implements Event {
-  const _Event({required this.eventId, this.title, this.displayLabel, required this.displayName, required this.startsAt, this.endsAt, required this.locationState, this.destinationName, this.destinationLat, this.destinationLng, this.anchor = EventAnchor.arriveBy, this.sourceType = EventSourceType.internal, this.status, this.autoManageExcluded});
+  const _Event({required this.eventId, this.title, this.displayLabel, required this.displayName, required this.startsAt, this.timezone, this.endsAt, required this.locationState, this.destinationName, this.destinationAddress, this.destinationLat, this.destinationLng, this.meetingUrl, this.eventKind, this.calendarSourceId, this.anchor = EventAnchor.arriveBy, this.sourceType = EventSourceType.internal, this.status, this.autoManageExcluded});
   factory _Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);
 
 @override final  String eventId;
@@ -232,13 +237,18 @@ class _Event implements Event {
 @override final  String? displayLabel;
 @override final  String displayName;
 @override final  DateTime startsAt;
+@override final  String? timezone;
 // BE EventResponse.endsAt은 nullable이다 — 종료 시각 없이 만든 일정이
 // 그대로 null로 내려온다.
 @override final  DateTime? endsAt;
 @override final  LocationState locationState;
 @override final  String? destinationName;
+@override final  String? destinationAddress;
 @override final  double? destinationLat;
 @override final  double? destinationLng;
+@override final  String? meetingUrl;
+@override final  String? eventKind;
+@override final  String? calendarSourceId;
 @override@JsonKey() final  EventAnchor anchor;
 @override@JsonKey() final  EventSourceType sourceType;
 @override final  EventLifecycleStatus? status;
@@ -257,16 +267,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Event&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.title, title) || other.title == title)&&(identical(other.displayLabel, displayLabel) || other.displayLabel == displayLabel)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.startsAt, startsAt) || other.startsAt == startsAt)&&(identical(other.endsAt, endsAt) || other.endsAt == endsAt)&&(identical(other.locationState, locationState) || other.locationState == locationState)&&(identical(other.destinationName, destinationName) || other.destinationName == destinationName)&&(identical(other.destinationLat, destinationLat) || other.destinationLat == destinationLat)&&(identical(other.destinationLng, destinationLng) || other.destinationLng == destinationLng)&&(identical(other.anchor, anchor) || other.anchor == anchor)&&(identical(other.sourceType, sourceType) || other.sourceType == sourceType)&&(identical(other.status, status) || other.status == status)&&(identical(other.autoManageExcluded, autoManageExcluded) || other.autoManageExcluded == autoManageExcluded));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Event&&(identical(other.eventId, eventId) || other.eventId == eventId)&&(identical(other.title, title) || other.title == title)&&(identical(other.displayLabel, displayLabel) || other.displayLabel == displayLabel)&&(identical(other.displayName, displayName) || other.displayName == displayName)&&(identical(other.startsAt, startsAt) || other.startsAt == startsAt)&&(identical(other.timezone, timezone) || other.timezone == timezone)&&(identical(other.endsAt, endsAt) || other.endsAt == endsAt)&&(identical(other.locationState, locationState) || other.locationState == locationState)&&(identical(other.destinationName, destinationName) || other.destinationName == destinationName)&&(identical(other.destinationAddress, destinationAddress) || other.destinationAddress == destinationAddress)&&(identical(other.destinationLat, destinationLat) || other.destinationLat == destinationLat)&&(identical(other.destinationLng, destinationLng) || other.destinationLng == destinationLng)&&(identical(other.meetingUrl, meetingUrl) || other.meetingUrl == meetingUrl)&&(identical(other.eventKind, eventKind) || other.eventKind == eventKind)&&(identical(other.calendarSourceId, calendarSourceId) || other.calendarSourceId == calendarSourceId)&&(identical(other.anchor, anchor) || other.anchor == anchor)&&(identical(other.sourceType, sourceType) || other.sourceType == sourceType)&&(identical(other.status, status) || other.status == status)&&(identical(other.autoManageExcluded, autoManageExcluded) || other.autoManageExcluded == autoManageExcluded));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,eventId,title,displayLabel,displayName,startsAt,endsAt,locationState,destinationName,destinationLat,destinationLng,anchor,sourceType,status,autoManageExcluded);
+int get hashCode => Object.hashAll([runtimeType,eventId,title,displayLabel,displayName,startsAt,timezone,endsAt,locationState,destinationName,destinationAddress,destinationLat,destinationLng,meetingUrl,eventKind,calendarSourceId,anchor,sourceType,status,autoManageExcluded]);
 
 @override
 String toString() {
-  return 'Event(eventId: $eventId, title: $title, displayLabel: $displayLabel, displayName: $displayName, startsAt: $startsAt, endsAt: $endsAt, locationState: $locationState, destinationName: $destinationName, destinationLat: $destinationLat, destinationLng: $destinationLng, anchor: $anchor, sourceType: $sourceType, status: $status, autoManageExcluded: $autoManageExcluded)';
+  return 'Event(eventId: $eventId, title: $title, displayLabel: $displayLabel, displayName: $displayName, startsAt: $startsAt, timezone: $timezone, endsAt: $endsAt, locationState: $locationState, destinationName: $destinationName, destinationAddress: $destinationAddress, destinationLat: $destinationLat, destinationLng: $destinationLng, meetingUrl: $meetingUrl, eventKind: $eventKind, calendarSourceId: $calendarSourceId, anchor: $anchor, sourceType: $sourceType, status: $status, autoManageExcluded: $autoManageExcluded)';
 }
 
 
@@ -277,7 +287,7 @@ abstract mixin class _$EventCopyWith<$Res> implements $EventCopyWith<$Res> {
   factory _$EventCopyWith(_Event value, $Res Function(_Event) _then) = __$EventCopyWithImpl;
 @override @useResult
 $Res call({
- String eventId, String? title, String? displayLabel, String displayName, DateTime startsAt, DateTime? endsAt, LocationState locationState, String? destinationName, double? destinationLat, double? destinationLng, EventAnchor anchor, EventSourceType sourceType, EventLifecycleStatus? status, bool? autoManageExcluded
+ String eventId, String? title, String? displayLabel, String displayName, DateTime startsAt, String? timezone, DateTime? endsAt, LocationState locationState, String? destinationName, String? destinationAddress, double? destinationLat, double? destinationLng, String? meetingUrl, String? eventKind, String? calendarSourceId, EventAnchor anchor, EventSourceType sourceType, EventLifecycleStatus? status, bool? autoManageExcluded
 });
 
 
@@ -294,19 +304,24 @@ class __$EventCopyWithImpl<$Res>
 
 /// Create a copy of Event
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? eventId = null,Object? title = freezed,Object? displayLabel = freezed,Object? displayName = null,Object? startsAt = null,Object? endsAt = freezed,Object? locationState = null,Object? destinationName = freezed,Object? destinationLat = freezed,Object? destinationLng = freezed,Object? anchor = null,Object? sourceType = null,Object? status = freezed,Object? autoManageExcluded = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? eventId = null,Object? title = freezed,Object? displayLabel = freezed,Object? displayName = null,Object? startsAt = null,Object? timezone = freezed,Object? endsAt = freezed,Object? locationState = null,Object? destinationName = freezed,Object? destinationAddress = freezed,Object? destinationLat = freezed,Object? destinationLng = freezed,Object? meetingUrl = freezed,Object? eventKind = freezed,Object? calendarSourceId = freezed,Object? anchor = null,Object? sourceType = null,Object? status = freezed,Object? autoManageExcluded = freezed,}) {
   return _then(_Event(
 eventId: null == eventId ? _self.eventId : eventId // ignore: cast_nullable_to_non_nullable
 as String,title: freezed == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
 as String?,displayLabel: freezed == displayLabel ? _self.displayLabel : displayLabel // ignore: cast_nullable_to_non_nullable
 as String?,displayName: null == displayName ? _self.displayName : displayName // ignore: cast_nullable_to_non_nullable
 as String,startsAt: null == startsAt ? _self.startsAt : startsAt // ignore: cast_nullable_to_non_nullable
-as DateTime,endsAt: freezed == endsAt ? _self.endsAt : endsAt // ignore: cast_nullable_to_non_nullable
+as DateTime,timezone: freezed == timezone ? _self.timezone : timezone // ignore: cast_nullable_to_non_nullable
+as String?,endsAt: freezed == endsAt ? _self.endsAt : endsAt // ignore: cast_nullable_to_non_nullable
 as DateTime?,locationState: null == locationState ? _self.locationState : locationState // ignore: cast_nullable_to_non_nullable
 as LocationState,destinationName: freezed == destinationName ? _self.destinationName : destinationName // ignore: cast_nullable_to_non_nullable
+as String?,destinationAddress: freezed == destinationAddress ? _self.destinationAddress : destinationAddress // ignore: cast_nullable_to_non_nullable
 as String?,destinationLat: freezed == destinationLat ? _self.destinationLat : destinationLat // ignore: cast_nullable_to_non_nullable
 as double?,destinationLng: freezed == destinationLng ? _self.destinationLng : destinationLng // ignore: cast_nullable_to_non_nullable
-as double?,anchor: null == anchor ? _self.anchor : anchor // ignore: cast_nullable_to_non_nullable
+as double?,meetingUrl: freezed == meetingUrl ? _self.meetingUrl : meetingUrl // ignore: cast_nullable_to_non_nullable
+as String?,eventKind: freezed == eventKind ? _self.eventKind : eventKind // ignore: cast_nullable_to_non_nullable
+as String?,calendarSourceId: freezed == calendarSourceId ? _self.calendarSourceId : calendarSourceId // ignore: cast_nullable_to_non_nullable
+as String?,anchor: null == anchor ? _self.anchor : anchor // ignore: cast_nullable_to_non_nullable
 as EventAnchor,sourceType: null == sourceType ? _self.sourceType : sourceType // ignore: cast_nullable_to_non_nullable
 as EventSourceType,status: freezed == status ? _self.status : status // ignore: cast_nullable_to_non_nullable
 as EventLifecycleStatus?,autoManageExcluded: freezed == autoManageExcluded ? _self.autoManageExcluded : autoManageExcluded // ignore: cast_nullable_to_non_nullable

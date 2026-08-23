@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Place {
 
- String get placeId; String get placeType; String get placeName; String? get address; double get lat; double get lng; bool get isPrimary;
+ String get placeId; String get placeType; String get placeName; String get address; double get lat; double get lng; bool get isPrimary;
 /// Create a copy of Place
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +48,7 @@ abstract mixin class $PlaceCopyWith<$Res>  {
   factory $PlaceCopyWith(Place value, $Res Function(Place) _then) = _$PlaceCopyWithImpl;
 @useResult
 $Res call({
- String placeId, String placeType, String placeName, String? address, double lat, double lng, bool isPrimary
+ String placeId, String placeType, String placeName, String address, double lat, double lng, bool isPrimary
 });
 
 
@@ -65,13 +65,13 @@ class _$PlaceCopyWithImpl<$Res>
 
 /// Create a copy of Place
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? placeId = null,Object? placeType = null,Object? placeName = null,Object? address = freezed,Object? lat = null,Object? lng = null,Object? isPrimary = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? placeId = null,Object? placeType = null,Object? placeName = null,Object? address = null,Object? lat = null,Object? lng = null,Object? isPrimary = null,}) {
   return _then(_self.copyWith(
 placeId: null == placeId ? _self.placeId : placeId // ignore: cast_nullable_to_non_nullable
 as String,placeType: null == placeType ? _self.placeType : placeType // ignore: cast_nullable_to_non_nullable
 as String,placeName: null == placeName ? _self.placeName : placeName // ignore: cast_nullable_to_non_nullable
-as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
-as String?,lat: null == lat ? _self.lat : lat // ignore: cast_nullable_to_non_nullable
+as String,address: null == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
+as String,lat: null == lat ? _self.lat : lat // ignore: cast_nullable_to_non_nullable
 as double,lng: null == lng ? _self.lng : lng // ignore: cast_nullable_to_non_nullable
 as double,isPrimary: null == isPrimary ? _self.isPrimary : isPrimary // ignore: cast_nullable_to_non_nullable
 as bool,
@@ -159,7 +159,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String placeId,  String placeType,  String placeName,  String? address,  double lat,  double lng,  bool isPrimary)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String placeId,  String placeType,  String placeName,  String address,  double lat,  double lng,  bool isPrimary)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Place() when $default != null:
 return $default(_that.placeId,_that.placeType,_that.placeName,_that.address,_that.lat,_that.lng,_that.isPrimary);case _:
@@ -180,7 +180,7 @@ return $default(_that.placeId,_that.placeType,_that.placeName,_that.address,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String placeId,  String placeType,  String placeName,  String? address,  double lat,  double lng,  bool isPrimary)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String placeId,  String placeType,  String placeName,  String address,  double lat,  double lng,  bool isPrimary)  $default,) {final _that = this;
 switch (_that) {
 case _Place():
 return $default(_that.placeId,_that.placeType,_that.placeName,_that.address,_that.lat,_that.lng,_that.isPrimary);case _:
@@ -200,7 +200,7 @@ return $default(_that.placeId,_that.placeType,_that.placeName,_that.address,_tha
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String placeId,  String placeType,  String placeName,  String? address,  double lat,  double lng,  bool isPrimary)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String placeId,  String placeType,  String placeName,  String address,  double lat,  double lng,  bool isPrimary)?  $default,) {final _that = this;
 switch (_that) {
 case _Place() when $default != null:
 return $default(_that.placeId,_that.placeType,_that.placeName,_that.address,_that.lat,_that.lng,_that.isPrimary);case _:
@@ -215,13 +215,13 @@ return $default(_that.placeId,_that.placeType,_that.placeName,_that.address,_tha
 @JsonSerializable()
 
 class _Place implements Place {
-  const _Place({required this.placeId, required this.placeType, required this.placeName, this.address, required this.lat, required this.lng, this.isPrimary = false});
+  const _Place({required this.placeId, required this.placeType, required this.placeName, required this.address, required this.lat, required this.lng, this.isPrimary = false});
   factory _Place.fromJson(Map<String, dynamic> json) => _$PlaceFromJson(json);
 
 @override final  String placeId;
 @override final  String placeType;
 @override final  String placeName;
-@override final  String? address;
+@override final  String address;
 @override final  double lat;
 @override final  double lng;
 @override@JsonKey() final  bool isPrimary;
@@ -259,7 +259,7 @@ abstract mixin class _$PlaceCopyWith<$Res> implements $PlaceCopyWith<$Res> {
   factory _$PlaceCopyWith(_Place value, $Res Function(_Place) _then) = __$PlaceCopyWithImpl;
 @override @useResult
 $Res call({
- String placeId, String placeType, String placeName, String? address, double lat, double lng, bool isPrimary
+ String placeId, String placeType, String placeName, String address, double lat, double lng, bool isPrimary
 });
 
 
@@ -276,13 +276,13 @@ class __$PlaceCopyWithImpl<$Res>
 
 /// Create a copy of Place
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? placeId = null,Object? placeType = null,Object? placeName = null,Object? address = freezed,Object? lat = null,Object? lng = null,Object? isPrimary = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? placeId = null,Object? placeType = null,Object? placeName = null,Object? address = null,Object? lat = null,Object? lng = null,Object? isPrimary = null,}) {
   return _then(_Place(
 placeId: null == placeId ? _self.placeId : placeId // ignore: cast_nullable_to_non_nullable
 as String,placeType: null == placeType ? _self.placeType : placeType // ignore: cast_nullable_to_non_nullable
 as String,placeName: null == placeName ? _self.placeName : placeName // ignore: cast_nullable_to_non_nullable
-as String,address: freezed == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
-as String?,lat: null == lat ? _self.lat : lat // ignore: cast_nullable_to_non_nullable
+as String,address: null == address ? _self.address : address // ignore: cast_nullable_to_non_nullable
+as String,lat: null == lat ? _self.lat : lat // ignore: cast_nullable_to_non_nullable
 as double,lng: null == lng ? _self.lng : lng // ignore: cast_nullable_to_non_nullable
 as double,isPrimary: null == isPrimary ? _self.isPrimary : isPrimary // ignore: cast_nullable_to_non_nullable
 as bool,

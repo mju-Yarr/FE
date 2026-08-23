@@ -48,13 +48,18 @@ abstract class Event with _$Event {
     String? displayLabel,
     required String displayName,
     required DateTime startsAt,
+    String? timezone,
     // BE EventResponse.endsAt은 nullable이다 — 종료 시각 없이 만든 일정이
     // 그대로 null로 내려온다.
     DateTime? endsAt,
     required LocationState locationState,
     String? destinationName,
+    String? destinationAddress,
     double? destinationLat,
     double? destinationLng,
+    String? meetingUrl,
+    String? eventKind,
+    String? calendarSourceId,
     @Default(EventAnchor.arriveBy) EventAnchor anchor,
     @Default(EventSourceType.internal) EventSourceType sourceType,
     EventLifecycleStatus? status,

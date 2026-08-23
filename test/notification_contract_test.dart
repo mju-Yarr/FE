@@ -19,6 +19,7 @@ void main() {
       });
 
       expect(notification.notificationCategory, NotificationCategory.time);
+      expect(notification.planId, "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
       expect(notification.notificationType, NotificationType.relaxed);
       expect(notification.slot, "A");
       expect(notification.deliveryStatus, DeliveryStatus.delivered);
@@ -29,6 +30,7 @@ void main() {
     test("parses a pending wellness notification", () {
       final notification = AppNotification.fromJson({
         "notificationId": "22222222-2222-2222-2222-222222222222",
+        "planId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
         "notificationCategory": "wellness",
         "notificationType": "wellness_event",
         "slot": "W",
@@ -51,6 +53,7 @@ void main() {
     test("parses a failed disruption notification", () {
       final notification = AppNotification.fromJson({
         "notificationId": "33333333-3333-3333-3333-333333333333",
+        "planId": "cccccccc-cccc-cccc-cccc-cccccccccccc",
         "notificationCategory": "time",
         "notificationType": "disruption",
         "slot": "C",

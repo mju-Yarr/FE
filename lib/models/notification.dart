@@ -40,6 +40,7 @@ enum DeliveryStatus {
 abstract class AppNotification with _$AppNotification {
   const factory AppNotification({
     required String notificationId,
+    required String planId,
     required NotificationCategory notificationCategory,
     required NotificationType notificationType,
     required String slot, // time: A|B|C, wellness: W

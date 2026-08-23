@@ -75,6 +75,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       final api = ref.read(apiClientProvider);
       await api.patch<Map<String, dynamic>>(
         "/me/password",
+        includeRefreshToken: true,
         body: {
           // Google-only 계정 최초 설정 시 currentPassword 생략 (§2.4)
           if (_current.isNotEmpty) "currentPassword": _current,

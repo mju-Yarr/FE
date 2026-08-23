@@ -10,7 +10,7 @@ _Place _$PlaceFromJson(Map<String, dynamic> json) => _Place(
   placeId: json['placeId'] as String,
   placeType: json['placeType'] as String,
   placeName: json['placeName'] as String,
-  address: json['address'] as String?,
+  address: json['address'] as String,
   lat: (json['lat'] as num).toDouble(),
   lng: (json['lng'] as num).toDouble(),
   isPrimary: json['isPrimary'] as bool? ?? false,

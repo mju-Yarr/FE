@@ -15,6 +15,7 @@ DailyWellnessSummary _summary({
   summaryDate: "2026-08-22",
   eventCount: eventCount,
   totalOutdoorMinutes: totalOutdoorMinutes,
+  outdoorSource: "estimated",
   onTimeCount: onTimeCount,
   arrivalSampleCount: arrivalSampleCount,
   dwlBand: DwlBand.mid,

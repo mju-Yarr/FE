@@ -32,7 +32,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
     });
     try {
       final api = ref.read(apiClientProvider);
-      final data = await api.get<List<dynamic>>("/me/sessions");
+      final data = await api.get<List<dynamic>>(
+        "/me/sessions",
+        includeRefreshToken: true,
+      );
       if (mounted) {
         setState(() {
           _sessions = data.map((e) => e as Map<String, dynamic>).toList();
@@ -52,7 +55,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
   Future<void> _deleteSession(String sessionId) async {
     try {
       final api = ref.read(apiClientProvider);
-      await api.delete<Map<String, dynamic>>("/me/sessions/$sessionId");
+      await api.delete<Map<String, dynamic>>(
+        "/me/sessions/$sessionId",
+        includeRefreshToken: true,
+      );
       await _load();
     } on ApiException catch (e) {
       if (mounted) {
@@ -89,7 +95,10 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
       final api = ref.read(apiClientProvider);
       // DELETE /me/sessions는 현재 기기를 제외한 세션만 종료한다.
       // 따라서 로컬 소거·로그아웃 없이 세션 목록만 새로고침한다.
-      await api.delete<Map<String, dynamic>>("/me/sessions");
+      await api.delete<Map<String, dynamic>>(
+        "/me/sessions",
+        includeRefreshToken: true,
+      );
       if (!mounted) return;
       await _load();
       if (!mounted) return;

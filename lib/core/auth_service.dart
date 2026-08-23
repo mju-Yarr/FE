@@ -104,11 +104,7 @@ class AuthService {
     try {
       final data = await _client.postPublic<Map<String, dynamic>>(
         "/auth/email/login",
-        body: {
-          "email": email,
-          "password": password,
-          if (installationId != null) "installationId": installationId,
-        },
+        body: {"email": email, "password": password},
       );
       return _handleLoginResponse(data, expectedGeneration);
     } on ApiException {
@@ -134,7 +130,7 @@ class AuthService {
     try {
       final data = await _client.postPublic<Map<String, dynamic>>(
         "/auth/google",
-        body: {"idToken": idToken, "installationId": installationId},
+        body: {"idToken": idToken},
       );
       return _handleLoginResponse(data, expectedGeneration);
     } on ApiException {
