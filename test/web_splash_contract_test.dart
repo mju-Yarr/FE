@@ -13,11 +13,14 @@ void main() {
     expect(html, contains("font-size: 22px"));
     expect(html, contains("font-size: 11px"));
     expect(html, contains("width: .72em"));
-    expect(html, contains("bottom: 44px"));
-    expect(html, contains("width: 18px"));
-    expect(html, contains("animation: bootstrap-spin 1s linear infinite"));
     expect(html, contains('stroke="#4e6810"'));
     expect(html, contains('stroke="#c6f135"'));
+    // Flutter 스플래시(splash_screen.dart)와 동일하게 라임 배경 + 워드마크
+    // O 자리 링이 직접 도는 방식이다 — 흰 배경도, 별도 스피너도 없다.
+    expect(html, contains("background: #c6f135;"));
+    expect(html, contains("bootstrap-ring-arc"));
+    expect(html, contains("bootstrap-ring-spin"));
+    expect(html, isNot(contains("bootstrap-spinner")));
   });
 
   test("Flutter 스플래시도 priming splash 수치·배경·회전 링을 사용한다", () {
