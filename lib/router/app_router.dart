@@ -3,6 +3,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 import "package:permission_handler/permission_handler.dart";
 import "../core/permission_service.dart";
+import "../theme/ensom_colors.dart";
 import "../providers/auth_providers.dart";
 import "../providers/map_providers.dart";
 import "../screens/onboarding/auth_screen.dart";
@@ -417,31 +418,95 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 // ─── 메인 탭 셸 ───────────────────────────────────────────────────
+/// ensom_prototype.html `.tabbar` — 화면 하단에 살짝 띄운 알약 모양
+/// 탭바(좌우 26px, 아래 16px 여백, 완전히 둥근 모서리, 옅은 그림자).
+/// 기본 Material BottomNavigationBar(꽉 찬 사각 바)와는 모양이 달라서
+/// 직접 그린다.
 class MainTabShell extends StatelessWidget {
   const MainTabShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
 
+  static const _tabs = [
+    (icon: Icons.calendar_today_outlined, label: "캘린더"),
+    (icon: Icons.home_outlined, label: "홈"),
+    (icon: Icons.map_outlined, label: "지도"),
+    (icon: Icons.person_outline, label: "프로필"),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: shell,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: shell.currentIndex,
-        onTap: shell.goBranch,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: "캘린더",
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.fromLTRB(26, 0, 26, 16),
+        child: Container(
+          height: 60,
+          decoration: BoxDecoration(
+            color: EnsomColors.surface2,
+            borderRadius: BorderRadius.circular(999),
+            boxShadow: [
+              BoxShadow(
+                color: EnsomColors.ink.withValues(alpha: .12),
+                blurRadius: 20,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "홈"),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: "지도"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: "프로필",
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              for (var i = 0; i < _tabs.length; i++)
+                _TabBarItem(
+                  icon: _tabs[i].icon,
+                  label: _tabs[i].label,
+                  selected: shell.currentIndex == i,
+                  onTap: () => shell.goBranch(i),
+                ),
+            ],
           ),
-        ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TabBarItem extends StatelessWidget {
+  const _TabBarItem({
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? EnsomColors.ink : EnsomColors.inkFaint;
+    return InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 20, color: color),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: color,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
