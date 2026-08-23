@@ -45,7 +45,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         _minDisplayElapsed && authState.status == AuthStatus.sessionCheckFailed;
 
     return Scaffold(
-      backgroundColor: EnsomColors.canvas,
+      backgroundColor: EnsomColors.lime,
       body: SafeArea(
         child: Stack(
           fit: StackFit.expand,
@@ -59,6 +59,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     ringScale: .72,
                     ringTrackColor: EnsomColors.limeInk,
                     ringArcColor: EnsomColors.lime,
+                    animate: true,
                   ),
                   SizedBox(height: 10),
                   Text(
@@ -72,22 +73,6 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                 ],
               ),
             ),
-            if (!showRetry)
-              const Positioned(
-                left: 0,
-                right: 0,
-                bottom: 44,
-                child: Center(
-                  child: SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      backgroundColor: EnsomColors.surface2,
-                      color: EnsomColors.inkFaint,
-                    ),
-                  ),
-                ),
-              ),
             if (showRetry) ...[
               Positioned(
                 left: 24,
