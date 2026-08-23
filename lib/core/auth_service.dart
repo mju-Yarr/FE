@@ -39,7 +39,7 @@ class AuthService {
         body: {"email": email, "code": code},
       );
       return VerificationTicket(
-        ticket: data["ticket"] as String,
+        ticket: data["verificationTicket"] as String,
         expiresAt: DateTime.parse(data["expiresAt"] as String),
       );
     });
