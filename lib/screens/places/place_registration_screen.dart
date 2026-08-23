@@ -162,9 +162,14 @@ class _PlaceRegistrationScreenState
         address: address,
         lat: lat!,
         lng: lng!,
+        // 온보딩에서 등록하는 장소가 대표 장소다 — GET /environment/current 등
+        // 홈 화면 정보가 대표 장소 존재를 전제로 한다(PRIMARY_PLACE_NOT_FOUND).
+        // BE PlaceService.create가 기존 대표 장소를 자동으로 해제하므로
+        // 온보딩 이후 재등록(/places/manage, isOnboarding=false)은 기본값
+        // false를 유지해 기존 대표 장소를 실수로 덮어쓰지 않는다.
+        isPrimary: widget.isOnboarding,
       );
 
-      // 1. 서버에 등록 (mock)
       await repo.registerPlace(place);
 
       // 2. 로컬 캐시에 저장
