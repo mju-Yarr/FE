@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 import "../../models/event.dart";
+import "../../network/api_client.dart";
 import "../../network/kakao_local_search_service.dart";
 import "../../models/calendar_connection.dart";
 import "../../providers/calendar_providers.dart";
@@ -247,6 +248,9 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
             writeToCalendarSourceId: _writeToCalendarSourceId,
           );
 
+      ref.invalidate(eventsInRangeProvider);
+      ref.invalidate(pendingReviewsProvider);
+
       if (draft != null) {
         await ref.read(mapDraftEventProvider.notifier).clear();
       }
@@ -259,7 +263,13 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         ),
       );
       context.pushReplacement("/events/${created.eventId}");
-    } catch (_) {
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (error, stackTrace) {
+      debugPrint("[event-create] 실패: $error\n$stackTrace");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("일정을 저장하지 못했어요. 다시 시도해주세요.")),

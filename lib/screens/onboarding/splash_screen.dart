@@ -4,8 +4,8 @@ import "../../providers/auth_providers.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_wordmark.dart";
 
-/// S-37. 앱을 켤 때마다 뜨는 화면(온보딩 단계 아님). 라임 배경이 화면을
-/// 꽉 채우고, 워드마크 O 자리의 링이 도는 것 자체가 로딩 인디케이터다
+/// S-37. 앱을 켤 때마다 뜨는 화면(온보딩 단계 아님). 앱의 공통 캔버스와
+/// 같은 배경을 쓰고, 워드마크 O 자리의 링이 도는 것 자체가 로딩 인디케이터다
 /// — 별도 스피너를 두지 않는다(§1.1). 최소 노출 시간 1.5초를 지켜서
 /// 세션 검사가 빨리 끝나도 화면이 깜빡이지 않게 한다.
 ///
@@ -45,7 +45,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         _minDisplayElapsed && authState.status == AuthStatus.sessionCheckFailed;
 
     return Scaffold(
-      backgroundColor: EnsomColors.lime,
+      backgroundColor: EnsomColors.canvas,
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

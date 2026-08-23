@@ -56,6 +56,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   // 선택한 날이 있는 달의 앞뒤 한 달씩을 같이 불러온다 — 주간 뷰가 달
   // 경계를 넘나들 때, 그리고 검색 오버레이가 뒤질 범위를 위해서다.
+  // (eventsInRangeProvider/pendingReviewsProvider가 내부적으로 31일
+  // 이하 단위로 쪼개 요청하므로 여기서는 API 제한을 신경 쓸 필요가 없다.)
   EventRange get _fetchRange => EventRange(
     from: DateTime(_focusedMonth.year, _focusedMonth.month - 1, 1),
     to: DateTime(_focusedMonth.year, _focusedMonth.month + 2, 1),

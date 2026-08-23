@@ -39,6 +39,21 @@ class PermissionService {
     return status;
   }
 
+  Future<PermissionStatus> notificationStatus() =>
+      Permission.notification.status;
+
+  Future<PermissionStatus> locationStatus() async {
+    if (kIsWeb) {
+      return _mapGeolocatorPermission(await Geolocator.checkPermission());
+    }
+    return Permission.location.status;
+  }
+
+  Future<PermissionStatus> locationAlwaysStatus() async {
+    if (kIsWeb) return locationStatus();
+    return Permission.locationAlways.status;
+  }
+
   /// 위치 권한 요청 (whenInUse만).
   /// 온보딩·프라이밍에서 사용한다. always는 별도로 요청한다.
   Future<PermissionStatus> requestLocation() async {
