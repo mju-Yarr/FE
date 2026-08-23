@@ -21,9 +21,12 @@ const String kKakaoRestApiKey = String.fromEnvironment(
 
 /// Flutter Web의 Kakao Maps JavaScript SDK 키. 네이티브/REST 키와
 /// 별도이며, 웹 빌드 시 동적으로 SDK script를 로드하는 데만 사용한다.
+/// JavaScript App Key 역시 브라우저에 포함되는 공개 식별자이므로 Ensom
+/// 웹 앱의 등록값을 기본값으로 둔다. 다른 카카오 앱을 사용하는 환경은
+/// --dart-define=KAKAO_JAVASCRIPT_APP_KEY로 덮어쓸 수 있다.
 const String kKakaoJavaScriptAppKey = String.fromEnvironment(
   'KAKAO_JAVASCRIPT_APP_KEY',
-  defaultValue: '',
+  defaultValue: '39e8fcb6ebb0b0020889cec5ca210f60',
 );
 
 /// Google OAuth 클라이언트 ID. BE의 OAUTH_GOOGLE_CLIENT_ID와 같은

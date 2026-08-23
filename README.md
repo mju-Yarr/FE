@@ -30,6 +30,10 @@ flutter run \
 - `KAKAO_NATIVE_APP_KEY`: Ensom 네이티브 앱 키가 코드 기본값으로 등록되어
   있어 일반 Android/iOS 실행에는 별도 주입이 필요하지 않습니다. 다른 카카오
   앱을 사용하는 빌드에서만 `--dart-define=KAKAO_NATIVE_APP_KEY=...`로 덮어씁니다.
+- `KAKAO_JAVASCRIPT_APP_KEY`: Ensom 웹 앱 키도 코드 기본값으로 등록되어
+  있어 일반 Web 실행·빌드에는 별도 주입이 필요하지 않습니다. 다른 카카오
+  앱을 사용하는 웹 빌드에서만 `--dart-define=KAKAO_JAVASCRIPT_APP_KEY=...`로
+  덮어씁니다.
 - `KAKAO_REST_API_KEY`: 같은 콘솔의 REST API 키 (목적지 키워드 검색)
 - REST API 키가 비어 있어도 지도는 표시되지만 장소 키워드 검색은 저하 동작합니다.
 
@@ -41,6 +45,14 @@ flutter run \
 키 해시는 앱에 전달하는 런타임 설정이 아니라 카카오 서버가 APK 서명을
 검증하기 위한 콘솔 등록값입니다. 서명 인증서를 변경하면 새 키 해시도 콘솔에
 추가해야 합니다.
+
+카카오 개발자 콘솔의 Web 플랫폼에는 실제 배포 주소를 사이트 도메인으로
+등록해야 합니다. Firebase 기본 배포 주소는 다음 두 개입니다.
+
+- `https://ensom-10da2.web.app`
+- `https://ensom-10da2.firebaseapp.com`
+
+별도 커스텀 도메인으로 배포하면 해당 HTTPS origin도 추가해야 합니다.
 
 ### 3. Google OAuth (선택)
 
@@ -57,7 +69,6 @@ flutter run \
 flutter run \
   --dart-define=API_BASE_URL=https://api.ensom.shop/v1 \
   --dart-define=KAKAO_REST_API_KEY=yyy \
-  --dart-define=KAKAO_JAVASCRIPT_APP_KEY=www \
   --dart-define=OAUTH_GOOGLE_CLIENT_ID=zzz
 ```
 

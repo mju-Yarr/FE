@@ -5,4 +5,8 @@ void main() {
   test("native Kakao map has a default app key", () {
     expect(kKakaoNativeAppKey, isNotEmpty);
   });
+
+  test("web Kakao map has a default JavaScript app key", () {
+    expect(kKakaoJavaScriptAppKey, isNotEmpty);
+  });
 }
