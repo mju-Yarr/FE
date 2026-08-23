@@ -124,11 +124,7 @@ class _ArrivalResultCardState extends ConsumerState<ArrivalResultCard> {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color:
-                  execution.arrivalResult == ArrivalResult.early ||
-                      execution.arrivalResult == ArrivalResult.onTime
-                  ? EnsomColors.limeInk
-                  : EnsomColors.ink,
+              color: _badgeTextColor(execution.arrivalResult),
             ),
           ),
         ),
@@ -255,6 +251,21 @@ class _ArrivalResultCardState extends ConsumerState<ArrivalResultCard> {
       case ArrivalResult.late_:
       case ArrivalResult.unknown:
         return EnsomColors.surface2;
+    }
+  }
+
+  // ensom_result_eval.html: "정시 도착" 배지는 limeInk, "촉박"은 ink,
+  // "지각"(neu 배지)은 inkMuted 글자색을 쓴다.
+  Color _badgeTextColor(ArrivalResult result) {
+    switch (result) {
+      case ArrivalResult.early:
+      case ArrivalResult.onTime:
+        return EnsomColors.limeInk;
+      case ArrivalResult.rushed:
+        return EnsomColors.ink;
+      case ArrivalResult.late_:
+      case ArrivalResult.unknown:
+        return EnsomColors.inkMuted;
     }
   }
 }

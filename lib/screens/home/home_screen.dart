@@ -19,6 +19,8 @@ import "../../widgets/ensom/ensom_pill_button.dart";
 import "../../widgets/ensom/ensom_skeleton.dart";
 import "../../widgets/ensom/ensom_wordmark.dart";
 import "../../widgets/permission_degraded_banner.dart";
+import "../../widgets/prep_item_add_sheet.dart";
+import "../../models/event.dart";
 import "widgets/arrival_result_card.dart";
 import "widgets/home_empty_state.dart";
 import "widgets/plan_card.dart";
@@ -102,6 +104,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  // ensom_prototype.html HM-01 [+ 추가] → 준비 항목 추가 시트(PREP-01).
+  // createPrepItem은 사용자 단위 규칙이라 특정 이벤트에 매이지 않지만,
+  // 저장 후에는 오늘의 히어로 계획을 다시 불러와 새 규칙이 반영됐는지
+  // 보여준다.
+  Future<void> _openPrepSheet() async {
+    final added = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const PrepItemAddSheet(),
+    );
+    if (added != true || !mounted) return;
+    final heroEventId = ref.read(todayPlanProvider).value?.hero?.event.eventId;
+    if (heroEventId != null) {
+      ref.invalidate(planControllerProvider(heroEventId));
+    }
+    ref.invalidate(todayPlanProvider);
+  }
+
   void _scheduleLocalNotifications(Plan plan, String eventDisplayName) {
     if (_lastScheduledRevision == plan.revisionNo) return;
     _lastScheduledRevision = plan.revisionNo;
@@ -134,8 +154,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       _IconAction(
                         icon: Icons.add,
-                        tooltip: "일정 만들기",
-                        onTap: () => context.push("/calendar/new"),
+                        tooltip: "준비 항목 추가",
+                        onTap: _openPrepSheet,
                       ),
                       const SizedBox(width: 6),
                       _IconAction(
@@ -157,8 +177,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildBody(AsyncValue<TodayPlan> todayAsync) {
     final nickname = ref.watch(bootstrapProvider).value?.user.nickname;
-    Widget overview(int count) =>
-        _HomeOverviewHeader(nickname: nickname, eventCount: count);
+    Widget overview(int count, {bool minimal = false}) => _HomeOverviewHeader(
+      nickname: nickname,
+      eventCount: count,
+      minimal: minimal,
+    );
     return todayAsync.when(
       // §11 로딩은 스켈레톤. 스피너는 스플래시 워드마크 링에만 허용된다.
       loading: () => ListView(
@@ -190,11 +213,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       data: (today) {
         // §3 S-06 — 일정이 0건이면 빈 상태 카드 + CTA 2개.
+        // ensom_empty_error.html v0(홈-없음): 날씨·일정 개수 없이 인사말만.
         if (today.isEmpty) {
           return ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
             children: [
-              overview(0),
+              overview(0, minimal: true),
               const SizedBox(height: 20),
               const HomeEmptyState(),
             ],
@@ -297,9 +321,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 _DegradedBanner(reasons: today.degraded),
                 PlanCard(
                   eventTitle: event.displayName,
+                  eventStartsAt: event.startsAt,
+                  eventPlace: event.locationState == LocationState.notRequired
+                      ? null
+                      : event.destinationName,
                   state: today.homeState,
                   plan: plan,
                   previousPlan: controller.previousPlan,
+                  stacked: today.stacked,
+                  totalCount: today.cards.length,
+                  onTapStacked: (card) =>
+                      context.push("/events/${card.event.eventId}"),
+                  onSeeAllStacked: () => context.go("/calendar"),
                   onTap: () => context.push("/events/${event.eventId}"),
                   onPrepStart: () => _enqueueAndMaybeRefresh(
                     event.eventId,
@@ -351,18 +384,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     }
                   },
                 ),
-                // §3 S-06 — 히어로 뒤에 겹치는 오늘의 남은 일정. 탭하면 해당
-                // 일정 상세로 간다.
-                if (today.stacked.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  StackedEventCards(
-                    cards: today.stacked,
-                    totalCount: today.cards.length,
-                    onTapCard: (card) =>
-                        context.push("/events/${card.event.eventId}"),
-                    onSeeAll: () => context.go("/calendar"),
-                  ),
-                ],
+                // §3 S-06 — 히어로 뒤에 겹치는 오늘의 남은 일정은 이제
+                // PlanCard가 직접 그린다(겹쳐 보이는 스택, 위 참고).
                 if (plan.eventStatus == EventLifecycleStatus.arrived ||
                     plan.eventStatus == EventLifecycleStatus.closed) ...[
                   const SizedBox(height: 16),
@@ -460,10 +483,18 @@ class _IconAction extends StatelessWidget {
 }
 
 class _HomeOverviewHeader extends StatelessWidget {
-  const _HomeOverviewHeader({this.nickname, required this.eventCount});
+  const _HomeOverviewHeader({
+    this.nickname,
+    required this.eventCount,
+    this.minimal = false,
+  });
 
   final String? nickname;
   final int eventCount;
+
+  /// ensom_empty_error.html v0(홈-없음): 날씨 위젯도 "오늘 일정 N개"
+  /// 줄도 없이 인사말만 보여준다.
+  final bool minimal;
 
   String get _greeting {
     final hour = DateTime.now().hour;
@@ -492,19 +523,23 @@ class _HomeOverviewHeader extends StatelessWidget {
                   color: EnsomColors.ink,
                 ),
               ),
-              const SizedBox(height: 5),
-              Text(
-                "오늘 일정 $eventCount개",
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  color: EnsomColors.inkMuted,
+              if (!minimal) ...[
+                const SizedBox(height: 5),
+                Text(
+                  "오늘 일정 $eventCount개",
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: EnsomColors.inkMuted,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        const WeatherWidget(),
+        if (!minimal) ...[
+          const SizedBox(width: 12),
+          const WeatherWidget(),
+        ],
       ],
     );
   }

@@ -5,8 +5,8 @@ import "../../../models/today_plan.dart";
 import "../../../theme/ensom_colors.dart";
 import "../../../widgets/ensom/ensom_pill_button.dart";
 import "reason_section.dart";
-import "checklist_section.dart";
-import "wellness_actions_section.dart";
+import "home_prep_chips.dart";
+import "home_wellness_tags.dart";
 import "plan_change_banner.dart";
 
 /// HOME-01/02 · S-06 히어로 카드. 화면연결명세서 §3 "홈 카드 상태 6종"을
@@ -39,6 +39,8 @@ class PlanCard extends StatelessWidget {
   const PlanCard({
     super.key,
     required this.eventTitle,
+    required this.eventStartsAt,
+    this.eventPlace,
     required this.state,
     required this.plan,
     this.previousPlan,
@@ -52,9 +54,18 @@ class PlanCard extends StatelessWidget {
     required this.onSelectRoute,
     required this.onToggleChecklistItem,
     required this.onResolveWellnessAction,
+    this.stacked = const [],
+    this.totalCount = 0,
+    this.onTapStacked,
+    this.onSeeAllStacked,
   });
 
   final String eventTitle;
+
+  /// ensom_prototype.html `.hero-meta` — 히어로 카드 아래쪽에 표시하는
+  /// 이 일정 자체의 시작 시각·장소(도착 예정 시각이 아니다).
+  final DateTime eventStartsAt;
+  final String? eventPlace;
 
   /// 서버가 판정한 히어로 상태(§7.2).
   final HomeCardState state;
@@ -77,6 +88,15 @@ class PlanCard extends StatelessWidget {
     WellnessActionCompletionStatus status,
   )
   onResolveWellnessAction;
+
+  /// ensom_prototype.html `.stack-wrap` — 히어로 뒤에 겹쳐 보이는 오늘의
+  /// 남은 일정(최대 2장만 겹쳐 보이고, 나머지는 "모두 보기"로 안내한다).
+  final List<TodayPlanCard> stacked;
+
+  /// 히어로 포함 오늘 전체 일정 수. "오늘 일정 N개 모두 보기"에 쓴다.
+  final int totalCount;
+  final void Function(TodayPlanCard card)? onTapStacked;
+  final VoidCallback? onSeeAllStacked;
 
   static final _timeFmt = DateFormat("a h:mm", "ko_KR");
 
@@ -122,11 +142,14 @@ class PlanCard extends StatelessWidget {
         );
       case HomeCardState.start:
         final mins = plan.prepStartAt.difference(DateTime.now()).inMinutes;
+        final hasCountdown = mins > 0;
         return _HeroContent(
           badgeLabel: "준비 시작",
           caution: false,
-          headline: "준비를 시작하세요",
-          bigNumber: mins > 0 ? "$mins분" : null,
+          // ensom_prototype.html: "{N}분 뒤 준비를 시작하세요" — 카운트다운이
+          // 없을 때는 "뒤"를 붙이지 않는다.
+          headline: hasCountdown ? "뒤 준비를 시작하세요" : "준비를 시작하세요",
+          bigNumber: hasCountdown ? "$mins분" : null,
           sub:
               "${_timeFmt.format(plan.recommendedDepartAt)}에 출발하면 제시간에 도착할 수 있어요.",
           ctaLabel: "준비 시작",
@@ -136,11 +159,12 @@ class PlanCard extends StatelessWidget {
         final mins = plan.recommendedDepartAt
             .difference(DateTime.now())
             .inMinutes;
+        final hasCountdown = mins > 0;
         return _HeroContent(
           badgeLabel: "출발 임박",
           caution: false,
-          headline: "출발하세요",
-          bigNumber: mins > 0 ? "$mins분" : null,
+          headline: hasCountdown ? "뒤 출발하세요" : "출발하세요",
+          bigNumber: hasCountdown ? "$mins분" : null,
           sub: "현재 경로로 ${_timeFmt.format(plan.targetArriveAt)} 도착 예정입니다.",
           ctaLabel: "출발했어요",
           onCta: onDeparted,
@@ -174,15 +198,38 @@ class PlanCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         PlanChangeBanner(currentPlan: plan, previousPlan: previousPlan),
-        _Hero(
-          eventTitle: eventTitle,
-          eventMeta: "${_timeFmt.format(plan.targetArriveAt)} 도착 예정",
-          onTap: onTap,
-          onSelectRoute: onSelectRoute,
-          isTerminal: _isTerminal,
-          terminalMessage: _terminalMessage,
-          content: _isTerminal ? null : _content(state),
+        _PeekingHeroStack(
+          behind: stacked.take(2).toList(),
+          onTapBehind: onTapStacked,
+          hero: _Hero(
+            eventTitle: eventTitle,
+            eventMeta:
+                "${_timeFmt.format(eventStartsAt)}"
+                "${eventPlace == null || eventPlace!.isEmpty ? "" : " · $eventPlace"}",
+            onTap: onTap,
+            onSelectRoute: onSelectRoute,
+            isTerminal: _isTerminal,
+            terminalMessage: _terminalMessage,
+            content: _isTerminal ? null : _content(state),
+          ),
         ),
+        // ensom_prototype.html: 겹친 카드가 2장을 넘으면(=stacked가 2장
+        // 넘게 있으면) "오늘 일정 N개 모두 보기"를 추가로 보여준다.
+        // 2장 이하는 이미 다 겹쳐 보이므로 링크를 두지 않는다.
+        if (stacked.length > 2 && onSeeAllStacked != null) ...[
+          const SizedBox(height: 6),
+          TextButton(
+            onPressed: onSeeAllStacked,
+            style: TextButton.styleFrom(
+              minimumSize: const Size.fromHeight(36),
+              foregroundColor: EnsomColors.inkMuted,
+            ),
+            child: Text(
+              "오늘 일정 $totalCount개 모두 보기 →",
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
         if (!_isTerminal) ...[
           const SizedBox(height: 10),
           Wrap(
@@ -215,18 +262,110 @@ class PlanCard extends StatelessWidget {
         const SizedBox(height: 16),
         ReasonSection(reasons: plan.reasons),
         const SizedBox(height: 16),
-        ChecklistSection(
+        HomePrepChips(
           checklist: plan.checklist,
           onToggle: onToggleChecklistItem,
         ),
         if (plan.wellnessActions.isNotEmpty) ...[
           const SizedBox(height: 16),
-          WellnessActionsSection(
+          HomeWellnessTags(
             actions: plan.wellnessActions,
             onResolve: onResolveWellnessAction,
           ),
         ],
       ],
+    );
+  }
+}
+
+/// ensom_prototype.html `.stack-wrap` — 히어로 뒤로 최대 2장까지 겹쳐
+/// 보이는 카드. 겹칠 카드가 없으면 히어로 그대로 반환한다.
+class _PeekingHeroStack extends StatelessWidget {
+  const _PeekingHeroStack({
+    required this.hero,
+    required this.behind,
+    required this.onTapBehind,
+  });
+
+  final Widget hero;
+
+  /// 가까운 카드부터(behind[0]이 히어로 바로 뒤).
+  final List<TodayPlanCard> behind;
+  final void Function(TodayPlanCard card)? onTapBehind;
+
+  static final _timeFmt = DateFormat("HH:mm");
+
+  @override
+  Widget build(BuildContext context) {
+    if (behind.isEmpty) return hero;
+
+    // 가장 먼 카드부터 그려야 가까운 카드가 위에 겹친다.
+    final ordered = behind.reversed.toList();
+    return Padding(
+      padding: EdgeInsets.only(right: 14.0 * behind.length),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          for (var depth = ordered.length; depth >= 1; depth--)
+            Positioned(
+              top: 8.0 * depth,
+              bottom: 8.0 * depth,
+              left: 8.0 * depth,
+              right: -(14.0 * depth),
+              child: _BehindCard(
+                card: ordered[ordered.length - depth],
+                surfaceColor: depth == ordered.length
+                    ? EnsomColors.surfaceNeutral
+                    : EnsomColors.surface2,
+                onTap: onTapBehind == null
+                    ? null
+                    : () => onTapBehind!(ordered[ordered.length - depth]),
+              ),
+            ),
+          hero,
+        ],
+      ),
+    );
+  }
+}
+
+class _BehindCard extends StatelessWidget {
+  const _BehindCard({
+    required this.card,
+    required this.surfaceColor,
+    required this.onTap,
+  });
+
+  final TodayPlanCard card;
+  final Color surfaceColor;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: surfaceColor,
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onTap,
+        child: Align(
+          alignment: Alignment.centerRight,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: RotatedBox(
+              quarterTurns: 1,
+              child: Text(
+                _PeekingHeroStack._timeFmt.format(card.event.startsAt.toLocal()),
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: EnsomColors.inkFaint,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
