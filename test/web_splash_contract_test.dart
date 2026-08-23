@@ -20,7 +20,7 @@ void main() {
     expect(html, contains('stroke="#c6f135"'));
   });
 
-  test("Flutter 스플래시도 priming splash 수치를 사용한다", () {
+  test("Flutter 스플래시도 priming splash 수치·배경·회전 링을 사용한다", () {
     final source = File(
       "lib/screens/onboarding/splash_screen.dart",
     ).readAsStringSync();
@@ -28,9 +28,11 @@ void main() {
     expect(source, contains("fontSize: 22"));
     expect(source, contains("fontSize: 11"));
     expect(source, contains("letterSpacing: .2"));
-    expect(source, contains("bottom: 44"));
-    expect(source, contains("dimension: 18"));
-    expect(source, contains("strokeWidth: 2"));
+    // priming splash 목업처럼 라임 배경 위에 워드마크의 O 자리 링이 직접
+    // 돌아간다 — 별도 스피너를 더 두지 않는다(§1.1 "별도 로딩 인디케이터를
+    // 두지 않는다").
+    expect(source, contains("backgroundColor: EnsomColors.lime"));
+    expect(source, contains("animate: true"));
     expect(source, isNot(contains("다음 일정까지, 언제부터 준비하면")));
   });
 }
