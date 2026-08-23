@@ -138,21 +138,33 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
     });
   }
 
-  Future<void> _pickCustomDateTime() async {
+  Future<void> _pickCustomDate() async {
     final date = await EnsomDatePickerSheet.show(context, initial: _startsAt);
     if (date == null || !mounted) return;
-
-    final time = await EnsomTimePickerSheet.show(
-      context,
-      initial: TimeOfDay.fromDateTime(_startsAt),
-    );
-    if (time == null) return;
 
     setState(() {
       _startsAt = DateTime(
         date.year,
         date.month,
         date.day,
+        _startsAt.hour,
+        _startsAt.minute,
+      );
+    });
+  }
+
+  Future<void> _pickCustomTime() async {
+    final time = await EnsomTimePickerSheet.show(
+      context,
+      initial: TimeOfDay.fromDateTime(_startsAt),
+    );
+    if (time == null || !mounted) return;
+
+    setState(() {
+      _startsAt = DateTime(
+        _startsAt.year,
+        _startsAt.month,
+        _startsAt.day,
         time.hour,
         time.minute,
       );
@@ -523,7 +535,8 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
                       onDateOffset: _setDateOffset,
                       onAdjustMinutes: _adjustTime,
                       onSpecificTime: _setSpecificTime,
-                      onCustom: _pickCustomDateTime,
+                      onCustomDate: _pickCustomDate,
+                      onCustomTime: _pickCustomTime,
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -675,7 +688,8 @@ class _EventTimeEditor extends StatelessWidget {
     required this.onDateOffset,
     required this.onAdjustMinutes,
     required this.onSpecificTime,
-    required this.onCustom,
+    required this.onCustomDate,
+    required this.onCustomTime,
   });
 
   final DateTime startsAt;
@@ -685,7 +699,8 @@ class _EventTimeEditor extends StatelessWidget {
   final ValueChanged<int> onDateOffset;
   final ValueChanged<int> onAdjustMinutes;
   final void Function(int hour, int minute) onSpecificTime;
-  final VoidCallback onCustom;
+  final VoidCallback onCustomDate;
+  final VoidCallback onCustomTime;
 
   int get _selectedOffset {
     final now = DateTime.now();
@@ -798,7 +813,7 @@ class _EventTimeEditor extends StatelessWidget {
                         selected: _selectedOffset == 2,
                         onTap: () => onDateOffset(2),
                       ),
-                      _QuickTimeChip(label: "직접 선택", onTap: onCustom),
+                      _QuickTimeChip(label: "직접 선택", onTap: onCustomDate),
                     ],
                   ),
                   const _FormSectionLabel("시각 빠르게 조정"),
@@ -826,6 +841,7 @@ class _EventTimeEditor extends StatelessWidget {
                         label: "오후 6:00",
                         onTap: () => onSpecificTime(18, 0),
                       ),
+                      _QuickTimeChip(label: "직접 선택", onTap: onCustomTime),
                     ],
                   ),
                 ],

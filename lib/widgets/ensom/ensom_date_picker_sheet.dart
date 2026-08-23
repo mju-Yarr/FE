@@ -2,6 +2,18 @@ import "package:flutter/material.dart";
 import "../../theme/ensom_colors.dart";
 import "ensom_pill_button.dart";
 
+@visibleForTesting
+int calendarGridCellCount(DateTime focusedMonth) {
+  final monthStart = DateTime(focusedMonth.year, focusedMonth.month, 1);
+  final leading = monthStart.weekday % 7;
+  final daysInMonth = DateTime(
+    focusedMonth.year,
+    focusedMonth.month + 1,
+    0,
+  ).day;
+  return ((leading + daysInMonth) / 7).ceil() * 7;
+}
+
 /// ensom_pickers.html "날짜 선택기" 반영 — 월 이동 화살표 + 달력
 /// 그리드 바텀시트. 오늘은 라임 채움, 선택한 날은 딥차콜 채움.
 class EnsomDatePickerSheet {
@@ -11,11 +23,14 @@ class EnsomDatePickerSheet {
   }) {
     return showModalBottomSheet<DateTime>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: EnsomColors.canvas,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
       ),
-      builder: (context) => _DatePickerSheetBody(initial: initial),
+      builder: (context) =>
+          SingleChildScrollView(child: _DatePickerSheetBody(initial: initial)),
     );
   }
 }
@@ -59,13 +74,8 @@ class _DatePickerSheetBodyState extends State<_DatePickerSheetBody> {
     final todayOnly = DateTime(today.year, today.month, today.day);
     final monthStart = DateTime(_focusedMonth.year, _focusedMonth.month, 1);
     final leading = monthStart.weekday % 7;
-    final daysInMonth = DateTime(
-      _focusedMonth.year,
-      _focusedMonth.month + 1,
-      0,
-    ).day;
     final gridStart = monthStart.subtract(Duration(days: leading));
-    final cellCount = ((leading + daysInMonth) / 7).ceil() * 7;
+    final cellCount = calendarGridCellCount(_focusedMonth);
 
     return Padding(
       padding: EdgeInsets.fromLTRB(
