@@ -427,13 +427,6 @@ class MainTabShell extends StatelessWidget {
 
   final StatefulNavigationShell shell;
 
-  static const _tabs = [
-    (icon: Icons.calendar_today_outlined, label: "캘린더"),
-    (icon: Icons.home_outlined, label: "홈"),
-    (icon: Icons.map_outlined, label: "지도"),
-    (icon: Icons.person_outline, label: "프로필"),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -453,16 +446,38 @@ class MainTabShell extends StatelessWidget {
               ),
             ],
           ),
+          // 아이콘을 리스트에 넣고 인덱스로 꺼내 쓰면 Flutter 웹 릴리스
+          // 빌드의 아이콘 트리쉐이커가 "실제로 쓰인다"는 걸 정적으로
+          // 못 찾아서 폰트에서 잘라내 버린다(Icons.home_outlined가 이
+          // 화면에서만, 그것도 간접 참조로만 쓰이다가 실제로 이렇게
+          // 사라졌었다). 그래서 4개를 각각 리터럴로 직접 나열한다.
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              for (var i = 0; i < _tabs.length; i++)
-                _TabBarItem(
-                  icon: _tabs[i].icon,
-                  label: _tabs[i].label,
-                  selected: shell.currentIndex == i,
-                  onTap: () => shell.goBranch(i),
-                ),
+              _TabBarItem(
+                icon: Icons.calendar_today_outlined,
+                label: "캘린더",
+                selected: shell.currentIndex == 0,
+                onTap: () => shell.goBranch(0),
+              ),
+              _TabBarItem(
+                icon: Icons.home_outlined,
+                label: "홈",
+                selected: shell.currentIndex == 1,
+                onTap: () => shell.goBranch(1),
+              ),
+              _TabBarItem(
+                icon: Icons.map_outlined,
+                label: "지도",
+                selected: shell.currentIndex == 2,
+                onTap: () => shell.goBranch(2),
+              ),
+              _TabBarItem(
+                icon: Icons.person_outline,
+                label: "프로필",
+                selected: shell.currentIndex == 3,
+                onTap: () => shell.goBranch(3),
+              ),
             ],
           ),
         ),
