@@ -56,7 +56,9 @@ https://api.ensom.shop/v1
 
 ### 1.5 시간 표현 (TR-02)
 
-- 저장은 전부 `timestamptz`(UTC). **응답은 오프셋 포함 ISO-8601 필수** — `Z`만 오는 값은 요청에서 거부(`422`)
+- 저장은 전부 `timestamptz`(UTC). 일정 시각은 BE의 `Instant` 계약에 따라
+  ISO-8601 UTC(`Z`) 또는 명시적 오프셋 값을 받으며, 응답은 UTC(`Z`)로
+  정규화될 수 있습니다. 오프셋이 없는 로컬 시각 문자열은 요청에서 거부합니다(`422`).
 - 일정은 `USERS.timezone`(IANA, 예 `Asia/Seoul`)을 함께 반환
 - 종일 일정은 계획 대상에서 제외. 사용자가 시각을 지정하면 편입
 - 클라이언트가 보내는 `deviceTs`는 기기 시각이며, 서버 수신 시각과 **±120초**를 넘게 차이 나면 `clockSkew` 플래그가 붙어 개인화 학습에서 제외됨 (§13)
@@ -527,6 +529,7 @@ FE는 캘린더 연동 전용 GoogleSignIn 인스턴스(`calendar.readonly` scop
 | `anchorMode` | `arrive_by`(기본) \| `depart_at` | Plan Engine의 역산 방향 결정 (TRD §5.3) |
 | `originPlaceId` · `selectedRouteOptionId` | uuid | `map_search` 저장 시 동봉 (CAL-05) |
 | `displayLabel` · `writeToCalendarSourceId` | string · uuid | 표시명 처리 — §8.3 |
+| `endsAt` | ISO-8601 instant, nullable | 생략 가능. 없으면 종료 시각 없는 일정으로 저장되고 응답은 `null` |
 
 `anchorMode`는 API 전용 필드입니다. ERD `PLAN_REVISION`에는 이 값 대신 계산 결과가 남으므로, 서버는 계획 생성 시점에만 사용합니다.
 

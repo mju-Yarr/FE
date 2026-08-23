@@ -85,7 +85,7 @@ void main() {
     expect(jsonDecode(captured!.body), {"originPlaceId": "place-1"});
   });
 
-  test("event creation sends timestamps with an explicit UTC offset", () async {
+  test("event creation sends timestamps as explicit UTC instants", () async {
     http.Request? captured;
     final repository = await _repository((request) async {
       captured = request;
@@ -109,14 +109,14 @@ void main() {
         eventId: "",
         displayLabel: "회의",
         displayName: "회의",
-        startsAt: DateTime(2026, 8, 23, 14),
-        endsAt: DateTime(2026, 8, 23, 15),
+        startsAt: DateTime.utc(2026, 8, 23, 5),
+        endsAt: DateTime.utc(2026, 8, 23, 6),
         locationState: LocationState.notRequired,
       ),
     );
 
     final body = jsonDecode(captured!.body) as Map<String, dynamic>;
-    expect(DateTime.parse(body["startsAt"] as String).isUtc, isTrue);
-    expect(DateTime.parse(body["endsAt"] as String).isUtc, isTrue);
+    expect(body["startsAt"], "2026-08-23T05:00:00.000Z");
+    expect(body["endsAt"], "2026-08-23T06:00:00.000Z");
   });
 }

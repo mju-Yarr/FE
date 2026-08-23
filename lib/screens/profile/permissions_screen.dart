@@ -3,6 +3,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 import "package:permission_handler/permission_handler.dart";
 import "../../core/permission_service.dart";
+import "../../network/api_client.dart";
 import "../../providers/auth_providers.dart";
 import "../../theme/ensom_colors.dart";
 
@@ -20,6 +21,7 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
   Map<Permission, PermissionStatus> _statuses = {};
   bool _alwaysLocation = false;
   bool? _calendarConnected;
+  String? _calendarStatusError;
 
   @override
   void initState() {
@@ -52,18 +54,29 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
       Permission.locationAlways: results[2],
     };
     bool? calendarConnected;
+    String? calendarStatusError;
     try {
       final data = await ref
           .read(apiClientProvider)
           .get<Map<String, dynamic>>("/calendar/google/status");
       calendarConnected = data["connected"] == true;
-    } catch (_) {
+    } on ApiException catch (error) {
       calendarConnected = null;
+      calendarStatusError = error.isAuthExpired
+          ? "로그인이 만료되어 연결 상태를 확인할 수 없어요."
+          : error.isNetworkError
+          ? "네트워크 연결 후 캘린더 상태를 다시 확인해 주세요."
+          : "캘린더 연결 상태를 확인하지 못했어요.";
+    } catch (error, stackTrace) {
+      debugPrint("[permissions] 캘린더 연결 상태 확인 실패: $error\n$stackTrace");
+      calendarConnected = null;
+      calendarStatusError = "캘린더 연결 상태를 확인하지 못했어요.";
     }
     if (mounted) {
       setState(() {
         _statuses = current;
         _calendarConnected = calendarConnected;
+        _calendarStatusError = calendarStatusError;
         _alwaysLocation =
             current[Permission.locationAlways]?.isGranted ?? false;
       });
@@ -124,6 +137,16 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen>
                     isGranted: _calendarConnected == true,
                     onTap: () => context.push("/calendar/connections"),
                   ),
+                  if (_calendarStatusError != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      _calendarStatusError!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: EnsomColors.caution,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   // 위치
                   _PermissionCard(
