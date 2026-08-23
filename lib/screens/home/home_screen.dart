@@ -8,6 +8,7 @@ import "../../models/action_log.dart";
 import "../../models/plan.dart";
 import "../../models/today_plan.dart";
 import "../../providers/home_providers.dart";
+import "../../providers/bootstrap_provider.dart";
 import "../../providers/offline_queue_providers.dart";
 import "../../providers/system_state_provider.dart";
 import "../../repository/providers.dart";
@@ -129,10 +130,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   const EnsomWordmark(fontSize: 15),
-                  _IconAction(
-                    icon: Icons.notifications_none,
-                    tooltip: "오늘의 알림",
-                    onTap: () => context.push("/notifications/today"),
+                  Row(
+                    children: [
+                      _IconAction(
+                        icon: Icons.add,
+                        tooltip: "일정 만들기",
+                        onTap: () => context.push("/calendar/new"),
+                      ),
+                      const SizedBox(width: 6),
+                      _IconAction(
+                        icon: Icons.notifications_none,
+                        tooltip: "오늘의 알림",
+                        onTap: () => context.push("/notifications/today"),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -145,12 +156,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _buildBody(AsyncValue<TodayPlan> todayAsync) {
+    final nickname = ref.watch(bootstrapProvider).value?.user.nickname;
+    Widget overview(int count) =>
+        _HomeOverviewHeader(nickname: nickname, eventCount: count);
     return todayAsync.when(
       // §11 로딩은 스켈레톤. 스피너는 스플래시 워드마크 링에만 허용된다.
       loading: () => ListView(
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
         children: const [
-          EnsomSkeleton.card(height: 96),
+          EnsomSkeleton.card(height: 104),
           SizedBox(height: 16),
           EnsomSkeleton.card(height: 260),
           SizedBox(height: 12),
@@ -179,10 +193,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (today.isEmpty) {
           return ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-            children: const [
-              WeatherWidget(),
-              SizedBox(height: 16),
-              HomeEmptyState(),
+            children: [
+              overview(0),
+              const SizedBox(height: 20),
+              const HomeEmptyState(),
             ],
           );
         }
@@ -193,6 +207,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
             children: [
+              overview(today.cards.length),
+              const SizedBox(height: 20),
               _DegradedBanner(reasons: today.degraded),
               TodayWrapCard(
                 summary: today.wrapSummary,
@@ -210,8 +226,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           return ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
             children: [
-              const WeatherWidget(),
-              const SizedBox(height: 12),
+              overview(today.cards.length),
+              const SizedBox(height: 20),
               _DegradedBanner(reasons: today.degraded),
               StackedEventCards(
                 cards: today.cards,
@@ -242,7 +258,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           loading: () => ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
             children: const [
-              EnsomSkeleton.card(height: 96),
+              EnsomSkeleton.card(height: 104),
               SizedBox(height: 16),
               EnsomSkeleton.card(height: 260),
             ],
@@ -269,8 +285,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                const WeatherWidget(),
-                const SizedBox(height: 12),
+                overview(today.cards.length),
+                const SizedBox(height: 20),
                 const PermissionDegradedBanner(
                   type: DegradedPermissionType.notification,
                 ),
@@ -439,6 +455,57 @@ class _IconAction extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _HomeOverviewHeader extends StatelessWidget {
+  const _HomeOverviewHeader({this.nickname, required this.eventCount});
+
+  final String? nickname;
+  final int eventCount;
+
+  String get _greeting {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return "좋은 아침이에요,";
+    if (hour < 18) return "좋은 오후예요,";
+    return "좋은 저녁이에요,";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final name = nickname?.trim();
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "$_greeting\n${name == null || name.isEmpty ? "회원" : name} 님",
+                style: const TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -.5,
+                  height: 1.25,
+                  color: EnsomColors.ink,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                "오늘 일정 $eventCount개",
+                style: const TextStyle(
+                  fontSize: 12.5,
+                  color: EnsomColors.inkMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        const WeatherWidget(),
+      ],
     );
   }
 }

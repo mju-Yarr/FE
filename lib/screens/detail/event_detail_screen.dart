@@ -168,15 +168,13 @@ class EventDetailScreen extends ConsumerWidget {
         backgroundColor: EnsomColors.canvas,
         surfaceTintColor: EnsomColors.canvas,
         elevation: 0,
-        title: Text(
-          eventAsync.value?.displayName ?? "일정 상세",
-          style: const TextStyle(
+        title: const Text(
+          "일정 상세",
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w700,
             color: EnsomColors.ink,
           ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
         ),
         actions: [
           PopupMenuButton<String>(

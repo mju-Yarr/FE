@@ -32,7 +32,7 @@ class ChecklistSection extends StatelessWidget {
         const Padding(
           padding: EdgeInsets.symmetric(vertical: 8),
           child: Text(
-            "준비물",
+            "준비 항목",
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
