@@ -22,22 +22,72 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
       padding: 24px;
       box-sizing: border-box;
-      color: #171915;
+      color: #14150f;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       text-align: center;
     }
-    #bootstrap-status strong { font-size: 32px; letter-spacing: -1px; }
-    #bootstrap-status p { margin: 0; font-size: 14px; line-height: 1.5; opacity: .72; }
-    #bootstrap-status[data-state="error"] { background: #f7f7f2; }
+    .bootstrap-wordmark {
+      display: inline-flex;
+      align-items: center;
+      font-size: 22px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: 2px;
+    }
+    .bootstrap-wordmark svg {
+      width: .72em;
+      height: .72em;
+      margin: 0 2px;
+      flex: 0 0 auto;
+    }
+    .bootstrap-slogan {
+      margin: 10px 0 0;
+      color: #63655e;
+      font-size: 11px;
+      letter-spacing: .2px;
+    }
+    .bootstrap-spinner {
+      position: absolute;
+      bottom: 44px;
+      width: 18px;
+      height: 18px;
+      border: 2px solid #eef0ea;
+      border-top-color: #6f7269;
+      border-radius: 999px;
+      animation: bootstrap-spin 1s linear infinite;
+    }
+    @keyframes bootstrap-spin { to { transform: rotate(360deg); } }
+    .bootstrap-error {
+      display: none;
+      position: absolute;
+      right: 24px;
+      bottom: 44px;
+      left: 24px;
+      margin: 0;
+      color: #6f7269;
+      font-size: 12.5px;
+      line-height: 1.6;
+    }
+    #bootstrap-status[data-state="error"] { background: #ffffff; }
+    #bootstrap-status[data-state="error"] .bootstrap-spinner { display: none; }
+    #bootstrap-status[data-state="error"] .bootstrap-error { display: block; }
   </style>
 </head>
 <body>
   <div id="bootstrap-status" role="status" aria-live="polite">
-    <strong>Ensom</strong>
-    <p id="bootstrap-message">앱을 준비하고 있어요.</p>
+    <div class="bootstrap-wordmark" aria-label="ENSOM">
+      <span>ENS</span>
+      <svg aria-hidden="true" viewBox="0 0 32 32">
+        <circle cx="16" cy="16" r="11" fill="none" stroke="#4e6810" stroke-width="7"/>
+        <circle cx="16" cy="16" r="11" fill="none" stroke="#c6f135" stroke-width="7" stroke-dasharray="47 22" transform="rotate(-90 16 16)" stroke-linecap="round"/>
+      </svg>
+      <span>M</span>
+    </div>
+    <p class="bootstrap-slogan">늦지 않게, 서두르지 않게.</p>
+    <div class="bootstrap-spinner" aria-hidden="true"></div>
+    <p class="bootstrap-error" id="bootstrap-message"></p>
   </div>
   <script>
     (() => {
