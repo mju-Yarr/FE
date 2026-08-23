@@ -5,7 +5,7 @@ import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_wordmark.dart";
 
 /// S-37. 앱을 켤 때마다 뜨는 화면(온보딩 단계 아님).
-/// ensom_onboarding_flow.html STEP 0의 브랜드 영역을 그대로 사용한다.
+/// ensom_priming_splash.html의 스플래시(v2)를 그대로 사용한다.
 /// 최소 노출 시간 1.5초를 지켜서
 /// 세션 검사가 빨리 끝나도 화면이 깜빡이지 않게 한다.
 ///
@@ -46,66 +46,91 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
 
     return Scaffold(
       backgroundColor: EnsomColors.canvas,
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+      body: SafeArea(
+        child: Stack(
+          fit: StackFit.expand,
           children: [
-            const EnsomWordmark(
-              fontSize: 26,
-              ringScale: .72,
-              ringTrackColor: EnsomColors.limeInk,
-              ringArcColor: EnsomColors.lime,
-            ),
-            const SizedBox(height: 14),
-            const Text(
-              "늦지 않게, 서두르지 않게.",
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -.2,
-                color: EnsomColors.inkMuted,
+            const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  EnsomWordmark(
+                    fontSize: 22,
+                    ringScale: .72,
+                    ringTrackColor: EnsomColors.limeInk,
+                    ringArcColor: EnsomColors.lime,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    "늦지 않게, 서두르지 않게.",
+                    style: TextStyle(
+                      fontSize: 11,
+                      letterSpacing: .2,
+                      color: EnsomColors.inkMuted,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 8),
-            const Text(
-              "다음 일정까지, 언제부터 준비하면\n되는지 알려드려요.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12.5,
-                color: EnsomColors.inkFaint,
-                height: 1.6,
+            if (!showRetry)
+              const Positioned(
+                left: 0,
+                right: 0,
+                bottom: 44,
+                child: Center(
+                  child: SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      backgroundColor: EnsomColors.surface2,
+                      color: EnsomColors.inkFaint,
+                    ),
+                  ),
+                ),
               ),
-            ),
             if (showRetry) ...[
-              const SizedBox(height: 28),
-              Text(
-                authState.errorMessage ?? "연결을 확인하지 못했어요.",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  color: EnsomColors.ink.withValues(alpha: .72),
+              Positioned(
+                left: 24,
+                right: 24,
+                bottom: 24,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      authState.errorMessage ?? "연결을 확인하지 못했어요.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: EnsomColors.ink.withValues(alpha: .72),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _isRetrying ? null : _retry,
+                      style: TextButton.styleFrom(
+                        foregroundColor: EnsomColors.ink,
+                      ),
+                      child: Text(_isRetrying ? "다시 확인하는 중..." : "다시 시도"),
+                    ),
+                    TextButton(
+                      onPressed: _isRetrying
+                          ? null
+                          : () async {
+                              setState(() => _isRetrying = true);
+                              await ref
+                                  .read(authNotifierProvider.notifier)
+                                  .discardLocalSession();
+                              if (mounted) {
+                                setState(() => _isRetrying = false);
+                              }
+                            },
+                      style: TextButton.styleFrom(
+                        foregroundColor: EnsomColors.ink.withValues(alpha: .68),
+                      ),
+                      child: const Text("다시 로그인"),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: _isRetrying ? null : _retry,
-                style: TextButton.styleFrom(foregroundColor: EnsomColors.ink),
-                child: Text(_isRetrying ? "다시 확인하는 중..." : "다시 시도"),
-              ),
-              TextButton(
-                onPressed: _isRetrying
-                    ? null
-                    : () async {
-                        setState(() => _isRetrying = true);
-                        await ref
-                            .read(authNotifierProvider.notifier)
-                            .discardLocalSession();
-                        if (mounted) setState(() => _isRetrying = false);
-                      },
-                style: TextButton.styleFrom(
-                  foregroundColor: EnsomColors.ink.withValues(alpha: .68),
-                ),
-                child: const Text("다시 로그인"),
               ),
             ],
           ],
