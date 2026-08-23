@@ -29,6 +29,22 @@ import "../network/api_client.dart";
 /// feat/fe-map-summary-settings)라 UnimplementedError로 남겨둔다 --
 /// 이 리포지토리를 그 화면에 조기 연결하면 조용히 죽는 대신 바로
 /// 터지게 하기 위함이다.
+
+/// API 명세 §1.5 TR-02는 오프셋 포함 ISO-8601을 요구하고 "Z만 오면 422"라고
+/// 적혀 있다(이 422가 실제로 재현된 적은 없음 — PR #3에서 POST /events 바디는
+/// Z suffix로도 201이 확인됨). 명세를 따라 "+00:00" 오프셋을 명시해 보낸다.
+String _toOffsetIso8601(DateTime dt) {
+  final utc = dt.toUtc();
+  final y = utc.year.toString().padLeft(4, "0");
+  final mo = utc.month.toString().padLeft(2, "0");
+  final d = utc.day.toString().padLeft(2, "0");
+  final h = utc.hour.toString().padLeft(2, "0");
+  final mi = utc.minute.toString().padLeft(2, "0");
+  final s = utc.second.toString().padLeft(2, "0");
+  final ms = utc.millisecond.toString().padLeft(3, "0");
+  return "$y-$mo-${d}T$h:$mi:$s.${ms}+00:00";
+}
+
 class ApiEnsomRepository implements EnsomRepository {
   ApiEnsomRepository(this._client);
 
@@ -120,7 +136,7 @@ class ApiEnsomRepository implements EnsomRepository {
           "anchorMode": anchorMode == EventAnchor.departAt
               ? "depart_at"
               : "arrive_by",
-          "at": at.toUtc().toIso8601String(),
+          "at": _toOffsetIso8601(at),
         },
       );
       return json
@@ -281,8 +297,8 @@ class ApiEnsomRepository implements EnsomRepository {
     final json = await _client.get<List<dynamic>>(
       "/events",
       query: {
-        "from": from.toUtc().toIso8601String(),
-        "to": to.toUtc().toIso8601String(),
+        "from": _toOffsetIso8601(from),
+        "to": _toOffsetIso8601(to),
       },
     );
     return json.map((e) => Event.fromJson(e as Map<String, dynamic>)).toList();
@@ -352,8 +368,8 @@ class ApiEnsomRepository implements EnsomRepository {
     final json = await _client.get<List<dynamic>>(
       "/events/reviews/pending",
       query: {
-        "from": from.toUtc().toIso8601String(),
-        "to": to.toUtc().toIso8601String(),
+        "from": _toOffsetIso8601(from),
+        "to": _toOffsetIso8601(to),
       },
     );
     return json
@@ -386,17 +402,15 @@ class ApiEnsomRepository implements EnsomRepository {
     // API v5.0 §9.5 PATCH /plans/{planId}.
     // 사용자 직접 수정은 서버가 새 리비전을 만든다(revisionNo 증가).
     //
-    // 시각 직렬화(TR-02): 로컬 DateTime의 toIso8601String()은 오프셋도 Z도
-    // 붙지 않아("2026-08-20T14:00:00.000") BE(Instant, Jackson JavaTimeModule)가
-    // 역직렬화에 실패해 400을 낸다. toUtc()로 변환하면 "...Z"가 붙고 현재 BE가
-    // 정상 수용한다(양쪽 실행 검증). 명세는 오프셋 포함(+09:00)을 요구하고
-    // "Z만 오는 값은 422"라고 적혀 있으나 그 규칙은 현행 BE에 미구현이다.
-    // BE가 그 422 규칙을 실제 구현하면 그때 +09:00 형태로 직접 포매팅해야 한다.
+    // 시각 직렬화(TR-02): toUtc().toIso8601String()은 "...Z"를 반환하는데
+    // 명세는 오프셋 포함을 요구한다. 이 422가 실제로 재현된 적은 없으나
+    // (PR #3에서 POST /events 바디는 Z suffix로도 201 확인) 명세를 따라
+    // _toOffsetIso8601()로 "+00:00" 오프셋을 명시한다.
     final json = await _client.patch<Map<String, dynamic>>(
       "/plans/$planId",
       body: {
         if (prepStartAt != null)
-          "prepStartAt": prepStartAt.toUtc().toIso8601String(),
+          "prepStartAt": _toOffsetIso8601(prepStartAt),
         if (originPlaceId != null) "originPlaceId": originPlaceId,
       },
     );
@@ -723,7 +737,7 @@ class ApiEnsomRepository implements EnsomRepository {
           {
             "actionType": "ARRIVED",
             "actionSource": source.name.toUpperCase(),
-            "deviceTs": DateTime.now().toUtc().toIso8601String(),
+            "deviceTs": _toOffsetIso8601(DateTime.now()),
             "clientEventId": clientEventId,
             if (confidence != null) "confidence": confidence,
           },
