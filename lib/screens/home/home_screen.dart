@@ -22,7 +22,7 @@ import "../../widgets/permission_degraded_banner.dart";
 import "../../widgets/prep_item_add_sheet.dart";
 import "../../models/event.dart";
 import "widgets/arrival_result_card.dart";
-import "widgets/empty_hero_card.dart";
+import "widgets/home_empty_state.dart";
 import "widgets/plan_card.dart";
 import "widgets/stacked_event_cards.dart";
 import "widgets/today_wrap_card.dart";
@@ -177,8 +177,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildBody(AsyncValue<TodayPlan> todayAsync) {
     final nickname = ref.watch(bootstrapProvider).value?.user.nickname;
-    Widget overview(int count) =>
-        _HomeOverviewHeader(nickname: nickname, eventCount: count);
+    Widget overview(int count, {bool minimal = false}) => _HomeOverviewHeader(
+      nickname: nickname,
+      eventCount: count,
+      minimal: minimal,
+    );
     return todayAsync.when(
       // §11 로딩은 스켈레톤. 스피너는 스플래시 워드마크 링에만 허용된다.
       loading: () => ListView(
@@ -209,16 +212,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
       ),
       data: (today) {
-        // §3 S-06 — 일정이 0건이면 히어로 카드 자리에 빈 상태가 그대로
-        // 들어간다(ensom_prototype.html `.hero.empty` — 별도 카드 섹션이
-        // 아니다. 날씨 위젯도 계속 보인다).
+        // §3 S-06 — 일정이 0건이면 빈 상태 카드 + CTA 2개.
+        // ensom_empty_error.html v0(홈-없음): 날씨·일정 개수 없이 인사말만.
         if (today.isEmpty) {
           return ListView(
             padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
             children: [
-              overview(0),
+              overview(0, minimal: true),
               const SizedBox(height: 20),
-              const EmptyHeroCard(),
+              const HomeEmptyState(),
             ],
           );
         }
@@ -481,10 +483,18 @@ class _IconAction extends StatelessWidget {
 }
 
 class _HomeOverviewHeader extends StatelessWidget {
-  const _HomeOverviewHeader({this.nickname, required this.eventCount});
+  const _HomeOverviewHeader({
+    this.nickname,
+    required this.eventCount,
+    this.minimal = false,
+  });
 
   final String? nickname;
   final int eventCount;
+
+  /// ensom_empty_error.html v0(홈-없음): 날씨 위젯도 "오늘 일정 N개"
+  /// 줄도 없이 인사말만 보여준다.
+  final bool minimal;
 
   String get _greeting {
     final hour = DateTime.now().hour;
@@ -513,22 +523,23 @@ class _HomeOverviewHeader extends StatelessWidget {
                   color: EnsomColors.ink,
                 ),
               ),
-              const SizedBox(height: 5),
-              // ensom_prototype.html render(): count===0이면 "오늘
-              // 등록된 일정이 없어요", 그 외엔 "오늘 일정 N개" — 날씨
-              // 위젯은 0건일 때도 계속 보인다(감춘 적 없다).
-              Text(
-                eventCount == 0 ? "오늘 등록된 일정이 없어요" : "오늘 일정 $eventCount개",
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  color: EnsomColors.inkMuted,
+              if (!minimal) ...[
+                const SizedBox(height: 5),
+                Text(
+                  "오늘 일정 $eventCount개",
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: EnsomColors.inkMuted,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        const WeatherWidget(),
+        if (!minimal) ...[
+          const SizedBox(width: 12),
+          const WeatherWidget(),
+        ],
       ],
     );
   }

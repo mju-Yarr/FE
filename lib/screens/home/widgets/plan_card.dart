@@ -278,12 +278,8 @@ class PlanCard extends StatelessWidget {
   }
 }
 
-/// ensom_prototype.html `.stack-wrap`/`.behind.b1`/`.behind.b2` — 히어로
-/// 뒤로 최대 2장까지 겹쳐 보이는 카드. 좌표는 목업 CSS·render()의 값을
-/// 그대로 옮겼다: PEEK=19px, b1(가까운 카드) top/bottom 9·left 24,
-/// b2(먼 카드) top/bottom 18·left 34·항상 right 0. 히어로는 겹친 카드
-/// 수 × 19px만큼 margin-right를 준다. 겹칠 카드가 없으면 히어로
-/// 그대로 반환한다.
+/// ensom_prototype.html `.stack-wrap` — 히어로 뒤로 최대 2장까지 겹쳐
+/// 보이는 카드. 겹칠 카드가 없으면 히어로 그대로 반환한다.
 class _PeekingHeroStack extends StatelessWidget {
   const _PeekingHeroStack({
     required this.hero,
@@ -293,54 +289,42 @@ class _PeekingHeroStack extends StatelessWidget {
 
   final Widget hero;
 
-  /// 가까운 카드부터(behind[0]이 히어로 바로 뒤). 최대 2장까지만 쓴다.
+  /// 가까운 카드부터(behind[0]이 히어로 바로 뒤).
   final List<TodayPlanCard> behind;
   final void Function(TodayPlanCard card)? onTapBehind;
 
-  static const _peek = 19.0;
   static final _timeFmt = DateFormat("HH:mm");
 
   @override
   Widget build(BuildContext context) {
     if (behind.isEmpty) return hero;
 
-    final behindCount = behind.length;
-    // render(): b1.right = (behindCount-1)*PEEK, b2.right = 항상 0.
-    final b1Right = (behindCount - 1) * _peek;
-
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        if (behindCount >= 2)
-          Positioned(
-            top: 18,
-            bottom: 18,
-            left: 34,
-            right: 0,
-            child: _BehindCard(
-              card: behind[1],
-              surfaceColor: EnsomColors.surfaceNeutral,
-              onTap: onTapBehind == null
-                  ? null
-                  : () => onTapBehind!(behind[1]),
+    // 가장 먼 카드부터 그려야 가까운 카드가 위에 겹친다.
+    final ordered = behind.reversed.toList();
+    return Padding(
+      padding: EdgeInsets.only(right: 14.0 * behind.length),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          for (var depth = ordered.length; depth >= 1; depth--)
+            Positioned(
+              top: 8.0 * depth,
+              bottom: 8.0 * depth,
+              left: 8.0 * depth,
+              right: -(14.0 * depth),
+              child: _BehindCard(
+                card: ordered[ordered.length - depth],
+                surfaceColor: depth == ordered.length
+                    ? EnsomColors.surfaceNeutral
+                    : EnsomColors.surface2,
+                onTap: onTapBehind == null
+                    ? null
+                    : () => onTapBehind!(ordered[ordered.length - depth]),
+              ),
             ),
-          ),
-        Positioned(
-          top: 9,
-          bottom: 9,
-          left: 24,
-          right: b1Right,
-          child: _BehindCard(
-            card: behind[0],
-            surfaceColor: EnsomColors.surface2,
-            onTap: onTapBehind == null ? null : () => onTapBehind!(behind[0]),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.only(right: behindCount * _peek),
-          child: hero,
-        ),
-      ],
+          hero,
+        ],
+      ),
     );
   }
 }
@@ -360,23 +344,22 @@ class _BehindCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: surfaceColor,
-      borderRadius: BorderRadius.circular(28),
+      borderRadius: BorderRadius.circular(24),
       child: InkWell(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(24),
         onTap: onTap,
         child: Align(
           alignment: Alignment.centerRight,
           child: Padding(
-            padding: const EdgeInsets.only(right: 6),
+            padding: const EdgeInsets.only(right: 10),
             child: RotatedBox(
               quarterTurns: 1,
               child: Text(
                 _PeekingHeroStack._timeFmt.format(card.event.startsAt.toLocal()),
                 style: const TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
                   color: EnsomColors.inkFaint,
-                  letterSpacing: .4,
                 ),
               ),
             ),
