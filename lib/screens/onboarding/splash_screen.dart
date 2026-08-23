@@ -4,9 +4,9 @@ import "../../providers/auth_providers.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_wordmark.dart";
 
-/// S-37. 앱을 켤 때마다 뜨는 화면(온보딩 단계 아님). 앱의 공통 캔버스와
-/// 같은 배경을 쓰고, 워드마크 O 자리의 링이 도는 것 자체가 로딩 인디케이터다
-/// — 별도 스피너를 두지 않는다(§1.1). 최소 노출 시간 1.5초를 지켜서
+/// S-37. 앱을 켤 때마다 뜨는 화면(온보딩 단계 아님).
+/// ensom_onboarding_flow.html STEP 0의 브랜드 영역을 그대로 사용한다.
+/// 최소 노출 시간 1.5초를 지켜서
 /// 세션 검사가 빨리 끝나도 화면이 깜빡이지 않게 한다.
 ///
 /// 네트워크 오류로 세션 검사에 실패하면 로그인 화면으로 보내지 않고
@@ -40,7 +40,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authNotifierProvider);
     // 최소 노출 시간이 지나기 전까지는 세션 검사 실패 안내도 미루고
-    // 링 애니메이션만 보여준다 — 화면이 깜빡이는 걸 막기 위함.
+    // 브랜드 화면만 보여준다 — 화면이 깜빡이는 걸 막기 위함.
     final showRetry =
         _minDisplayElapsed && authState.status == AuthStatus.sessionCheckFailed;
 
@@ -50,15 +50,30 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const EnsomWordmark(fontSize: 40, animate: true),
-            const SizedBox(height: 16),
-            Text(
+            const EnsomWordmark(
+              fontSize: 26,
+              ringScale: .72,
+              ringTrackColor: EnsomColors.limeInk,
+              ringArcColor: EnsomColors.lime,
+            ),
+            const SizedBox(height: 14),
+            const Text(
               "늦지 않게, 서두르지 않게.",
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,
                 letterSpacing: -.2,
-                color: EnsomColors.ink.withValues(alpha: .60),
+                color: EnsomColors.inkMuted,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "다음 일정까지, 언제부터 준비하면\n되는지 알려드려요.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                color: EnsomColors.inkFaint,
+                height: 1.6,
               ),
             ),
             if (showRetry) ...[
