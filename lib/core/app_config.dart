@@ -26,7 +26,7 @@ const String kKakaoRestApiKey = String.fromEnvironment(
 /// --dart-define=KAKAO_JAVASCRIPT_APP_KEY로 덮어쓸 수 있다.
 const String kKakaoJavaScriptAppKey = String.fromEnvironment(
   'KAKAO_JAVASCRIPT_APP_KEY',
-  defaultValue: '39e8fcb6ebb0b0020889cec5ca210f60',
+  defaultValue: 'a18e422a8a32a78ca9753aad386d26d0',
 );
 
 /// Google OAuth 클라이언트 ID. BE의 OAUTH_GOOGLE_CLIENT_ID와 같은
