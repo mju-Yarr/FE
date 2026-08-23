@@ -90,7 +90,7 @@ class _ArrivalResultCardState extends ConsumerState<ArrivalResultCard> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading || _execution == null || _submitted) {
+    if (_loading || _execution == null) {
       return const SizedBox.shrink();
     }
     final execution = _execution!;
@@ -100,104 +100,161 @@ class _ArrivalResultCardState extends ConsumerState<ArrivalResultCard> {
     // WIS 밴드는 숫자를 강조하지 않는다 — rushLoadScore는 표시하지 않는다.
     final needsEvaluation = execution.arrivalResult == ArrivalResult.unknown;
 
-    return Container(
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: EnsomColors.surface1,
-        borderRadius: BorderRadius.circular(19),
-        border: Border.all(color: EnsomColors.hairline),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "오늘 이동은 어땠나요?",
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          "결과",
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -.2,
+            color: EnsomColors.ink,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+          decoration: BoxDecoration(
+            color: _badgeColor(execution.arrivalResult),
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            _badgeLabel(execution.arrivalResult),
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 13,
               fontWeight: FontWeight.w700,
-              letterSpacing: -.2,
+              color:
+                  execution.arrivalResult == ArrivalResult.early ||
+                      execution.arrivalResult == ArrivalResult.onTime
+                  ? EnsomColors.limeInk
+                  : EnsomColors.ink,
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          _arrivalResultLabel(execution.arrivalResult),
+          style: const TextStyle(
+            fontSize: 12.5,
+            height: 1.55,
+            color: EnsomColors.inkMuted,
+          ),
+        ),
+        if (_submitted) ...[
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: EnsomColors.surface2,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Text(
+              "응답 감사해요.",
+              style: TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted),
+            ),
+          ),
+        ],
+        if (needsEvaluation && !_submitted) ...[
+          const SizedBox(height: 20),
+          const Divider(height: 1, color: EnsomColors.hairline),
+          const SizedBox(height: 18),
+          const Text(
+            "무엇 때문에 늦어졌을까요?",
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
               color: EnsomColors.ink,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            _arrivalResultLabel(execution.arrivalResult),
-            style: const TextStyle(fontSize: 12.5, color: EnsomColors.inkMuted),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              EnsomChip(
+                label: "너무 일렀어요",
+                selected: _prepTiming == PrepTimingAssessment.tooEarly,
+                onTap: () =>
+                    setState(() => _prepTiming = PrepTimingAssessment.tooEarly),
+              ),
+              EnsomChip(
+                label: "적절했어요",
+                selected: _prepTiming == PrepTimingAssessment.appropriate,
+                onTap: () => setState(
+                  () => _prepTiming = PrepTimingAssessment.appropriate,
+                ),
+              ),
+              EnsomChip(
+                label: "촉박했어요",
+                selected: _prepTiming == PrepTimingAssessment.tooLate,
+                onTap: () =>
+                    setState(() => _prepTiming = PrepTimingAssessment.tooLate),
+              ),
+            ],
           ),
-          if (needsEvaluation) ...[
-            const SizedBox(height: 14),
-            const Text(
-              "준비 시간은 어땠나요?",
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: EnsomColors.inkMuted,
+          const SizedBox(height: 12),
+          const Text(
+            "도착할 때는 어땠나요?",
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: EnsomColors.inkMuted,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              EnsomChip(
+                label: "여유로웠어요",
+                selected: _rush == RushAssessment.notRushed,
+                onTap: () => setState(() => _rush = RushAssessment.notRushed),
               ),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                EnsomChip(
-                  label: "너무 일렀어요",
-                  selected: _prepTiming == PrepTimingAssessment.tooEarly,
-                  onTap: () => setState(
-                    () => _prepTiming = PrepTimingAssessment.tooEarly,
-                  ),
-                ),
-                EnsomChip(
-                  label: "적절했어요",
-                  selected: _prepTiming == PrepTimingAssessment.appropriate,
-                  onTap: () => setState(
-                    () => _prepTiming = PrepTimingAssessment.appropriate,
-                  ),
-                ),
-                EnsomChip(
-                  label: "촉박했어요",
-                  selected: _prepTiming == PrepTimingAssessment.tooLate,
-                  onTap: () => setState(
-                    () => _prepTiming = PrepTimingAssessment.tooLate,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              "서두른 정도는요?",
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: FontWeight.w600,
-                color: EnsomColors.inkMuted,
+              EnsomChip(
+                label: "서둘렀어요",
+                selected: _rush == RushAssessment.rushed,
+                onTap: () => setState(() => _rush = RushAssessment.rushed),
               ),
-            ),
-            const SizedBox(height: 6),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                EnsomChip(
-                  label: "여유로웠어요",
-                  selected: _rush == RushAssessment.notRushed,
-                  onTap: () => setState(() => _rush = RushAssessment.notRushed),
-                ),
-                EnsomChip(
-                  label: "서둘렀어요",
-                  selected: _rush == RushAssessment.rushed,
-                  onTap: () => setState(() => _rush = RushAssessment.rushed),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            EnsomPillButton(
-              label: _submitting ? "저장 중..." : "저장",
-              onPressed: (_prepTiming != null && _rush != null && !_submitting)
-                  ? _submit
-                  : null,
-            ),
-          ],
+            ],
+          ),
+          const SizedBox(height: 14),
+          EnsomPillButton(
+            label: _submitting ? "저장 중..." : "저장",
+            onPressed: (_prepTiming != null && _rush != null && !_submitting)
+                ? _submit
+                : null,
+          ),
         ],
-      ),
+      ],
     );
+  }
+
+  String _badgeLabel(ArrivalResult result) {
+    switch (result) {
+      case ArrivalResult.early:
+      case ArrivalResult.onTime:
+        return "정시 도착";
+      case ArrivalResult.rushed:
+        return "촉박";
+      case ArrivalResult.late_:
+      case ArrivalResult.unknown:
+        return "지각";
+    }
+  }
+
+  Color _badgeColor(ArrivalResult result) {
+    switch (result) {
+      case ArrivalResult.early:
+      case ArrivalResult.onTime:
+        return EnsomColors.limeSoft;
+      case ArrivalResult.rushed:
+        return EnsomColors.caution;
+      case ArrivalResult.late_:
+      case ArrivalResult.unknown:
+        return EnsomColors.surface2;
+    }
   }
 }

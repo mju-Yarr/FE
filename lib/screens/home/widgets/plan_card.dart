@@ -176,7 +176,9 @@ class PlanCard extends StatelessWidget {
         PlanChangeBanner(currentPlan: plan, previousPlan: previousPlan),
         _Hero(
           eventTitle: eventTitle,
+          eventMeta: "${_timeFmt.format(plan.targetArriveAt)} 도착 예정",
           onTap: onTap,
+          onSelectRoute: onSelectRoute,
           isTerminal: _isTerminal,
           terminalMessage: _terminalMessage,
           content: _isTerminal ? null : _content(state),
@@ -236,14 +238,18 @@ class PlanCard extends StatelessWidget {
 class _Hero extends StatelessWidget {
   const _Hero({
     required this.eventTitle,
+    required this.eventMeta,
     required this.onTap,
+    required this.onSelectRoute,
     required this.isTerminal,
     required this.terminalMessage,
     required this.content,
   });
 
   final String eventTitle;
+  final String eventMeta;
   final VoidCallback? onTap;
+  final VoidCallback onSelectRoute;
   final bool isTerminal;
   final String terminalMessage;
   final _HeroContent? content;
@@ -268,20 +274,18 @@ class _Hero extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                eventTitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: isTerminal
-                      ? EnsomColors.inkMuted
-                      : EnsomColors.ink.withValues(alpha: .72),
-                ),
-              ),
-              const SizedBox(height: 10),
               if (isTerminal) ...[
+                Text(
+                  eventTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: EnsomColors.inkMuted,
+                  ),
+                ),
+                const SizedBox(height: 10),
                 Text(
                   terminalMessage,
                   style: const TextStyle(
@@ -292,25 +296,40 @@ class _Hero extends StatelessWidget {
                   ),
                 ),
               ] else if (c != null) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 11,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: c.caution
-                        ? EnsomColors.caution
-                        : Colors.white.withValues(alpha: .62),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    c.badgeLabel,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: EnsomColors.ink,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 11,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: c.caution
+                            ? EnsomColors.caution
+                            : Colors.white.withValues(alpha: .62),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        c.badgeLabel,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: EnsomColors.ink,
+                        ),
+                      ),
                     ),
-                  ),
+                    Row(
+                      children: [
+                        _HeroIcon(
+                          icon: Icons.map_outlined,
+                          onTap: onSelectRoute,
+                        ),
+                        const SizedBox(width: 6),
+                        _HeroIcon(icon: Icons.edit_outlined, onTap: onTap),
+                      ],
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 RichText(
@@ -345,17 +364,57 @@ class _Hero extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 14),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: EnsomPillButton(
-                    label: c.ctaLabel,
-                    onPressed: c.onCta,
-                    expand: false,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "$eventTitle\n$eventMeta",
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          height: 1.45,
+                          color: EnsomColors.ink.withValues(alpha: .8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    EnsomPillButton(
+                      label: c.ctaLabel,
+                      onPressed: c.onCta,
+                      expand: false,
+                    ),
+                  ],
                 ),
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroIcon extends StatelessWidget {
+  const _HeroIcon({required this.icon, required this.onTap});
+
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: EnsomColors.ink.withValues(alpha: .1),
+      shape: const CircleBorder(),
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: SizedBox(
+          width: 29,
+          height: 29,
+          child: Icon(icon, size: 14, color: EnsomColors.ink),
         ),
       ),
     );

@@ -35,72 +35,55 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget> {
   Widget _buildCard(EnvironmentData data) {
     return GestureDetector(
       onTap: () => setState(() => _expanded = !_expanded),
-      child: Card(
-        color: EnsomColors.surface2,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        width: 108,
+        decoration: BoxDecoration(
+          color: EnsomColors.surface2,
+          borderRadius: BorderRadius.circular(14),
+        ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 접힌 상태: 온도 · 하늘 · PM10
-              Row(
-                children: [
-                  if (data.temperature != null) ...[
-                    Text(
-                      "${data.temperature}°",
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: EnsomColors.ink,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  if (data.sky != null) ...[
-                    Icon(
-                      _skyIcon(data.sky!),
-                      size: 20,
-                      color: EnsomColors.inkMuted,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      data.sky!,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: EnsomColors.inkMuted,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                  if (data.pm10Grade != null)
-                    _GradeBadge(label: "미세", grade: data.pm10Grade!),
-                  const Spacer(),
-                  Icon(
-                    _expanded ? Icons.expand_less : Icons.expand_more,
-                    color: EnsomColors.inkMuted,
-                    size: 20,
+              const Text(
+                "현재 위치",
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w600,
+                  color: EnsomColors.inkMuted,
+                ),
+              ),
+              if (data.temperature != null)
+                Text(
+                  "${data.temperature}°",
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                    color: EnsomColors.ink,
                   ),
-                ],
+                ),
+              Text(
+                data.sky ?? "날씨 정보",
+                style: const TextStyle(
+                  fontSize: 9,
+                  height: 1.3,
+                  color: EnsomColors.inkMuted,
+                ),
               ),
               // 확장 상태: PM25 + UV
               if (_expanded) ...[
                 const SizedBox(height: 8),
                 const Divider(height: 1, color: EnsomColors.hairline),
                 const SizedBox(height: 8),
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (data.pm25Grade != null)
                       _GradeBadge(label: "초미세", grade: data.pm25Grade!),
-                    if (data.pm25Grade != null) const SizedBox(width: 12),
+                    if (data.pm25Grade != null) const SizedBox(height: 6),
                     if (data.uvIndex != null) ...[
-                      const Icon(
-                        Icons.wb_sunny_outlined,
-                        size: 16,
-                        color: EnsomColors.inkMuted,
-                      ),
-                      const SizedBox(width: 4),
                       Text(
                         "자외선 ${data.uvIndex}",
                         style: const TextStyle(
@@ -117,19 +100,6 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget> {
         ),
       ),
     );
-  }
-
-  IconData _skyIcon(String sky) {
-    switch (sky) {
-      case "맑음":
-        return Icons.wb_sunny;
-      case "구름많음":
-        return Icons.cloud;
-      case "흐림":
-        return Icons.cloud_queue;
-      default:
-        return Icons.wb_cloudy;
-    }
   }
 }
 
