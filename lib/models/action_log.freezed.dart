@@ -18,7 +18,7 @@ mixin _$ActionLogEntry {
  String get clientEventId; ActionType get actionType;// 기기 시각(deviceTs)은 UTC(Z)로 직렬화한다. 로컬 DateTime의
 // toIso8601String()은 오프셋/Z가 없어 BE(Instant) 파싱이 400으로
 // 실패한다. updatePlan/reportArrival과 동일한 toUtc() 규약.
-@JsonKey(toJson: _deviceTsToJson) DateTime get deviceTs; ActionSource get actionSource; double? get confidence;
+@JsonKey(toJson: iso8601WithOffset) DateTime get deviceTs; ActionSource get actionSource; double? get confidence;
 /// Create a copy of ActionLogEntry
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -51,7 +51,7 @@ abstract mixin class $ActionLogEntryCopyWith<$Res>  {
   factory $ActionLogEntryCopyWith(ActionLogEntry value, $Res Function(ActionLogEntry) _then) = _$ActionLogEntryCopyWithImpl;
 @useResult
 $Res call({
- String clientEventId, ActionType actionType,@JsonKey(toJson: _deviceTsToJson) DateTime deviceTs, ActionSource actionSource, double? confidence
+ String clientEventId, ActionType actionType,@JsonKey(toJson: iso8601WithOffset) DateTime deviceTs, ActionSource actionSource, double? confidence
 });
 
 
@@ -160,7 +160,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String clientEventId,  ActionType actionType, @JsonKey(toJson: _deviceTsToJson)  DateTime deviceTs,  ActionSource actionSource,  double? confidence)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String clientEventId,  ActionType actionType, @JsonKey(toJson: iso8601WithOffset)  DateTime deviceTs,  ActionSource actionSource,  double? confidence)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ActionLogEntry() when $default != null:
 return $default(_that.clientEventId,_that.actionType,_that.deviceTs,_that.actionSource,_that.confidence);case _:
@@ -181,7 +181,7 @@ return $default(_that.clientEventId,_that.actionType,_that.deviceTs,_that.action
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String clientEventId,  ActionType actionType, @JsonKey(toJson: _deviceTsToJson)  DateTime deviceTs,  ActionSource actionSource,  double? confidence)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String clientEventId,  ActionType actionType, @JsonKey(toJson: iso8601WithOffset)  DateTime deviceTs,  ActionSource actionSource,  double? confidence)  $default,) {final _that = this;
 switch (_that) {
 case _ActionLogEntry():
 return $default(_that.clientEventId,_that.actionType,_that.deviceTs,_that.actionSource,_that.confidence);case _:
@@ -201,7 +201,7 @@ return $default(_that.clientEventId,_that.actionType,_that.deviceTs,_that.action
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String clientEventId,  ActionType actionType, @JsonKey(toJson: _deviceTsToJson)  DateTime deviceTs,  ActionSource actionSource,  double? confidence)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String clientEventId,  ActionType actionType, @JsonKey(toJson: iso8601WithOffset)  DateTime deviceTs,  ActionSource actionSource,  double? confidence)?  $default,) {final _that = this;
 switch (_that) {
 case _ActionLogEntry() when $default != null:
 return $default(_that.clientEventId,_that.actionType,_that.deviceTs,_that.actionSource,_that.confidence);case _:
@@ -216,7 +216,7 @@ return $default(_that.clientEventId,_that.actionType,_that.deviceTs,_that.action
 @JsonSerializable()
 
 class _ActionLogEntry implements ActionLogEntry {
-  const _ActionLogEntry({required this.clientEventId, required this.actionType, @JsonKey(toJson: _deviceTsToJson) required this.deviceTs, required this.actionSource, this.confidence});
+  const _ActionLogEntry({required this.clientEventId, required this.actionType, @JsonKey(toJson: iso8601WithOffset) required this.deviceTs, required this.actionSource, this.confidence});
   factory _ActionLogEntry.fromJson(Map<String, dynamic> json) => _$ActionLogEntryFromJson(json);
 
 @override final  String clientEventId;
@@ -224,7 +224,7 @@ class _ActionLogEntry implements ActionLogEntry {
 // 기기 시각(deviceTs)은 UTC(Z)로 직렬화한다. 로컬 DateTime의
 // toIso8601String()은 오프셋/Z가 없어 BE(Instant) 파싱이 400으로
 // 실패한다. updatePlan/reportArrival과 동일한 toUtc() 규약.
-@override@JsonKey(toJson: _deviceTsToJson) final  DateTime deviceTs;
+@override@JsonKey(toJson: iso8601WithOffset) final  DateTime deviceTs;
 @override final  ActionSource actionSource;
 @override final  double? confidence;
 
@@ -261,7 +261,7 @@ abstract mixin class _$ActionLogEntryCopyWith<$Res> implements $ActionLogEntryCo
   factory _$ActionLogEntryCopyWith(_ActionLogEntry value, $Res Function(_ActionLogEntry) _then) = __$ActionLogEntryCopyWithImpl;
 @override @useResult
 $Res call({
- String clientEventId, ActionType actionType,@JsonKey(toJson: _deviceTsToJson) DateTime deviceTs, ActionSource actionSource, double? confidence
+ String clientEventId, ActionType actionType,@JsonKey(toJson: iso8601WithOffset) DateTime deviceTs, ActionSource actionSource, double? confidence
 });
 
 

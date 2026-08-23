@@ -19,7 +19,7 @@ Map<String, dynamic> _$ActionLogEntryToJson(_ActionLogEntry instance) =>
     <String, dynamic>{
       'clientEventId': instance.clientEventId,
       'actionType': _$ActionTypeEnumMap[instance.actionType]!,
-      'deviceTs': _deviceTsToJson(instance.deviceTs),
+      'deviceTs': iso8601WithOffset(instance.deviceTs),
       'actionSource': _$ActionSourceEnumMap[instance.actionSource]!,
       'confidence': instance.confidence,
     };

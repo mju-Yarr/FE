@@ -1,5 +1,6 @@
 import "dart:convert";
 
+import "package:ensom/core/iso8601_offset.dart";
 import "package:ensom/core/secure_storage_service.dart";
 import "package:ensom/network/api_client.dart";
 import "package:ensom/repository/api_ensom_repository.dart";
@@ -70,10 +71,10 @@ void main() {
         isTrue,
         reason: "prepStartAt must carry a timezone; got '$prep'",
       );
-      // toUtc() 결과는 Z로 끝난다.
-      expect(prep.endsWith("Z"), isTrue);
+      // iso8601WithOffset() 결과는 "+00:00"로 끝난다.
+      expect(prep.endsWith("+00:00"), isTrue);
       // 로컬 14:00(KST 가정)이 UTC로 변환됐는지 값 자체도 확인.
-      expect(prep, DateTime(2026, 8, 20, 14, 0).toUtc().toIso8601String());
+      expect(prep, iso8601WithOffset(DateTime(2026, 8, 20, 14, 0)));
     },
   );
 }

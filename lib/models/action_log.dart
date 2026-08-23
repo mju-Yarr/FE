@@ -1,5 +1,6 @@
 import "package:freezed_annotation/freezed_annotation.dart";
 import "plan.dart"; // EventLifecycleStatus
+import "../core/iso8601_offset.dart";
 
 part "action_log.freezed.dart";
 part "action_log.g.dart";
@@ -40,28 +41,13 @@ abstract class ActionLogEntry with _$ActionLogEntry {
     // 기기 시각(deviceTs)은 UTC(Z)로 직렬화한다. 로컬 DateTime의
     // toIso8601String()은 오프셋/Z가 없어 BE(Instant) 파싱이 400으로
     // 실패한다. updatePlan/reportArrival과 동일한 toUtc() 규약.
-    @JsonKey(toJson: _deviceTsToJson) required DateTime deviceTs,
+    @JsonKey(toJson: iso8601WithOffset) required DateTime deviceTs,
     required ActionSource actionSource,
     double? confidence, // actionSource: geo일 때만. 좌표는 포함하지 않는다.
   }) = _ActionLogEntry;
 
   factory ActionLogEntry.fromJson(Map<String, dynamic> json) =>
       _$ActionLogEntryFromJson(json);
-}
-
-/// deviceTs를 오프셋 포함 ISO-8601 문자열로 변환. TR-02 명세는 "Z만 오는 값은
-/// 422"라고 규정하나 실제 재현된 적은 없다(PR #3 참고). 명세를 따라
-/// "+00:00" 오프셋을 명시한다.
-String _deviceTsToJson(DateTime dt) {
-  final utc = dt.toUtc();
-  final y = utc.year.toString().padLeft(4, "0");
-  final mo = utc.month.toString().padLeft(2, "0");
-  final d = utc.day.toString().padLeft(2, "0");
-  final h = utc.hour.toString().padLeft(2, "0");
-  final mi = utc.minute.toString().padLeft(2, "0");
-  final s = utc.second.toString().padLeft(2, "0");
-  final ms = utc.millisecond.toString().padLeft(3, "0");
-  return "$y-$mo-${d}T$h:$mi:$s.${ms}+00:00";
 }
 
 /// POST /plans/{id}/actions 응답. 배치이므로 accepted/duplicated가
