@@ -39,6 +39,8 @@ class MapScreen extends ConsumerStatefulWidget {
 
 class _MapScreenState extends ConsumerState<MapScreen> {
   KakaoMapController? _controller;
+  Poi? _currentLocationPoi;
+  KImage? _currentLocationPoiImage;
   bool _locating = false;
   bool _retryingMap = false;
   String? _error;
@@ -123,7 +125,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
-  Future<void> _moveToCurrentLocation() async {
+  Future<void> _moveToCurrentLocation() =>
+      _loadCurrentLocation(moveCamera: true);
+
+  Future<void> _loadCurrentLocation({required bool moveCamera}) async {
     setState(() {
       _locating = true;
       _error = null;
@@ -132,15 +137,49 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final position = await Geolocator.getCurrentPosition();
       _currentPosition = position;
       final location = LatLng(position.latitude, position.longitude);
-      await _controller?.moveCamera(
-        CameraUpdate.newCenterPosition(location),
-        animation: const CameraAnimation(500),
-      );
+      await _showCurrentLocationMarker(location);
+      if (moveCamera) {
+        await _controller?.moveCamera(
+          CameraUpdate.newCenterPosition(location),
+          animation: const CameraAnimation(500),
+        );
+      }
     } catch (e) {
       setState(() => _error = "현재 위치를 가져오지 못했어요. 위치 권한을 확인해주세요.");
     } finally {
       if (mounted) setState(() => _locating = false);
     }
+  }
+
+  Future<void> _showCurrentLocationMarker(LatLng location) async {
+    final controller = _controller;
+    if (controller == null) return;
+
+    final currentPoi = _currentLocationPoi;
+    if (currentPoi != null) {
+      await currentPoi.move(location, 350);
+      return;
+    }
+
+    final image =
+        _currentLocationPoiImage ??
+        await KImage.fromWidget(
+          const CurrentLocationMarker(),
+          CurrentLocationMarker.imageSize,
+          context: context,
+        );
+    if (!mounted || _controller != controller) return;
+    _currentLocationPoiImage = image;
+    _currentLocationPoi = await controller.labelLayer.addPoi(
+      location,
+      id: "ensom-current-location",
+      rank: 1000,
+      style: PoiStyle(
+        icon: image,
+        applyDpScale: false,
+        anchor: const KPoint(.5, 18 / 58),
+      ),
+    );
   }
 
   Future<void> _retryWebMap() async {
@@ -548,9 +587,11 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 mapType: MapType.normal,
               ),
               onMapReady: (controller) {
+                _currentLocationPoi = null;
                 _controller = controller;
                 if (_hasInitialDestination) {
                   _moveToInitialDestination();
+                  _loadCurrentLocation(moveCamera: false);
                 } else {
                   _moveToCurrentLocation();
                 }
@@ -735,6 +776,70 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       : const Icon(Icons.my_location),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// ensom_map_bookmark.html의 현재 위치 원핀.
+/// 36px 범위 원 + 14px 위치점 + 하단 라벨을 하나의 지도 POI 이미지로 사용한다.
+@visibleForTesting
+class CurrentLocationMarker extends StatelessWidget {
+  const CurrentLocationMarker({super.key});
+
+  static const imageSize = Size(84, 58);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.fromSize(
+      size: imageSize,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: EnsomColors.lime.withValues(alpha: .30),
+              shape: BoxShape.circle,
+            ),
+            child: Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: EnsomColors.lime,
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 2.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: EnsomColors.ink.withValues(alpha: .30),
+                    offset: const Offset(0, 1),
+                    blurRadius: 5,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 2),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: .90),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text(
+              "현재 위치",
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w700,
+                color: EnsomColors.ink,
+                height: 1,
+              ),
             ),
           ),
         ],
