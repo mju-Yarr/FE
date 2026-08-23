@@ -2,6 +2,8 @@ import "package:ensom/models/bookmark.dart";
 import "package:ensom/models/calendar_connection.dart";
 import "package:ensom/models/event.dart";
 import "package:ensom/models/place.dart";
+import "package:ensom/models/plan.dart";
+import "package:ensom/providers/map_providers.dart";
 import "package:ensom/repository/ensom_repository.dart";
 import "package:ensom/repository/providers.dart";
 import "package:ensom/screens/calendar/event_form_screen.dart";
@@ -20,6 +22,7 @@ class _SavingRepo implements EnsomRepository {
   int createEventCalls = 0;
   Event? createdEvent;
   String? createdOriginPlaceId;
+  String? createdSelectedRouteOptionId;
 
   @override
   Future<List<Place>> fetchPlaces() async {
@@ -43,6 +46,7 @@ class _SavingRepo implements EnsomRepository {
     createEventCalls++;
     createdEvent = event;
     createdOriginPlaceId = originPlaceId;
+    createdSelectedRouteOptionId = selectedRouteOptionId;
     return event.copyWith(eventId: "created");
   }
 
@@ -51,7 +55,12 @@ class _SavingRepo implements EnsomRepository {
       throw UnimplementedError(invocation.memberName.toString());
 }
 
-Future<void> _pumpForm(WidgetTester tester, _SavingRepo repository) async {
+Future<void> _pumpForm(
+  WidgetTester tester,
+  _SavingRepo repository, {
+  bool fromMap = false,
+  MapDraftEventNotifier? mapDraftNotifier,
+}) async {
   tester.view.physicalSize = const Size(834, 2000);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -59,7 +68,10 @@ Future<void> _pumpForm(WidgetTester tester, _SavingRepo repository) async {
   final router = GoRouter(
     initialLocation: "/events/new",
     routes: [
-      GoRoute(path: "/events/new", builder: (_, _) => const EventFormScreen()),
+      GoRoute(
+        path: "/events/new",
+        builder: (_, _) => EventFormScreen(fromMap: fromMap),
+      ),
       GoRoute(
         path: "/events/:eventId",
         builder: (_, _) => const SizedBox.shrink(),
@@ -70,7 +82,11 @@ Future<void> _pumpForm(WidgetTester tester, _SavingRepo repository) async {
 
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [ensomRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        ensomRepositoryProvider.overrideWithValue(repository),
+        if (mapDraftNotifier != null)
+          mapDraftEventProvider.overrideWith((_) => mapDraftNotifier),
+      ],
       child: MaterialApp.router(routerConfig: router),
     ),
   );
@@ -157,5 +173,56 @@ void main() {
     expect(repository.createEventCalls, 1);
     expect(repository.createdEvent!.locationState, LocationState.notRequired);
     expect(repository.createdOriginPlaceId, isNull);
+  });
+
+  testWidgets("origin이 없는 지도 초안 저장은 장소 조회 없이 null 출발지를 전달한다", (tester) async {
+    final now = DateTime.now();
+    const route = RouteOption(
+      routeOptionId: "route-draft",
+      routeRank: 1,
+      routeType: RouteType.fastest,
+      totalMinutes: 25,
+      walkMinutes: 6,
+      transferCount: 1,
+    );
+    final draftNotifier = MapDraftEventNotifier();
+    await draftNotifier.set(
+      MapDraftEvent(
+        destName: "강남역",
+        destLat: 37.497,
+        destLng: 127.027,
+        selectedRoute: route,
+        anchorMode: EventAnchor.arriveBy,
+        at: now.add(const Duration(hours: 2)),
+        createdAt: now,
+        label: "지도 일정",
+      ),
+    );
+    final repository = _SavingRepo(
+      places: const [
+        Place(
+          placeId: "primary",
+          placeType: "home",
+          placeName: "집",
+          address: "서울",
+          lat: 37.2,
+          lng: 127.2,
+          isPrimary: true,
+        ),
+      ],
+    );
+    await _pumpForm(
+      tester,
+      repository,
+      fromMap: true,
+      mapDraftNotifier: draftNotifier,
+    );
+
+    await _save(tester);
+
+    expect(repository.fetchPlacesCalls, 0);
+    expect(repository.createEventCalls, 1);
+    expect(repository.createdOriginPlaceId, isNull);
+    expect(repository.createdSelectedRouteOptionId, "route-draft");
   });
 }
