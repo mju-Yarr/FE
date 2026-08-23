@@ -282,10 +282,7 @@ class ApiEnsomRepository implements EnsomRepository {
   }) async {
     final json = await _client.get<List<dynamic>>(
       "/events",
-      query: {
-        "from": iso8601WithOffset(from),
-        "to": iso8601WithOffset(to),
-      },
+      query: {"from": iso8601WithOffset(from), "to": iso8601WithOffset(to)},
     );
     return json.map((e) => Event.fromJson(e as Map<String, dynamic>)).toList();
   }
@@ -313,10 +310,14 @@ class ApiEnsomRepository implements EnsomRepository {
         "locationState": ej["locationState"],
         if (event.destinationName != null)
           "destinationName": event.destinationName,
+        if (event.destinationAddress != null)
+          "destinationAddress": event.destinationAddress,
         if (event.destinationLat != null)
           "destinationLat": event.destinationLat,
         if (event.destinationLng != null)
           "destinationLng": event.destinationLng,
+        if (event.meetingUrl != null) "meetingUrl": event.meetingUrl,
+        if (event.eventKind != null) "eventKind": event.eventKind,
         "sourceType": ej["sourceType"],
         "anchorMode": ej["anchor"],
         if (originPlaceId != null) "originPlaceId": originPlaceId,
@@ -336,8 +337,24 @@ class ApiEnsomRepository implements EnsomRepository {
     final json = await _client.patch<Map<String, dynamic>>(
       "/events/$eventId",
       body: {
+        "startsAt": event.startsAt.toUtc().toIso8601String(),
+        if (event.endsAt != null)
+          "endsAt": event.endsAt!.toUtc().toIso8601String(),
         "locationState": ej["locationState"],
+        if (event.destinationName != null)
+          "destinationName": event.destinationName,
+        if (event.destinationAddress != null)
+          "destinationAddress": event.destinationAddress,
+        if (event.destinationLat != null)
+          "destinationLat": event.destinationLat,
+        if (event.destinationLng != null)
+          "destinationLng": event.destinationLng,
+        if (event.meetingUrl != null) "meetingUrl": event.meetingUrl,
+        if (event.eventKind != null) "eventKind": event.eventKind,
         if (event.displayLabel != null) "displayLabel": event.displayLabel,
+        if (event.autoManageExcluded != null)
+          "autoManageExcluded": event.autoManageExcluded,
+        "anchorMode": ej["anchor"],
       },
     );
     return Event.fromJson(json);
@@ -355,10 +372,7 @@ class ApiEnsomRepository implements EnsomRepository {
   }) async {
     final json = await _client.get<List<dynamic>>(
       "/events/reviews/pending",
-      query: {
-        "from": iso8601WithOffset(from),
-        "to": iso8601WithOffset(to),
-      },
+      query: {"from": iso8601WithOffset(from), "to": iso8601WithOffset(to)},
     );
     return json
         .map((e) => PendingEventReview.fromJson(e as Map<String, dynamic>))
@@ -397,8 +411,7 @@ class ApiEnsomRepository implements EnsomRepository {
     final json = await _client.patch<Map<String, dynamic>>(
       "/plans/$planId",
       body: {
-        if (prepStartAt != null)
-          "prepStartAt": iso8601WithOffset(prepStartAt),
+        if (prepStartAt != null) "prepStartAt": iso8601WithOffset(prepStartAt),
         if (originPlaceId != null) "originPlaceId": originPlaceId,
       },
     );
@@ -610,7 +623,7 @@ class ApiEnsomRepository implements EnsomRepository {
       body: {
         "placeType": place.placeType,
         "placeName": place.placeName,
-        if (place.address != null) "address": place.address,
+        "address": place.address,
         "lat": place.lat,
         "lng": place.lng,
         "isPrimary": place.isPrimary,
@@ -723,8 +736,8 @@ class ApiEnsomRepository implements EnsomRepository {
       body: {
         "actions": [
           {
-            "actionType": "ARRIVED",
-            "actionSource": source.name.toUpperCase(),
+            "actionType": "arrived",
+            "actionSource": source.name,
             "deviceTs": iso8601WithOffset(DateTime.now()),
             "clientEventId": clientEventId,
             if (confidence != null) "confidence": confidence,

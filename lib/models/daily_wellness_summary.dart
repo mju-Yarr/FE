@@ -6,6 +6,8 @@ part 'daily_wellness_summary.g.dart';
 /// 낮음/보통/높음 3단계. 숫자(dwl_score) 노출 여부는 PRD §31 미결(TRD D5)
 /// — 필드는 준비해두되 현재는 band만 필수로 화면에 사용한다.
 enum DwlBand {
+  @JsonValue('unknown')
+  unknown,
   @JsonValue('low')
   low,
   @JsonValue('mid')
@@ -21,6 +23,7 @@ abstract class DailyWellnessSummary with _$DailyWellnessSummary {
     required String summaryDate, // yyyy-MM-dd
     required int eventCount,
     required int totalOutdoorMinutes,
+    required String outdoorSource,
     // 홈 wrap 카드의 "정시 도착" 칸. arrivalSampleCount가 0이면 도착 결과를
     // 하나도 모르는 것이므로 0회로 표시하지 않고 칸을 감춘다.
     @Default(0) int onTimeCount,

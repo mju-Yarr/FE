@@ -338,6 +338,7 @@ class MockEnsomRepository implements EnsomRepository {
     return [
       AppNotification(
         notificationId: "n1",
+        planId: "plan-1",
         notificationCategory: NotificationCategory.time,
         notificationType: NotificationType.relaxed,
         slot: "A",
@@ -350,6 +351,7 @@ class MockEnsomRepository implements EnsomRepository {
       ),
       AppNotification(
         notificationId: "n2",
+        planId: "plan-1",
         notificationCategory: NotificationCategory.time,
         notificationType: NotificationType.disruption,
         slot: "C",
@@ -360,6 +362,7 @@ class MockEnsomRepository implements EnsomRepository {
       ),
       AppNotification(
         notificationId: "n3",
+        planId: "plan-1",
         notificationCategory: NotificationCategory.wellness,
         notificationType: NotificationType.wellnessEvent,
         slot: "W",
@@ -409,6 +412,7 @@ class MockEnsomRepository implements EnsomRepository {
       summaryDate: date,
       eventCount: 3,
       totalOutdoorMinutes: 43,
+      outdoorSource: "estimated",
       dwlBand: DwlBand.mid,
       cardScenario: "exposure",
       message: "자외선이 높은 시간대의 예상 야외 이동이 길었어요. 지금은 수분을 보충하고 편안하게 쉬어주세요.",

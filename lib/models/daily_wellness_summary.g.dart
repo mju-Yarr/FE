@@ -13,6 +13,7 @@ _DailyWellnessSummary _$DailyWellnessSummaryFromJson(
   summaryDate: json['summaryDate'] as String,
   eventCount: (json['eventCount'] as num).toInt(),
   totalOutdoorMinutes: (json['totalOutdoorMinutes'] as num).toInt(),
+  outdoorSource: json['outdoorSource'] as String,
   onTimeCount: (json['onTimeCount'] as num?)?.toInt() ?? 0,
   arrivalSampleCount: (json['arrivalSampleCount'] as num?)?.toInt() ?? 0,
   dwlBand: $enumDecode(_$DwlBandEnumMap, json['dwlBand']),
@@ -29,6 +30,7 @@ Map<String, dynamic> _$DailyWellnessSummaryToJson(
   'summaryDate': instance.summaryDate,
   'eventCount': instance.eventCount,
   'totalOutdoorMinutes': instance.totalOutdoorMinutes,
+  'outdoorSource': instance.outdoorSource,
   'onTimeCount': instance.onTimeCount,
   'arrivalSampleCount': instance.arrivalSampleCount,
   'dwlBand': _$DwlBandEnumMap[instance.dwlBand]!,
@@ -39,6 +41,7 @@ Map<String, dynamic> _$DailyWellnessSummaryToJson(
 };
 
 const _$DwlBandEnumMap = {
+  DwlBand.unknown: 'unknown',
   DwlBand.low: 'low',
   DwlBand.mid: 'mid',
   DwlBand.high: 'high',

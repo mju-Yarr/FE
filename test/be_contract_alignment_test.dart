@@ -1,8 +1,10 @@
 import "dart:convert";
 
 import "package:ensom/core/secure_storage_service.dart";
+import "package:ensom/core/auth_service.dart";
 import "package:ensom/models/notification.dart";
 import "package:ensom/models/event.dart";
+import "package:ensom/models/daily_wellness_summary.dart";
 import "package:ensom/network/api_client.dart";
 import "package:ensom/repository/api_ensom_repository.dart";
 import "package:flutter_test/flutter_test.dart";
@@ -49,6 +51,87 @@ Future<ApiEnsomRepository> _repository(
 }
 
 void main() {
+  test("daily summary accepts the backend unknown band", () {
+    final summary = DailyWellnessSummary.fromJson({
+      "summaryId": "summary-1",
+      "summaryDate": "2026-08-24",
+      "eventCount": 0,
+      "totalOutdoorMinutes": 0,
+      "outdoorSource": "none",
+      "onTimeCount": 0,
+      "arrivalSampleCount": 0,
+      "dwlBand": "unknown",
+      "dwlScore": null,
+      "cardScenario": "default",
+      "message": "",
+      "isViewed": false,
+    });
+
+    expect(summary.dwlBand, DwlBand.unknown);
+    expect(summary.outdoorSource, "none");
+  });
+
+  test("session requests send the refresh token identity header", () async {
+    http.Request? captured;
+    final client = ApiClient(
+      baseUrl: "https://api.ensom.test/v1",
+      secureStorage: _StubStorage(),
+      httpClient: MockClient((request) async {
+        captured = request;
+        return http.Response("[]", 200);
+      }),
+    );
+    final generation = client.beginSessionTransition();
+    await client.saveSession(
+      expectedGeneration: generation,
+      accessToken: "access",
+      refreshToken: "refresh",
+      userId: "user",
+    );
+
+    await client.get<List<dynamic>>("/me/sessions", includeRefreshToken: true);
+
+    expect(captured!.headers["x-refresh-token"], "refresh");
+  });
+
+  test("email login sends only fields declared by LoginRequest", () async {
+    http.Request? captured;
+    final client = ApiClient(
+      baseUrl: "https://api.ensom.test/v1",
+      secureStorage: _StubStorage(),
+      httpClient: MockClient((request) async {
+        captured = request;
+        return http.Response(
+          jsonEncode({
+            "accessToken": "access",
+            "refreshToken": "refresh",
+            "user": {
+              "userId": "user",
+              "nickname": "tester",
+              "timezone": "Asia/Seoul",
+              "isNew": false,
+            },
+            "consentRequired": <String>[],
+          }),
+          200,
+        );
+      }),
+    );
+    final generation = client.beginSessionTransition();
+
+    await AuthService(apiClient: client).loginWithEmail(
+      email: "test@example.com",
+      password: "password123",
+      installationId: "local-installation",
+      expectedGeneration: generation,
+    );
+
+    expect(jsonDecode(captured!.body), {
+      "email": "test@example.com",
+      "password": "password123",
+    });
+  });
+
   test("notification response sends the BE reaction contract only", () async {
     http.Request? captured;
     final repository = await _repository((request) async {

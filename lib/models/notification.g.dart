@@ -9,6 +9,7 @@ part of 'notification.dart';
 _AppNotification _$AppNotificationFromJson(Map<String, dynamic> json) =>
     _AppNotification(
       notificationId: json['notificationId'] as String,
+      planId: json['planId'] as String,
       notificationCategory: $enumDecode(
         _$NotificationCategoryEnumMap,
         json['notificationCategory'],
@@ -36,6 +37,7 @@ _AppNotification _$AppNotificationFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$AppNotificationToJson(_AppNotification instance) =>
     <String, dynamic>{
       'notificationId': instance.notificationId,
+      'planId': instance.planId,
       'notificationCategory':
           _$NotificationCategoryEnumMap[instance.notificationCategory]!,
       'notificationType': _$NotificationTypeEnumMap[instance.notificationType]!,

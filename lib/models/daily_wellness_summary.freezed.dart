@@ -17,7 +17,7 @@ mixin _$DailyWellnessSummary {
 
  String get summaryId;// POST /summary/daily/{summaryId}/viewed 에 필요
  String get summaryDate;// yyyy-MM-dd
- int get eventCount; int get totalOutdoorMinutes;// 홈 wrap 카드의 "정시 도착" 칸. arrivalSampleCount가 0이면 도착 결과를
+ int get eventCount; int get totalOutdoorMinutes; String get outdoorSource;// 홈 wrap 카드의 "정시 도착" 칸. arrivalSampleCount가 0이면 도착 결과를
 // 하나도 모르는 것이므로 0회로 표시하지 않고 칸을 감춘다.
  int get onTimeCount; int get arrivalSampleCount; DwlBand get dwlBand; String get cardScenario;// default|exposure|density|rushed|stable
  String get message;// 서버 템플릿 문구. 클라이언트가 재구성하지 않는다
@@ -34,16 +34,16 @@ $DailyWellnessSummaryCopyWith<DailyWellnessSummary> get copyWith => _$DailyWelln
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is DailyWellnessSummary&&(identical(other.summaryId, summaryId) || other.summaryId == summaryId)&&(identical(other.summaryDate, summaryDate) || other.summaryDate == summaryDate)&&(identical(other.eventCount, eventCount) || other.eventCount == eventCount)&&(identical(other.totalOutdoorMinutes, totalOutdoorMinutes) || other.totalOutdoorMinutes == totalOutdoorMinutes)&&(identical(other.onTimeCount, onTimeCount) || other.onTimeCount == onTimeCount)&&(identical(other.arrivalSampleCount, arrivalSampleCount) || other.arrivalSampleCount == arrivalSampleCount)&&(identical(other.dwlBand, dwlBand) || other.dwlBand == dwlBand)&&(identical(other.cardScenario, cardScenario) || other.cardScenario == cardScenario)&&(identical(other.message, message) || other.message == message)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed)&&(identical(other.dwlScore, dwlScore) || other.dwlScore == dwlScore));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DailyWellnessSummary&&(identical(other.summaryId, summaryId) || other.summaryId == summaryId)&&(identical(other.summaryDate, summaryDate) || other.summaryDate == summaryDate)&&(identical(other.eventCount, eventCount) || other.eventCount == eventCount)&&(identical(other.totalOutdoorMinutes, totalOutdoorMinutes) || other.totalOutdoorMinutes == totalOutdoorMinutes)&&(identical(other.outdoorSource, outdoorSource) || other.outdoorSource == outdoorSource)&&(identical(other.onTimeCount, onTimeCount) || other.onTimeCount == onTimeCount)&&(identical(other.arrivalSampleCount, arrivalSampleCount) || other.arrivalSampleCount == arrivalSampleCount)&&(identical(other.dwlBand, dwlBand) || other.dwlBand == dwlBand)&&(identical(other.cardScenario, cardScenario) || other.cardScenario == cardScenario)&&(identical(other.message, message) || other.message == message)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed)&&(identical(other.dwlScore, dwlScore) || other.dwlScore == dwlScore));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,summaryId,summaryDate,eventCount,totalOutdoorMinutes,onTimeCount,arrivalSampleCount,dwlBand,cardScenario,message,isViewed,dwlScore);
+int get hashCode => Object.hash(runtimeType,summaryId,summaryDate,eventCount,totalOutdoorMinutes,outdoorSource,onTimeCount,arrivalSampleCount,dwlBand,cardScenario,message,isViewed,dwlScore);
 
 @override
 String toString() {
-  return 'DailyWellnessSummary(summaryId: $summaryId, summaryDate: $summaryDate, eventCount: $eventCount, totalOutdoorMinutes: $totalOutdoorMinutes, onTimeCount: $onTimeCount, arrivalSampleCount: $arrivalSampleCount, dwlBand: $dwlBand, cardScenario: $cardScenario, message: $message, isViewed: $isViewed, dwlScore: $dwlScore)';
+  return 'DailyWellnessSummary(summaryId: $summaryId, summaryDate: $summaryDate, eventCount: $eventCount, totalOutdoorMinutes: $totalOutdoorMinutes, outdoorSource: $outdoorSource, onTimeCount: $onTimeCount, arrivalSampleCount: $arrivalSampleCount, dwlBand: $dwlBand, cardScenario: $cardScenario, message: $message, isViewed: $isViewed, dwlScore: $dwlScore)';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $DailyWellnessSummaryCopyWith<$Res>  {
   factory $DailyWellnessSummaryCopyWith(DailyWellnessSummary value, $Res Function(DailyWellnessSummary) _then) = _$DailyWellnessSummaryCopyWithImpl;
 @useResult
 $Res call({
- String summaryId, String summaryDate, int eventCount, int totalOutdoorMinutes, int onTimeCount, int arrivalSampleCount, DwlBand dwlBand, String cardScenario, String message, bool isViewed, int? dwlScore
+ String summaryId, String summaryDate, int eventCount, int totalOutdoorMinutes, String outdoorSource, int onTimeCount, int arrivalSampleCount, DwlBand dwlBand, String cardScenario, String message, bool isViewed, int? dwlScore
 });
 
 
@@ -71,13 +71,14 @@ class _$DailyWellnessSummaryCopyWithImpl<$Res>
 
 /// Create a copy of DailyWellnessSummary
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? summaryId = null,Object? summaryDate = null,Object? eventCount = null,Object? totalOutdoorMinutes = null,Object? onTimeCount = null,Object? arrivalSampleCount = null,Object? dwlBand = null,Object? cardScenario = null,Object? message = null,Object? isViewed = null,Object? dwlScore = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? summaryId = null,Object? summaryDate = null,Object? eventCount = null,Object? totalOutdoorMinutes = null,Object? outdoorSource = null,Object? onTimeCount = null,Object? arrivalSampleCount = null,Object? dwlBand = null,Object? cardScenario = null,Object? message = null,Object? isViewed = null,Object? dwlScore = freezed,}) {
   return _then(_self.copyWith(
 summaryId: null == summaryId ? _self.summaryId : summaryId // ignore: cast_nullable_to_non_nullable
 as String,summaryDate: null == summaryDate ? _self.summaryDate : summaryDate // ignore: cast_nullable_to_non_nullable
 as String,eventCount: null == eventCount ? _self.eventCount : eventCount // ignore: cast_nullable_to_non_nullable
 as int,totalOutdoorMinutes: null == totalOutdoorMinutes ? _self.totalOutdoorMinutes : totalOutdoorMinutes // ignore: cast_nullable_to_non_nullable
-as int,onTimeCount: null == onTimeCount ? _self.onTimeCount : onTimeCount // ignore: cast_nullable_to_non_nullable
+as int,outdoorSource: null == outdoorSource ? _self.outdoorSource : outdoorSource // ignore: cast_nullable_to_non_nullable
+as String,onTimeCount: null == onTimeCount ? _self.onTimeCount : onTimeCount // ignore: cast_nullable_to_non_nullable
 as int,arrivalSampleCount: null == arrivalSampleCount ? _self.arrivalSampleCount : arrivalSampleCount // ignore: cast_nullable_to_non_nullable
 as int,dwlBand: null == dwlBand ? _self.dwlBand : dwlBand // ignore: cast_nullable_to_non_nullable
 as DwlBand,cardScenario: null == cardScenario ? _self.cardScenario : cardScenario // ignore: cast_nullable_to_non_nullable
@@ -169,10 +170,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String summaryId,  String summaryDate,  int eventCount,  int totalOutdoorMinutes,  int onTimeCount,  int arrivalSampleCount,  DwlBand dwlBand,  String cardScenario,  String message,  bool isViewed,  int? dwlScore)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String summaryId,  String summaryDate,  int eventCount,  int totalOutdoorMinutes,  String outdoorSource,  int onTimeCount,  int arrivalSampleCount,  DwlBand dwlBand,  String cardScenario,  String message,  bool isViewed,  int? dwlScore)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _DailyWellnessSummary() when $default != null:
-return $default(_that.summaryId,_that.summaryDate,_that.eventCount,_that.totalOutdoorMinutes,_that.onTimeCount,_that.arrivalSampleCount,_that.dwlBand,_that.cardScenario,_that.message,_that.isViewed,_that.dwlScore);case _:
+return $default(_that.summaryId,_that.summaryDate,_that.eventCount,_that.totalOutdoorMinutes,_that.outdoorSource,_that.onTimeCount,_that.arrivalSampleCount,_that.dwlBand,_that.cardScenario,_that.message,_that.isViewed,_that.dwlScore);case _:
   return orElse();
 
 }
@@ -190,10 +191,10 @@ return $default(_that.summaryId,_that.summaryDate,_that.eventCount,_that.totalOu
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String summaryId,  String summaryDate,  int eventCount,  int totalOutdoorMinutes,  int onTimeCount,  int arrivalSampleCount,  DwlBand dwlBand,  String cardScenario,  String message,  bool isViewed,  int? dwlScore)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String summaryId,  String summaryDate,  int eventCount,  int totalOutdoorMinutes,  String outdoorSource,  int onTimeCount,  int arrivalSampleCount,  DwlBand dwlBand,  String cardScenario,  String message,  bool isViewed,  int? dwlScore)  $default,) {final _that = this;
 switch (_that) {
 case _DailyWellnessSummary():
-return $default(_that.summaryId,_that.summaryDate,_that.eventCount,_that.totalOutdoorMinutes,_that.onTimeCount,_that.arrivalSampleCount,_that.dwlBand,_that.cardScenario,_that.message,_that.isViewed,_that.dwlScore);case _:
+return $default(_that.summaryId,_that.summaryDate,_that.eventCount,_that.totalOutdoorMinutes,_that.outdoorSource,_that.onTimeCount,_that.arrivalSampleCount,_that.dwlBand,_that.cardScenario,_that.message,_that.isViewed,_that.dwlScore);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -210,10 +211,10 @@ return $default(_that.summaryId,_that.summaryDate,_that.eventCount,_that.totalOu
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String summaryId,  String summaryDate,  int eventCount,  int totalOutdoorMinutes,  int onTimeCount,  int arrivalSampleCount,  DwlBand dwlBand,  String cardScenario,  String message,  bool isViewed,  int? dwlScore)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String summaryId,  String summaryDate,  int eventCount,  int totalOutdoorMinutes,  String outdoorSource,  int onTimeCount,  int arrivalSampleCount,  DwlBand dwlBand,  String cardScenario,  String message,  bool isViewed,  int? dwlScore)?  $default,) {final _that = this;
 switch (_that) {
 case _DailyWellnessSummary() when $default != null:
-return $default(_that.summaryId,_that.summaryDate,_that.eventCount,_that.totalOutdoorMinutes,_that.onTimeCount,_that.arrivalSampleCount,_that.dwlBand,_that.cardScenario,_that.message,_that.isViewed,_that.dwlScore);case _:
+return $default(_that.summaryId,_that.summaryDate,_that.eventCount,_that.totalOutdoorMinutes,_that.outdoorSource,_that.onTimeCount,_that.arrivalSampleCount,_that.dwlBand,_that.cardScenario,_that.message,_that.isViewed,_that.dwlScore);case _:
   return null;
 
 }
@@ -225,7 +226,7 @@ return $default(_that.summaryId,_that.summaryDate,_that.eventCount,_that.totalOu
 @JsonSerializable()
 
 class _DailyWellnessSummary implements DailyWellnessSummary {
-  const _DailyWellnessSummary({required this.summaryId, required this.summaryDate, required this.eventCount, required this.totalOutdoorMinutes, this.onTimeCount = 0, this.arrivalSampleCount = 0, required this.dwlBand, required this.cardScenario, required this.message, this.isViewed = false, this.dwlScore});
+  const _DailyWellnessSummary({required this.summaryId, required this.summaryDate, required this.eventCount, required this.totalOutdoorMinutes, required this.outdoorSource, this.onTimeCount = 0, this.arrivalSampleCount = 0, required this.dwlBand, required this.cardScenario, required this.message, this.isViewed = false, this.dwlScore});
   factory _DailyWellnessSummary.fromJson(Map<String, dynamic> json) => _$DailyWellnessSummaryFromJson(json);
 
 @override final  String summaryId;
@@ -234,6 +235,7 @@ class _DailyWellnessSummary implements DailyWellnessSummary {
 // yyyy-MM-dd
 @override final  int eventCount;
 @override final  int totalOutdoorMinutes;
+@override final  String outdoorSource;
 // 홈 wrap 카드의 "정시 도착" 칸. arrivalSampleCount가 0이면 도착 결과를
 // 하나도 모르는 것이므로 0회로 표시하지 않고 칸을 감춘다.
 @override@JsonKey() final  int onTimeCount;
@@ -259,16 +261,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DailyWellnessSummary&&(identical(other.summaryId, summaryId) || other.summaryId == summaryId)&&(identical(other.summaryDate, summaryDate) || other.summaryDate == summaryDate)&&(identical(other.eventCount, eventCount) || other.eventCount == eventCount)&&(identical(other.totalOutdoorMinutes, totalOutdoorMinutes) || other.totalOutdoorMinutes == totalOutdoorMinutes)&&(identical(other.onTimeCount, onTimeCount) || other.onTimeCount == onTimeCount)&&(identical(other.arrivalSampleCount, arrivalSampleCount) || other.arrivalSampleCount == arrivalSampleCount)&&(identical(other.dwlBand, dwlBand) || other.dwlBand == dwlBand)&&(identical(other.cardScenario, cardScenario) || other.cardScenario == cardScenario)&&(identical(other.message, message) || other.message == message)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed)&&(identical(other.dwlScore, dwlScore) || other.dwlScore == dwlScore));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DailyWellnessSummary&&(identical(other.summaryId, summaryId) || other.summaryId == summaryId)&&(identical(other.summaryDate, summaryDate) || other.summaryDate == summaryDate)&&(identical(other.eventCount, eventCount) || other.eventCount == eventCount)&&(identical(other.totalOutdoorMinutes, totalOutdoorMinutes) || other.totalOutdoorMinutes == totalOutdoorMinutes)&&(identical(other.outdoorSource, outdoorSource) || other.outdoorSource == outdoorSource)&&(identical(other.onTimeCount, onTimeCount) || other.onTimeCount == onTimeCount)&&(identical(other.arrivalSampleCount, arrivalSampleCount) || other.arrivalSampleCount == arrivalSampleCount)&&(identical(other.dwlBand, dwlBand) || other.dwlBand == dwlBand)&&(identical(other.cardScenario, cardScenario) || other.cardScenario == cardScenario)&&(identical(other.message, message) || other.message == message)&&(identical(other.isViewed, isViewed) || other.isViewed == isViewed)&&(identical(other.dwlScore, dwlScore) || other.dwlScore == dwlScore));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,summaryId,summaryDate,eventCount,totalOutdoorMinutes,onTimeCount,arrivalSampleCount,dwlBand,cardScenario,message,isViewed,dwlScore);
+int get hashCode => Object.hash(runtimeType,summaryId,summaryDate,eventCount,totalOutdoorMinutes,outdoorSource,onTimeCount,arrivalSampleCount,dwlBand,cardScenario,message,isViewed,dwlScore);
 
 @override
 String toString() {
-  return 'DailyWellnessSummary(summaryId: $summaryId, summaryDate: $summaryDate, eventCount: $eventCount, totalOutdoorMinutes: $totalOutdoorMinutes, onTimeCount: $onTimeCount, arrivalSampleCount: $arrivalSampleCount, dwlBand: $dwlBand, cardScenario: $cardScenario, message: $message, isViewed: $isViewed, dwlScore: $dwlScore)';
+  return 'DailyWellnessSummary(summaryId: $summaryId, summaryDate: $summaryDate, eventCount: $eventCount, totalOutdoorMinutes: $totalOutdoorMinutes, outdoorSource: $outdoorSource, onTimeCount: $onTimeCount, arrivalSampleCount: $arrivalSampleCount, dwlBand: $dwlBand, cardScenario: $cardScenario, message: $message, isViewed: $isViewed, dwlScore: $dwlScore)';
 }
 
 
@@ -279,7 +281,7 @@ abstract mixin class _$DailyWellnessSummaryCopyWith<$Res> implements $DailyWelln
   factory _$DailyWellnessSummaryCopyWith(_DailyWellnessSummary value, $Res Function(_DailyWellnessSummary) _then) = __$DailyWellnessSummaryCopyWithImpl;
 @override @useResult
 $Res call({
- String summaryId, String summaryDate, int eventCount, int totalOutdoorMinutes, int onTimeCount, int arrivalSampleCount, DwlBand dwlBand, String cardScenario, String message, bool isViewed, int? dwlScore
+ String summaryId, String summaryDate, int eventCount, int totalOutdoorMinutes, String outdoorSource, int onTimeCount, int arrivalSampleCount, DwlBand dwlBand, String cardScenario, String message, bool isViewed, int? dwlScore
 });
 
 
@@ -296,13 +298,14 @@ class __$DailyWellnessSummaryCopyWithImpl<$Res>
 
 /// Create a copy of DailyWellnessSummary
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? summaryId = null,Object? summaryDate = null,Object? eventCount = null,Object? totalOutdoorMinutes = null,Object? onTimeCount = null,Object? arrivalSampleCount = null,Object? dwlBand = null,Object? cardScenario = null,Object? message = null,Object? isViewed = null,Object? dwlScore = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? summaryId = null,Object? summaryDate = null,Object? eventCount = null,Object? totalOutdoorMinutes = null,Object? outdoorSource = null,Object? onTimeCount = null,Object? arrivalSampleCount = null,Object? dwlBand = null,Object? cardScenario = null,Object? message = null,Object? isViewed = null,Object? dwlScore = freezed,}) {
   return _then(_DailyWellnessSummary(
 summaryId: null == summaryId ? _self.summaryId : summaryId // ignore: cast_nullable_to_non_nullable
 as String,summaryDate: null == summaryDate ? _self.summaryDate : summaryDate // ignore: cast_nullable_to_non_nullable
 as String,eventCount: null == eventCount ? _self.eventCount : eventCount // ignore: cast_nullable_to_non_nullable
 as int,totalOutdoorMinutes: null == totalOutdoorMinutes ? _self.totalOutdoorMinutes : totalOutdoorMinutes // ignore: cast_nullable_to_non_nullable
-as int,onTimeCount: null == onTimeCount ? _self.onTimeCount : onTimeCount // ignore: cast_nullable_to_non_nullable
+as int,outdoorSource: null == outdoorSource ? _self.outdoorSource : outdoorSource // ignore: cast_nullable_to_non_nullable
+as String,onTimeCount: null == onTimeCount ? _self.onTimeCount : onTimeCount // ignore: cast_nullable_to_non_nullable
 as int,arrivalSampleCount: null == arrivalSampleCount ? _self.arrivalSampleCount : arrivalSampleCount // ignore: cast_nullable_to_non_nullable
 as int,dwlBand: null == dwlBand ? _self.dwlBand : dwlBand // ignore: cast_nullable_to_non_nullable
 as DwlBand,cardScenario: null == cardScenario ? _self.cardScenario : cardScenario // ignore: cast_nullable_to_non_nullable

@@ -16,7 +16,7 @@ abstract class Place with _$Place {
     required String placeId,
     required String placeType,
     required String placeName,
-    String? address,
+    required String address,
     required double lat,
     required double lng,
     @Default(false) bool isPrimary,

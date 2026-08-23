@@ -487,11 +487,20 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? query,
     bool requiresAuth = true,
+    bool includeRefreshToken = false,
   }) async {
     final session = requiresAuth ? await _captureSession() : null;
+    final refreshToken = includeRefreshToken
+        ? await _secureStorage.refreshToken
+        : null;
     return _handle<T>(
-      (accessToken) =>
-          _http.get(_uri(path, query), headers: _readHeaders(accessToken)),
+      (accessToken) => _http.get(
+        _uri(path, query),
+        headers: {
+          ..._readHeaders(accessToken),
+          if (refreshToken != null) "X-Refresh-Token": refreshToken,
+        },
+      ),
       session: session,
       allowRefresh: requiresAuth,
     );
@@ -532,13 +541,20 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
     bool requiresAuth = true,
+    bool includeRefreshToken = false,
   }) async {
     final idempotencyKey = _uuid.v4();
     final session = requiresAuth ? await _captureSession() : null;
+    final refreshToken = includeRefreshToken
+        ? await _secureStorage.refreshToken
+        : null;
     return _handle<T>(
       (accessToken) => _http.patch(
         _uri(path),
-        headers: _writeHeaders(idempotencyKey, accessToken),
+        headers: {
+          ..._writeHeaders(idempotencyKey, accessToken),
+          if (refreshToken != null) "X-Refresh-Token": refreshToken,
+        },
         body: jsonEncode(body ?? {}),
       ),
       session: session,
@@ -546,13 +562,23 @@ class ApiClient {
     );
   }
 
-  Future<T> delete<T>(String path, {bool requiresAuth = true}) async {
+  Future<T> delete<T>(
+    String path, {
+    bool requiresAuth = true,
+    bool includeRefreshToken = false,
+  }) async {
     final idempotencyKey = _uuid.v4();
     final session = requiresAuth ? await _captureSession() : null;
+    final refreshToken = includeRefreshToken
+        ? await _secureStorage.refreshToken
+        : null;
     return _handle<T>(
       (accessToken) => _http.delete(
         _uri(path),
-        headers: _writeHeaders(idempotencyKey, accessToken),
+        headers: {
+          ..._writeHeaders(idempotencyKey, accessToken),
+          if (refreshToken != null) "X-Refresh-Token": refreshToken,
+        },
       ),
       session: session,
       allowRefresh: requiresAuth,
