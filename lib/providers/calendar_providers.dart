@@ -50,16 +50,48 @@ List<EventRange> _splitIntoSafeChunks(EventRange range) {
   return chunks;
 }
 
+/// 청크 중 일부만 실패해도(일시적 네트워크 오류 등) 전체 화면을 에러로
+/// 만들지 않는다 — 성공한 청크만 모아서 반환하고, **전부** 실패했을 때만
+/// (원래 단일 요청이었을 때와 동일하게) 에러를 전파한다.
+Future<List<T>> _fetchChunksResilient<T>(
+  List<Future<List<T>>> futures,
+) async {
+  final settled = await Future.wait(
+    futures.map(
+      (f) => f.then<Object?>((v) => v).catchError((Object e) => e),
+    ),
+  );
+  final oks = <List<T>>[];
+  Object? firstError;
+  for (final r in settled) {
+    if (r is List<T>) {
+      oks.add(r);
+    } else {
+      firstError ??= r;
+    }
+  }
+  if (oks.isEmpty && firstError != null) {
+    throw firstError;
+  }
+  return oks.expand((e) => e).toList();
+}
+
 final eventsInRangeProvider = FutureProvider.autoDispose
     .family<List<Event>, EventRange>((ref, range) async {
       final repo = ref.watch(ensomRepositoryProvider);
       final chunks = _splitIntoSafeChunks(range);
-      final results = await Future.wait(
-        chunks.map((c) => repo.fetchEvents(from: c.from, to: c.to)),
+      final events = await _fetchChunksResilient(
+        chunks.map((c) => repo.fetchEvents(from: c.from, to: c.to)).toList(),
       );
-      final events = results.expand((e) => e).toList()
-        ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
-      return events;
+      // 청크는 [from, to) 반개구간으로 인접·비중첩이라(BE
+      // EventRepository: `startsAt >= :from AND startsAt < :to`로 확인)
+      // 원칙적으로 중복이 없지만, eventId 기준으로 한 번 더 방어한다.
+      final seen = <String>{};
+      final deduped = [
+        for (final e in events)
+          if (seen.add(e.eventId)) e,
+      ]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+      return deduped;
     });
 
 /// S-11 — 보이는 기간의 미해결 분류 질문. 캘린더 화면이 이 범위를 정한다.
@@ -67,12 +99,17 @@ final pendingReviewsProvider = FutureProvider.autoDispose
     .family<List<PendingEventReview>, EventRange>((ref, range) async {
       final repo = ref.watch(ensomRepositoryProvider);
       final chunks = _splitIntoSafeChunks(range);
-      final results = await Future.wait(
-        chunks.map((c) => repo.fetchPendingReviews(from: c.from, to: c.to)),
+      final reviews = await _fetchChunksResilient(
+        chunks
+            .map((c) => repo.fetchPendingReviews(from: c.from, to: c.to))
+            .toList(),
       );
-      final reviews = results.expand((r) => r).toList()
-        ..sort((a, b) => a.startsAt.compareTo(b.startsAt));
-      return reviews;
+      final seen = <String>{};
+      final deduped = [
+        for (final r in reviews)
+          if (seen.add(r.reviewId)) r,
+      ]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
+      return deduped;
     });
 
 final weeklySummaryProvider = FutureProvider.autoDispose
