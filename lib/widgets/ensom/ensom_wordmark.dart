@@ -11,10 +11,16 @@ class EnsomWordmark extends StatefulWidget {
     this.fontSize = 40,
     this.color = EnsomColors.ink,
     this.animate = false,
+    this.ringScale = .82,
+    this.ringTrackColor,
+    this.ringArcColor,
   });
 
   final double fontSize;
   final Color color;
+  final double ringScale;
+  final Color? ringTrackColor;
+  final Color? ringArcColor;
 
   /// true면 링이 1.05초 주기로 회전한다(스플래시 전용).
   /// false면 정지된 상태로 그린다(로그인 화면 상단 워드마크 등).
@@ -47,16 +53,26 @@ class _EnsomWordmarkState extends State<EnsomWordmark>
 
   @override
   Widget build(BuildContext context) {
-    final ringSize = widget.fontSize * 0.82;
+    final ringSize = widget.fontSize * widget.ringScale;
     final ring = SizedBox(
       width: ringSize,
       height: ringSize,
       child: _controller == null
-          ? CustomPaint(painter: _RingPainter(0, widget.color))
+          ? CustomPaint(
+              painter: _RingPainter(
+                0,
+                widget.ringTrackColor ?? widget.color.withValues(alpha: .18),
+                widget.ringArcColor ?? widget.color,
+              ),
+            )
           : AnimatedBuilder(
               animation: _controller!,
               builder: (context, _) => CustomPaint(
-                painter: _RingPainter(_controller!.value, widget.color),
+                painter: _RingPainter(
+                  _controller!.value,
+                  widget.ringTrackColor ?? widget.color.withValues(alpha: .18),
+                  widget.ringArcColor ?? widget.color,
+                ),
               ),
             ),
     );
@@ -96,24 +112,26 @@ class _EnsomWordmarkState extends State<EnsomWordmark>
 /// 트랙(잉크 18%) + arc(잉크 100%, 68% 둘레) 링. progress(0~1)가 arc의
 /// 회전 각도를 결정한다 — 목업의 `stroke-dasharray:47 22` 비율과 동일.
 class _RingPainter extends CustomPainter {
-  _RingPainter(this.progress, this.color);
+  _RingPainter(this.progress, this.trackColor, this.arcColor);
   final double progress;
-  final Color color;
+  final Color trackColor;
+  final Color arcColor;
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
-    final radius = size.width / 2 - size.width * 0.11;
-    final strokeWidth = size.width * 0.22;
+    // HTML SVG: viewBox 32, circle radius 11, stroke-width 7.
+    final radius = size.width * 11 / 32;
+    final strokeWidth = size.width * 7 / 32;
 
     final trackPaint = Paint()
-      ..color = color.withValues(alpha: .18)
+      ..color = trackColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawCircle(center, radius, trackPaint);
 
     final arcPaint = Paint()
-      ..color = color
+      ..color = arcColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
@@ -130,5 +148,7 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _RingPainter oldDelegate) =>
-      oldDelegate.progress != progress || oldDelegate.color != color;
+      oldDelegate.progress != progress ||
+      oldDelegate.trackColor != trackColor ||
+      oldDelegate.arcColor != arcColor;
 }
