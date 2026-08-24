@@ -26,10 +26,26 @@ class WeatherDetailScreen extends ConsumerWidget {
         top: false,
         child: envAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, st) => const Center(
-            child: Text(
-              "날씨 정보를 불러오지 못했어요.",
-              style: TextStyle(color: EnsomColors.inkMuted),
+          error: (err, st) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    "날씨 정보를 불러오지 못했어요.",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: EnsomColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: () => ref.invalidate(environmentProvider),
+                    child: const Text("다시 시도"),
+                  ),
+                ],
+              ),
             ),
           ),
           data: (data) {
@@ -87,7 +103,7 @@ class WeatherDetailScreen extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Text(
-                    "현재 위치 기준 날씨·대기질 정보예요. 실제 준비 계획은 일정 시각과 이동 경로를 함께 반영해 계산돼요.",
+                    "대표 장소 기준 날씨·대기질 정보예요. 실제 준비 계획은 일정 시각과 이동 경로를 함께 반영해 계산돼요.",
                     style: TextStyle(
                       fontSize: 11,
                       color: EnsomColors.inkMuted,
@@ -122,7 +138,7 @@ class _WeatherHero extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            "현재 위치",
+            "대표 장소",
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -177,7 +193,9 @@ class _StatCard extends StatelessWidget {
             style: const TextStyle(
               fontSize: 9.5,
               fontWeight: FontWeight.w600,
-              color: EnsomColors.inkFaint,
+              // inkFaint(#6F7269)는 surface2(#EEF0EA) 위에서 대비 4.27:1로
+              // WCAG AA 본문 기준(4.5:1) 미달이라 inkMuted(5.15:1)를 쓴다.
+              color: EnsomColors.inkMuted,
             ),
           ),
           Padding(

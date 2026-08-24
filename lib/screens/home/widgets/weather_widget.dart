@@ -43,7 +43,7 @@ class WeatherWidget extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "현재 위치",
+                "대표 장소",
                 style: TextStyle(
                   fontSize: 9.5,
                   fontWeight: FontWeight.w600,
