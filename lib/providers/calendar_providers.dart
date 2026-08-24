@@ -2,6 +2,7 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:intl/intl.dart";
 import "../models/calendar_connection.dart";
 import "../models/event.dart";
+import "../models/plan.dart";
 import "../models/pending_event_review.dart";
 import "../models/weekly_summary.dart";
 import "../repository/providers.dart";
@@ -53,13 +54,9 @@ List<EventRange> _splitIntoSafeChunks(EventRange range) {
 /// 청크 중 일부만 실패해도(일시적 네트워크 오류 등) 전체 화면을 에러로
 /// 만들지 않는다 — 성공한 청크만 모아서 반환하고, **전부** 실패했을 때만
 /// (원래 단일 요청이었을 때와 동일하게) 에러를 전파한다.
-Future<List<T>> _fetchChunksResilient<T>(
-  List<Future<List<T>>> futures,
-) async {
+Future<List<T>> _fetchChunksResilient<T>(List<Future<List<T>>> futures) async {
   final settled = await Future.wait(
-    futures.map(
-      (f) => f.then<Object?>((v) => v).catchError((Object e) => e),
-    ),
+    futures.map((f) => f.then<Object?>((v) => v).catchError((Object e) => e)),
   );
   final oks = <List<T>>[];
   Object? firstError;
@@ -89,7 +86,11 @@ final eventsInRangeProvider = FutureProvider.autoDispose
       final seen = <String>{};
       final deduped = [
         for (final e in events)
-          if (seen.add(e.eventId)) e,
+          // DELETE /events/{id} is a soft delete. The backend currently keeps
+          // cancelled events in GET /events, so calendar-facing queries must
+          // hide them just like a physically deleted event.
+          if (e.status != EventLifecycleStatus.cancelled && seen.add(e.eventId))
+            e,
       ]..sort((a, b) => a.startsAt.compareTo(b.startsAt));
       return deduped;
     });
