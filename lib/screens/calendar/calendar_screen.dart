@@ -260,8 +260,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   event: selectedEvents[i],
                   isLast: i == selectedEvents.length - 1,
                   hot: _isHot(selectedEvents, i),
-                  onTap: () =>
-                      context.push("/events/${selectedEvents[i].eventId}"),
+                  onTap: () async {
+                    final changed = await context.push<bool>(
+                      "/events/${selectedEvents[i].eventId}",
+                    );
+                    if (!mounted || changed != true) return;
+                    ref.invalidate(eventsInRangeProvider(_fetchRange));
+                    ref.invalidate(pendingReviewsProvider(_fetchRange));
+                  },
                 ),
                 childCount: selectedEvents.length,
               ),

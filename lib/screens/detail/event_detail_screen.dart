@@ -4,10 +4,10 @@ import "package:go_router/go_router.dart";
 import "../../models/event.dart";
 import "../../models/plan.dart";
 import "../../network/api_client.dart";
-import "../../providers/auth_providers.dart";
 import "../../providers/calendar_providers.dart";
 import "../calendar/widgets/classification_review_sheet.dart";
 import "../../providers/home_providers.dart";
+import "../../repository/providers.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_error_banner.dart";
 import "../../widgets/ensom/ensom_pill_button.dart";
@@ -112,7 +112,13 @@ class EventDetailScreen extends ConsumerWidget {
       builder: (_) =>
           PlanEditSheet(eventId: eventId, initialPrepStartAt: plan.prepStartAt),
     );
-    if (saved == true) ref.invalidate(planControllerProvider(eventId));
+    if (saved == true) {
+      // PlanEditSheet's controller already contains the PATCH response. Keep
+      // that authoritative revision instead of discarding it and racing a
+      // second GET against the just-completed update.
+      ref.invalidate(todayPlanProvider);
+      ref.invalidate(nextEventProvider);
+    }
   }
 
   void _showDeleteConfirm(BuildContext context, WidgetRef ref) {
@@ -141,13 +147,18 @@ class EventDetailScreen extends ConsumerWidget {
 
   Future<void> _deleteEvent(BuildContext context, WidgetRef ref) async {
     try {
-      final apiClient = ref.read(apiClientProvider);
-      await apiClient.delete("/events/$eventId");
+      await ref.read(ensomRepositoryProvider).deleteEvent(eventId);
+      ref.invalidate(eventDetailProvider(eventId));
+      ref.invalidate(planControllerProvider(eventId));
+      ref.invalidate(eventsInRangeProvider);
+      ref.invalidate(pendingReviewsProvider);
+      ref.invalidate(todayPlanProvider);
+      ref.invalidate(nextEventProvider);
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text("삭제했어요.")));
-        context.pop();
+        context.pop(true);
       }
     } on ApiException catch (e) {
       if (context.mounted) {
