@@ -60,7 +60,11 @@ class _DailySummaryScreenState extends ConsumerState<DailySummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
+    // DateTime.now()를 그대로 쓰면 밀리초까지 달라 매 리빌드마다 .family 키가
+    // 바뀌어 API를 무한 재호출했다(관측: 초당 수십 회, nginx rate limit 503).
+    // 날짜만 남기면 같은 날엔 항상 같은 값이라 provider가 재사용된다.
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final summaryAsync = ref.watch(dailySummaryProvider(today));
 
     return Scaffold(
