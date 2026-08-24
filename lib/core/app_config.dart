@@ -47,7 +47,7 @@ const String kKakaoJavaScriptAppKey = String.fromEnvironment(
 const String kGoogleServerClientId = String.fromEnvironment(
   'OAUTH_GOOGLE_CLIENT_ID',
   defaultValue:
-      '496007970310-15p3l1gvka68ijtphubh889pvnk9crs7.apps.googleusercontent.com',
+      '496007970310-mj44hrd9q0dsco5m15v70c9iq8evid2d.apps.googleusercontent.com',
 );
 
 /// 백엔드 API base URL. 운영 도메인은 api.ensom.shop이며(구 api.ensom.app은
