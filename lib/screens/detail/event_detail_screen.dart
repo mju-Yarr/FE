@@ -9,6 +9,7 @@ import "../../network/api_client.dart";
 import "../../providers/calendar_providers.dart";
 import "../calendar/widgets/classification_review_sheet.dart";
 import "../../providers/home_providers.dart";
+import "../../repository/ensom_repository.dart";
 import "../../repository/providers.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_error_banner.dart";
@@ -27,8 +28,79 @@ final localNotificationServiceProvider = Provider<LocalNotificationService>((
   return LocalNotificationService.instance;
 });
 
-final eventDeletionInProgressProvider = StateProvider.autoDispose
-    .family<bool, String>((ref, eventId) => false);
+final eventDeletionControllerProvider = StateNotifierProvider.autoDispose
+    .family<EventDeletionController, AsyncValue<void>, String>((
+      ref,
+      eventId,
+    ) {
+      return EventDeletionController(
+        ref: ref,
+        repo: ref.watch(ensomRepositoryProvider),
+        notifications: ref.watch(localNotificationServiceProvider),
+        eventId: eventId,
+      );
+    });
+
+/// 일정 삭제를 `EventDetailScreen`의 위젯 수명과 분리해서 처리한다.
+///
+/// 이전엔 삭제·알림 취소·캐시 무효화를 화면의 `WidgetRef`로 직접
+/// 실행했다. 삭제 도중 사용자가 뒤로 가서 화면이 dispose되면 그 `ref`도
+/// 함께 무효화되는데, 그 시점에 서버 DELETE는 이미 성공해 있을 수
+/// 있다 — 이후 알림 취소·캐시 무효화 호출이 dispose된 ref 때문에
+/// 실패하면 (1) 성공한 삭제인데도 알림·캐시가 정리되지 않고, (2)
+/// in-flight 표시가 사라져 같은 일정을 다시 삭제할 수 있었다.
+///
+/// 이 컨트롤러는 provider 자신의 `Ref`(위젯이 아니라 provider의 수명에
+/// 묶임)를 갖고 있고, 삭제가 끝날 때까지 `ref.keepAlive()`로 autoDispose를
+/// 미룬다. 그래서 화면이 사라져도 후처리가 끝까지 실행되고, 사용자가
+/// 같은 일정 상세로 돌아오면 여전히 진행 중인 상태를 그대로 보게 된다.
+///
+/// 서버 DELETE 성공을 유일한 authoritative commit 경계로 삼는다 — 그
+/// 아래 알림 취소는 best-effort로 격리해서, 알림 취소가 실패해도 이미
+/// 성공한 삭제를 실패로 되돌리지 않는다.
+class EventDeletionController extends StateNotifier<AsyncValue<void>> {
+  EventDeletionController({
+    required Ref ref,
+    required this.repo,
+    required this.notifications,
+    required this.eventId,
+  }) : _ref = ref,
+       super(const AsyncValue.data(null));
+
+  final Ref _ref;
+  final EnsomRepository repo;
+  final LocalNotificationService notifications;
+  final String eventId;
+
+  Future<void> delete() async {
+    if (state.isLoading) return;
+    final keepAliveLink = _ref.keepAlive();
+    state = const AsyncValue.loading();
+    try {
+      await repo.deleteEvent(eventId);
+
+      try {
+        await notifications.cancelPlanNotifications(eventId: eventId);
+      } catch (_) {
+        // best-effort — 알림 정리 실패는 이미 끝난 삭제 결과에 영향을 주지 않는다.
+      }
+
+      _ref.invalidate(eventDetailProvider(eventId));
+      _ref.invalidate(planControllerProvider(eventId));
+      _ref.invalidate(eventsInRangeProvider);
+      _ref.invalidate(pendingReviewsProvider);
+      _ref.invalidate(weeklySummaryProvider);
+      _ref.invalidate(todayPlanProvider);
+      _ref.invalidate(nextEventProvider);
+
+      state = const AsyncValue.data(null);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    } finally {
+      keepAliveLink.close();
+    }
+  }
+}
 
 /// DTL-01 일정 상세 (S-12)
 /// 진입: HM-01 카드 탭, CAL-01 카드 탭, HM-02 알림 행
@@ -129,11 +201,38 @@ class EventDetailScreen extends ConsumerWidget {
       // second GET against the just-completed update.
       ref.invalidate(todayPlanProvider);
       ref.invalidate(nextEventProvider);
+      await _rescheduleNotifications(ref);
+    }
+  }
+
+  /// PATCH 성공 후 새 리비전으로 로컬 준비·출발 알림을 재예약한다.
+  /// `LocalNotificationService.schedulePlanNotifications`는 같은
+  /// eventId의 기존 알림을 먼저 취소하므로 이전 리비전 알림이 남지
+  /// 않는다. home_screen.dart는 홈의 히어로 계획이 빌드될 때만 이 함수를
+  /// 호출하므로, 히어로가 아닌 다른 일정을 여기서 수정하면 홈이 절대
+  /// 재예약하지 않는다 — 그래서 이 화면이 직접 책임진다. 알림 재예약은
+  /// best-effort라 실패해도 이미 성공한 계획 수정 자체는 되돌리지 않는다.
+  Future<void> _rescheduleNotifications(WidgetRef ref) async {
+    try {
+      final plan = ref.read(planControllerProvider(eventId)).value;
+      final event = ref.read(eventDetailProvider(eventId)).value;
+      if (plan == null || event == null) return;
+      await ref
+          .read(localNotificationServiceProvider)
+          .schedulePlanNotifications(
+            eventId: eventId,
+            revisionNo: plan.revisionNo,
+            prepStartAt: plan.prepStartAt,
+            recommendedDepartAt: plan.recommendedDepartAt,
+            eventDisplayName: event.displayName,
+          );
+    } catch (_) {
+      // best-effort — 실패해도 계획 수정 자체는 이미 완료된 상태다.
     }
   }
 
   void _showDeleteConfirm(BuildContext context, WidgetRef ref) {
-    if (ref.read(eventDeletionInProgressProvider(eventId))) return;
+    if (ref.read(eventDeletionControllerProvider(eventId)).isLoading) return;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -147,7 +246,10 @@ class EventDetailScreen extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(ctx);
-              _deleteEvent(context, ref);
+              // 실제 삭제·알림 취소·캐시 무효화는 화면이 아니라
+              // EventDeletionController가 수행한다 — 이 화면이 사라져도
+              // (뒤로가기 등) 진행 중이던 후처리가 끝까지 이어진다.
+              ref.read(eventDeletionControllerProvider(eventId).notifier).delete();
             },
             style: TextButton.styleFrom(foregroundColor: EnsomColors.caution),
             child: const Text("삭제"),
@@ -157,51 +259,37 @@ class EventDetailScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _deleteEvent(BuildContext context, WidgetRef ref) async {
-    final deletionState = ref.read(
-      eventDeletionInProgressProvider(eventId).notifier,
-    );
-    if (deletionState.state) return;
-    deletionState.state = true;
-
-    try {
-      await ref.read(ensomRepositoryProvider).deleteEvent(eventId);
-      await ref
-          .read(localNotificationServiceProvider)
-          .cancelPlanNotifications(eventId: eventId);
-      ref.invalidate(eventDetailProvider(eventId));
-      ref.invalidate(planControllerProvider(eventId));
-      ref.invalidate(eventsInRangeProvider);
-      ref.invalidate(pendingReviewsProvider);
-      ref.invalidate(weeklySummaryProvider);
-      ref.invalidate(todayPlanProvider);
-      ref.invalidate(nextEventProvider);
-      if (context.mounted) {
-        deletionState.state = false;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text("삭제했어요.")));
-        context.pop(true);
-      }
-    } on ApiException catch (e) {
-      if (!context.mounted) return;
-      deletionState.state = false;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.message)));
-    } catch (_) {
-      if (!context.mounted) return;
-      deletionState.state = false;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("삭제를 마무리하지 못했어요. 다시 시도해주세요.")),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eventAsync = ref.watch(eventDetailProvider(eventId));
-    final isDeleting = ref.watch(eventDeletionInProgressProvider(eventId));
+    final deletionState = ref.watch(eventDeletionControllerProvider(eventId));
+    final isDeleting = deletionState.isLoading;
+
+    // loading -> data 전이일 때만 삭제 "성공" 알림/pop을 실행한다. 컨트롤러의
+    // 초기 idle 상태도 AsyncData(null)이라 next만 보면 구분할 수 없어서,
+    // 반드시 로딩에서 넘어온 전이인지(prev is AsyncLoading)까지 확인한다.
+    // 삭제 중 이 화면이 dispose됐다가 같은 일정으로 재진입해도 컨트롤러
+    // 상태가 그대로 살아있어(keepAlive) 여기서 다시 정확히 한 번 반응한다.
+    ref.listen<AsyncValue<void>>(eventDeletionControllerProvider(eventId), (
+      previous,
+      next,
+    ) {
+      if (previous is! AsyncLoading) return;
+      if (next.hasError) {
+        final error = next.error;
+        final message = error is ApiException
+            ? error.message
+            : "삭제를 마무리하지 못했어요. 다시 시도해주세요.";
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("삭제했어요.")));
+      context.pop(true);
+    });
 
     return Scaffold(
       backgroundColor: EnsomColors.canvas,
