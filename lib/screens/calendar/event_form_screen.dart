@@ -9,6 +9,7 @@ import "../../providers/calendar_providers.dart";
 import "../../providers/map_providers.dart";
 import "../map/widgets/place_quick_pick_sheet.dart";
 import "../../repository/providers.dart";
+import "../../repository/ensom_repository.dart";
 import "../../theme/ensom_colors.dart";
 import "../../widgets/ensom/ensom_chip.dart";
 import "../../widgets/ensom/ensom_date_picker_sheet.dart";
@@ -28,6 +29,28 @@ DateTime nextEventStartTime(DateTime now) {
     roundedMinute == 0 ? candidate.hour + 1 : candidate.hour,
     roundedMinute,
   );
+}
+
+@visibleForTesting
+Future<String?> resolveEventOriginPlaceId({
+  required EnsomRepository repository,
+  required LocationState locationState,
+  required bool hasMapDraft,
+  String? draftOriginPlaceId,
+}) async {
+  if (hasMapDraft) return draftOriginPlaceId;
+  if (locationState != LocationState.requiredResolved) return null;
+
+  try {
+    final places = await repository.fetchPlaces();
+    if (places.isEmpty) return null;
+    return places
+        .firstWhere((place) => place.isPrimary, orElse: () => places.first)
+        .placeId;
+  } catch (error, stackTrace) {
+    debugPrint("[event-create] 기본 출발지 조회 실패: $error\n$stackTrace");
+    return null;
+  }
 }
 
 /// S-10 일정 생성 폼.
@@ -295,14 +318,19 @@ class _EventFormScreenState extends ConsumerState<EventFormScreen> {
         autoManageExcluded: _autoManageExcluded,
       );
 
-      final created = await ref
-          .read(ensomRepositoryProvider)
-          .createEvent(
-            event,
-            originPlaceId: draft?.originPlaceId,
-            selectedRouteOptionId: draft?.selectedRoute.routeOptionId,
-            writeToCalendarSourceId: _writeToCalendarSourceId,
-          );
+      final repository = ref.read(ensomRepositoryProvider);
+      final originPlaceId = await resolveEventOriginPlaceId(
+        repository: repository,
+        locationState: event.locationState,
+        hasMapDraft: draft != null,
+        draftOriginPlaceId: draft?.originPlaceId,
+      );
+      final created = await repository.createEvent(
+        event,
+        originPlaceId: originPlaceId,
+        selectedRouteOptionId: draft?.selectedRoute.routeOptionId,
+        writeToCalendarSourceId: _writeToCalendarSourceId,
+      );
 
       ref.invalidate(eventsInRangeProvider);
       ref.invalidate(pendingReviewsProvider);

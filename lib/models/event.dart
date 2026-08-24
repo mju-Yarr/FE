@@ -66,7 +66,10 @@ abstract class Event with _$Event {
     bool? autoManageExcluded,
   }) = _Event;
 
-  factory Event.fromJson(Map<String, dynamic> json) => _$EventFromJson(json);
+  factory Event.fromJson(Map<String, dynamic> json) => _$EventFromJson({
+    ...json,
+    if (json["anchorMode"] != null) "anchor": json["anchorMode"],
+  });
 }
 
 /// POST /events/{id}/review 요청 바디.

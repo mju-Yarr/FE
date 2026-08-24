@@ -196,10 +196,12 @@ void main() {
         endsAt: DateTime.utc(2026, 8, 23, 6),
         locationState: LocationState.notRequired,
       ),
+      originPlaceId: "place-1",
     );
 
     final body = jsonDecode(captured!.body) as Map<String, dynamic>;
     expect(body["startsAt"], "2026-08-23T05:00:00.000Z");
     expect(body["endsAt"], "2026-08-23T06:00:00.000Z");
+    expect(body["originPlaceId"], "place-1");
   });
 }
