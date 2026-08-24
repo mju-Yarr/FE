@@ -3,11 +3,11 @@ import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:go_router/go_router.dart";
 import "package:uuid/uuid.dart";
 import "../../core/coachmark_service.dart";
-import "../../core/local_notification_service.dart";
 import "../../models/action_log.dart";
 import "../../models/plan.dart";
 import "../../models/today_plan.dart";
 import "../../providers/home_providers.dart";
+import "../../providers/local_notification_providers.dart";
 import "../../providers/bootstrap_provider.dart";
 import "../../providers/offline_queue_providers.dart";
 import "../../providers/system_state_provider.dart";
@@ -27,6 +27,20 @@ import "widgets/plan_card.dart";
 import "widgets/stacked_event_cards.dart";
 import "widgets/today_wrap_card.dart";
 import "widgets/weather_widget.dart";
+
+Future<void> scheduleHomePlanNotifications({
+  required EventNotificationCoordinator coordinator,
+  required Plan plan,
+  required String eventDisplayName,
+}) {
+  return coordinator.reschedule(
+    eventId: plan.eventId,
+    revisionNo: plan.revisionNo,
+    prepStartAt: plan.prepStartAt,
+    recommendedDepartAt: plan.recommendedDepartAt,
+    eventDisplayName: eventDisplayName,
+  );
+}
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -125,11 +139,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _scheduleLocalNotifications(Plan plan, String eventDisplayName) {
     if (_lastScheduledRevision == plan.revisionNo) return;
     _lastScheduledRevision = plan.revisionNo;
-    LocalNotificationService.instance.schedulePlanNotifications(
-      eventId: plan.eventId,
-      revisionNo: plan.revisionNo,
-      prepStartAt: plan.prepStartAt,
-      recommendedDepartAt: plan.recommendedDepartAt,
+    scheduleHomePlanNotifications(
+      coordinator: ref.read(eventNotificationCoordinatorProvider),
+      plan: plan,
       eventDisplayName: eventDisplayName,
     );
   }

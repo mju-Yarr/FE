@@ -2,13 +2,13 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_riverpod/legacy.dart";
 import "package:go_router/go_router.dart";
-import "../../core/local_notification_service.dart";
 import "../../models/event.dart";
 import "../../models/plan.dart";
 import "../../network/api_client.dart";
 import "../../providers/calendar_providers.dart";
 import "../calendar/widgets/classification_review_sheet.dart";
 import "../../providers/home_providers.dart";
+import "../../providers/local_notification_providers.dart";
 import "../../repository/ensom_repository.dart";
 import "../../repository/providers.dart";
 import "../../theme/ensom_colors.dart";
@@ -22,19 +22,6 @@ import "../home/widgets/arrival_result_card.dart";
 import "../home/widgets/checklist_section.dart";
 import "../home/widgets/wellness_actions_section.dart";
 
-final localNotificationServiceProvider = Provider<LocalNotificationService>((
-  ref,
-) {
-  return LocalNotificationService.instance;
-});
-
-final eventNotificationCoordinatorProvider =
-    Provider<EventNotificationCoordinator>((ref) {
-      return EventNotificationCoordinator(
-        ref.watch(localNotificationServiceProvider),
-      );
-    });
-
 final eventDeletionControllerProvider = StateNotifierProvider.autoDispose
     .family<EventDeletionController, AsyncValue<void>, String>((ref, eventId) {
       return EventDeletionController(
@@ -46,60 +33,6 @@ final eventDeletionControllerProvider = StateNotifierProvider.autoDispose
         eventId: eventId,
       );
     });
-
-/// 같은 일정의 알림 변경을 시작 순서대로 실행한다.
-///
-/// 알림 재예약은 내부적으로 `기존 알림 취소 → 새 알림 예약`을 수행하므로,
-/// 일정 삭제의 알림 취소와 겹치면 삭제 후 새 알림이 뒤늦게 생길 수 있다.
-/// eventId별 tail future를 공유해 재예약이 먼저 시작됐다면 삭제 취소가
-/// 반드시 그 뒤에 실행되도록 보장한다.
-class EventNotificationCoordinator {
-  EventNotificationCoordinator(this.notifications);
-
-  final LocalNotificationService notifications;
-  final Map<String, Future<void>> _tails = {};
-
-  Future<void> reschedule({
-    required String eventId,
-    required int revisionNo,
-    required DateTime prepStartAt,
-    required DateTime recommendedDepartAt,
-    required String eventDisplayName,
-  }) {
-    return _enqueue(
-      eventId,
-      () => notifications.schedulePlanNotifications(
-        eventId: eventId,
-        revisionNo: revisionNo,
-        prepStartAt: prepStartAt,
-        recommendedDepartAt: recommendedDepartAt,
-        eventDisplayName: eventDisplayName,
-      ),
-    );
-  }
-
-  Future<void> cancel(String eventId) {
-    return _enqueue(
-      eventId,
-      () => notifications.cancelPlanNotifications(eventId: eventId),
-    );
-  }
-
-  Future<void> _enqueue(String eventId, Future<void> Function() operation) {
-    final previous = _tails[eventId] ?? Future<void>.value();
-    late final Future<void> current;
-    current = previous
-        .catchError((Object error, StackTrace stackTrace) {})
-        .then<void>((_) => operation())
-        .whenComplete(() {
-          if (identical(_tails[eventId], current)) {
-            _tails.remove(eventId);
-          }
-        });
-    _tails[eventId] = current;
-    return current;
-  }
-}
 
 /// 일정 삭제를 `EventDetailScreen`의 위젯 수명과 분리해서 처리한다.
 ///

@@ -1,6 +1,7 @@
 import "package:ensom/core/local_notification_service.dart";
 import "package:ensom/models/weekly_summary.dart";
 import "package:ensom/providers/calendar_providers.dart";
+import "package:ensom/providers/local_notification_providers.dart";
 import "package:ensom/repository/ensom_repository.dart";
 import "package:ensom/repository/providers.dart";
 import "package:ensom/screens/detail/event_detail_screen.dart";

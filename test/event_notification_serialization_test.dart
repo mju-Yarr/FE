@@ -1,9 +1,12 @@
 import "dart:async";
 
 import "package:ensom/core/local_notification_service.dart";
+import "package:ensom/models/plan.dart";
+import "package:ensom/providers/local_notification_providers.dart";
 import "package:ensom/repository/ensom_repository.dart";
 import "package:ensom/repository/providers.dart";
 import "package:ensom/screens/detail/event_detail_screen.dart";
+import "package:ensom/screens/home/home_screen.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "package:flutter_test/flutter_test.dart";
 
@@ -63,12 +66,31 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      final coordinator = container.read(eventNotificationCoordinatorProvider);
-      final reschedule = coordinator.reschedule(
+      final plan = Plan(
+        planId: "plan-1",
         eventId: "event-1",
         revisionNo: 2,
+        calcVersion: "test",
+        planStatus: PlanStatus.active,
+        eventStatus: EventLifecycleStatus.planned,
+        feasible: true,
         prepStartAt: DateTime.utc(2026, 8, 25, 1),
         recommendedDepartAt: DateTime.utc(2026, 8, 25, 2),
+        targetArriveAt: DateTime.utc(2026, 8, 25, 3),
+        breakdown: const PlanBreakdown(
+          estimatedPrepMinutes: 10,
+          extraPrepMinutes: 0,
+          personalRoutineMinutes: 0,
+          travelMinutes: 20,
+          trafficBufferMinutes: 0,
+          arrivalBufferMinutes: 5,
+        ),
+        reasons: const [],
+        checklist: const [],
+      );
+      final reschedule = scheduleHomePlanNotifications(
+        coordinator: container.read(eventNotificationCoordinatorProvider),
+        plan: plan,
         eventDisplayName: "meeting",
       );
       await notifications.scheduleStarted.future;

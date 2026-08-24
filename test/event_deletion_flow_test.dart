@@ -4,6 +4,7 @@ import "package:ensom/core/local_notification_service.dart";
 import "package:ensom/models/event.dart";
 import "package:ensom/repository/ensom_repository.dart";
 import "package:ensom/repository/providers.dart";
+import "package:ensom/providers/local_notification_providers.dart";
 import "package:ensom/screens/detail/event_detail_screen.dart";
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
