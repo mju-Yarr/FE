@@ -28,18 +28,78 @@ final localNotificationServiceProvider = Provider<LocalNotificationService>((
   return LocalNotificationService.instance;
 });
 
+final eventNotificationCoordinatorProvider =
+    Provider<EventNotificationCoordinator>((ref) {
+      return EventNotificationCoordinator(
+        ref.watch(localNotificationServiceProvider),
+      );
+    });
+
 final eventDeletionControllerProvider = StateNotifierProvider.autoDispose
-    .family<EventDeletionController, AsyncValue<void>, String>((
-      ref,
-      eventId,
-    ) {
+    .family<EventDeletionController, AsyncValue<void>, String>((ref, eventId) {
       return EventDeletionController(
         ref: ref,
         repo: ref.watch(ensomRepositoryProvider),
-        notifications: ref.watch(localNotificationServiceProvider),
+        notificationCoordinator: ref.watch(
+          eventNotificationCoordinatorProvider,
+        ),
         eventId: eventId,
       );
     });
+
+/// 같은 일정의 알림 변경을 시작 순서대로 실행한다.
+///
+/// 알림 재예약은 내부적으로 `기존 알림 취소 → 새 알림 예약`을 수행하므로,
+/// 일정 삭제의 알림 취소와 겹치면 삭제 후 새 알림이 뒤늦게 생길 수 있다.
+/// eventId별 tail future를 공유해 재예약이 먼저 시작됐다면 삭제 취소가
+/// 반드시 그 뒤에 실행되도록 보장한다.
+class EventNotificationCoordinator {
+  EventNotificationCoordinator(this.notifications);
+
+  final LocalNotificationService notifications;
+  final Map<String, Future<void>> _tails = {};
+
+  Future<void> reschedule({
+    required String eventId,
+    required int revisionNo,
+    required DateTime prepStartAt,
+    required DateTime recommendedDepartAt,
+    required String eventDisplayName,
+  }) {
+    return _enqueue(
+      eventId,
+      () => notifications.schedulePlanNotifications(
+        eventId: eventId,
+        revisionNo: revisionNo,
+        prepStartAt: prepStartAt,
+        recommendedDepartAt: recommendedDepartAt,
+        eventDisplayName: eventDisplayName,
+      ),
+    );
+  }
+
+  Future<void> cancel(String eventId) {
+    return _enqueue(
+      eventId,
+      () => notifications.cancelPlanNotifications(eventId: eventId),
+    );
+  }
+
+  Future<void> _enqueue(String eventId, Future<void> Function() operation) {
+    final previous = _tails[eventId] ?? Future<void>.value();
+    late final Future<void> current;
+    current = previous
+        .catchError((Object error, StackTrace stackTrace) {})
+        .then<void>((_) => operation())
+        .whenComplete(() {
+          if (identical(_tails[eventId], current)) {
+            _tails.remove(eventId);
+          }
+        });
+    _tails[eventId] = current;
+    return current;
+  }
+}
 
 /// 일정 삭제를 `EventDetailScreen`의 위젯 수명과 분리해서 처리한다.
 ///
@@ -62,14 +122,14 @@ class EventDeletionController extends StateNotifier<AsyncValue<void>> {
   EventDeletionController({
     required Ref ref,
     required this.repo,
-    required this.notifications,
+    required this.notificationCoordinator,
     required this.eventId,
   }) : _ref = ref,
        super(const AsyncValue.data(null));
 
   final Ref _ref;
   final EnsomRepository repo;
-  final LocalNotificationService notifications;
+  final EventNotificationCoordinator notificationCoordinator;
   final String eventId;
 
   Future<void> delete() async {
@@ -80,7 +140,7 @@ class EventDeletionController extends StateNotifier<AsyncValue<void>> {
       await repo.deleteEvent(eventId);
 
       try {
-        await notifications.cancelPlanNotifications(eventId: eventId);
+        await notificationCoordinator.cancel(eventId);
       } catch (_) {
         // best-effort — 알림 정리 실패는 이미 끝난 삭제 결과에 영향을 주지 않는다.
       }
@@ -218,8 +278,8 @@ class EventDetailScreen extends ConsumerWidget {
       final event = ref.read(eventDetailProvider(eventId)).value;
       if (plan == null || event == null) return;
       await ref
-          .read(localNotificationServiceProvider)
-          .schedulePlanNotifications(
+          .read(eventNotificationCoordinatorProvider)
+          .reschedule(
             eventId: eventId,
             revisionNo: plan.revisionNo,
             prepStartAt: plan.prepStartAt,
@@ -249,7 +309,9 @@ class EventDetailScreen extends ConsumerWidget {
               // 실제 삭제·알림 취소·캐시 무효화는 화면이 아니라
               // EventDeletionController가 수행한다 — 이 화면이 사라져도
               // (뒤로가기 등) 진행 중이던 후처리가 끝까지 이어진다.
-              ref.read(eventDeletionControllerProvider(eventId).notifier).delete();
+              ref
+                  .read(eventDeletionControllerProvider(eventId).notifier)
+                  .delete();
             },
             style: TextButton.styleFrom(foregroundColor: EnsomColors.caution),
             child: const Text("삭제"),
