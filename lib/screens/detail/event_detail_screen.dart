@@ -1,6 +1,8 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:flutter_riverpod/legacy.dart";
 import "package:go_router/go_router.dart";
+import "../../core/local_notification_service.dart";
 import "../../models/event.dart";
 import "../../models/plan.dart";
 import "../../network/api_client.dart";
@@ -18,6 +20,15 @@ import "../../widgets/route_change_sheet.dart";
 import "../home/widgets/arrival_result_card.dart";
 import "../home/widgets/checklist_section.dart";
 import "../home/widgets/wellness_actions_section.dart";
+
+final localNotificationServiceProvider = Provider<LocalNotificationService>((
+  ref,
+) {
+  return LocalNotificationService.instance;
+});
+
+final eventDeletionInProgressProvider = StateProvider.autoDispose
+    .family<bool, String>((ref, eventId) => false);
 
 /// DTL-01 일정 상세 (S-12)
 /// 진입: HM-01 카드 탭, CAL-01 카드 탭, HM-02 알림 행
@@ -122,6 +133,7 @@ class EventDetailScreen extends ConsumerWidget {
   }
 
   void _showDeleteConfirm(BuildContext context, WidgetRef ref) {
+    if (ref.read(eventDeletionInProgressProvider(eventId))) return;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -146,32 +158,50 @@ class EventDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _deleteEvent(BuildContext context, WidgetRef ref) async {
+    final deletionState = ref.read(
+      eventDeletionInProgressProvider(eventId).notifier,
+    );
+    if (deletionState.state) return;
+    deletionState.state = true;
+
     try {
       await ref.read(ensomRepositoryProvider).deleteEvent(eventId);
+      await ref
+          .read(localNotificationServiceProvider)
+          .cancelPlanNotifications(eventId: eventId);
       ref.invalidate(eventDetailProvider(eventId));
       ref.invalidate(planControllerProvider(eventId));
       ref.invalidate(eventsInRangeProvider);
       ref.invalidate(pendingReviewsProvider);
+      ref.invalidate(weeklySummaryProvider);
       ref.invalidate(todayPlanProvider);
       ref.invalidate(nextEventProvider);
       if (context.mounted) {
+        deletionState.state = false;
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text("삭제했어요.")));
         context.pop(true);
       }
     } on ApiException catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.message)));
-      }
+      if (!context.mounted) return;
+      deletionState.state = false;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (_) {
+      if (!context.mounted) return;
+      deletionState.state = false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("삭제를 마무리하지 못했어요. 다시 시도해주세요.")),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eventAsync = ref.watch(eventDetailProvider(eventId));
+    final isDeleting = ref.watch(eventDeletionInProgressProvider(eventId));
 
     return Scaffold(
       backgroundColor: EnsomColors.canvas,
@@ -189,8 +219,14 @@ class EventDetailScreen extends ConsumerWidget {
         ),
         actions: [
           PopupMenuButton<String>(
+            enabled: !isDeleting,
             onSelected: (action) => _onMenuAction(context, ref, action),
-            icon: const Icon(Icons.more_horiz, color: EnsomColors.ink),
+            icon: isDeleting
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.more_horiz, color: EnsomColors.ink),
             itemBuilder: (context) => [
               const PopupMenuItem(value: "edit", child: Text("계획 수정")),
               const PopupMenuItem(
