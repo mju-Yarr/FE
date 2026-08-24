@@ -17,6 +17,7 @@ import "../screens/onboarding/onboarding_complete_screen.dart";
 import "../screens/onboarding/permission_priming_screen.dart";
 import "../screens/onboarding/signup_complete_screen.dart";
 import "../screens/home/home_screen.dart";
+import "../screens/home/weather_detail_screen.dart";
 import "../screens/notifications/notification_log_screen.dart";
 import "../screens/places/place_registration_screen.dart";
 import "../screens/route/route_selection_screen.dart";
@@ -140,282 +141,263 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return null;
       }
     },
-    routes: [
-      // ─── 스플래시 (세션 확인 중) ─────────────────────────────────
-      GoRoute(path: "/splash", builder: (c, s) => const SplashScreen()),
+    routes: buildAppRoutes(ref),
+  );
+});
 
-      // ─── 온보딩 ──────────────────────────────────────────────────
-      GoRoute(path: "/onboarding/auth", builder: (c, s) => const AuthScreen()),
-      GoRoute(
-        path: "/onboarding/consent",
-        builder: (c, s) => const ConsentScreen(),
-      ),
-      GoRoute(
-        path: "/onboarding/email-verification",
-        builder: (c, s) => EmailVerificationScreen(
-          email: s.uri.queryParameters["email"] ?? "",
-        ),
-      ),
-      GoRoute(
-        path: "/onboarding/signup-complete",
-        builder: (c, s) => const SignupCompleteScreen(),
-      ),
-      GoRoute(
-        path: "/onboarding/prep-time",
-        builder: (c, s) => const PrepTimeEntryScreen(),
-      ),
-      GoRoute(
-        path: "/onboarding/places",
-        builder: (c, s) => const PlaceRegistrationScreen(isOnboarding: true),
-      ),
-      GoRoute(
-        path: "/onboarding/wellness",
-        builder: (c, s) => const WellnessOnboardingScreen(),
-      ),
-      GoRoute(
-        path: "/onboarding/complete",
-        builder: (c, s) => const OnboardingCompleteScreen(),
-      ),
-      GoRoute(
-        path: "/onboarding/password-reset",
-        builder: (c, s) => const PasswordResetScreen(),
-      ),
-      // S-21 약관 본문 (§6.1 /terms/:key, key = tos/privacy/location/marketing)
-      GoRoute(
-        path: "/terms/:key",
-        builder: (c, s) {
-          final key = s.pathParameters["key"]!;
-          // 명세의 라우트 key(tos)와 서버 consentType(terms)이 다르다.
-          final consentType = key == "tos" ? "terms" : key;
-          return ConsentDetailScreen(
-            consentType: consentType,
-            title: _consentTitles[consentType] ?? "약관",
+/// route table을 `appRouterProvider`에서 분리해 둔다 — production route가
+/// 빠지거나 오타 나는 회귀를 잡으려면 테스트가 이 리스트를 그대로 써서
+/// GoRouter를 만들어야 하는데, `appRouterProvider`는 redirect가
+/// `authNotifierProvider`/`mapDraftEventProvider`를 즉시 구독해서 테스트
+/// 하네스 부담이 크다. 이 함수는 온보딩 프라이밍 화면의 `onAllow`/`onSkip`
+/// 콜백 안에서만 `ref`를 지연 참조하므로, route 목록을 만드는 시점에는
+/// 저 provider들을 초기화하지 않는다.
+List<RouteBase> buildAppRoutes(Ref ref) => [
+  // ─── 스플래시 (세션 확인 중) ─────────────────────────────────
+  GoRoute(path: "/splash", builder: (c, s) => const SplashScreen()),
+
+  // ─── 온보딩 ──────────────────────────────────────────────────
+  GoRoute(path: "/onboarding/auth", builder: (c, s) => const AuthScreen()),
+  GoRoute(
+    path: "/onboarding/consent",
+    builder: (c, s) => const ConsentScreen(),
+  ),
+  GoRoute(
+    path: "/onboarding/email-verification",
+    builder: (c, s) =>
+        EmailVerificationScreen(email: s.uri.queryParameters["email"] ?? ""),
+  ),
+  GoRoute(
+    path: "/onboarding/signup-complete",
+    builder: (c, s) => const SignupCompleteScreen(),
+  ),
+  GoRoute(
+    path: "/onboarding/prep-time",
+    builder: (c, s) => const PrepTimeEntryScreen(),
+  ),
+  GoRoute(
+    path: "/onboarding/places",
+    builder: (c, s) => const PlaceRegistrationScreen(isOnboarding: true),
+  ),
+  GoRoute(
+    path: "/onboarding/wellness",
+    builder: (c, s) => const WellnessOnboardingScreen(),
+  ),
+  GoRoute(
+    path: "/onboarding/complete",
+    builder: (c, s) => const OnboardingCompleteScreen(),
+  ),
+  GoRoute(
+    path: "/onboarding/password-reset",
+    builder: (c, s) => const PasswordResetScreen(),
+  ),
+  // S-21 약관 본문 (§6.1 /terms/:key, key = tos/privacy/location/marketing)
+  GoRoute(
+    path: "/terms/:key",
+    builder: (c, s) {
+      final key = s.pathParameters["key"]!;
+      // 명세의 라우트 key(tos)와 서버 consentType(terms)이 다르다.
+      final consentType = key == "tos" ? "terms" : key;
+      return ConsentDetailScreen(
+        consentType: consentType,
+        title: _consentTitles[consentType] ?? "약관",
+      );
+    },
+  ),
+  GoRoute(
+    path: "/onboarding/priming/notification",
+    builder: (c, s) => PermissionPrimingScreen(
+      type: PermissionPrimingType.notification,
+      onAllow: () async {
+        final status = await PermissionService.instance.requestNotification();
+        if (!c.mounted) return;
+        if (!status.isGranted && !status.isLimited) {
+          await PermissionService.instance.showRationale(
+            c,
+            PermissionRationaleType.notification,
           );
-        },
-      ),
-      GoRoute(
-        path: "/onboarding/priming/notification",
-        builder: (c, s) => PermissionPrimingScreen(
-          type: PermissionPrimingType.notification,
-          onAllow: () async {
-            final status = await PermissionService.instance
-                .requestNotification();
-            if (!c.mounted) return;
-            if (!status.isGranted && !status.isLimited) {
-              await PermissionService.instance.showRationale(
-                c,
-                PermissionRationaleType.notification,
-              );
-            }
-            // 알림은 §4.1 프라이밍 3종의 마지막이다. 다음은 S-05 웰니스.
-            await ref
-                .read(authNotifierProvider.notifier)
-                .advanceOnboarding("wellness");
-            if (c.mounted) c.go("/onboarding/wellness");
-          },
-          onSkip: () async {
-            await ref
-                .read(authNotifierProvider.notifier)
-                .advanceOnboarding("wellness");
-            if (c.mounted) c.go("/onboarding/wellness");
-          },
-        ),
-      ),
-      GoRoute(
-        path: "/onboarding/priming/location",
-        builder: (c, s) => PermissionPrimingScreen(
-          type: PermissionPrimingType.location,
-          onAllow: () async {
-            final status = await PermissionService.instance.requestLocation();
-            if (!c.mounted) return;
-            if (!status.isGranted) {
-              await PermissionService.instance.showRationale(
-                c,
-                PermissionRationaleType.location,
-              );
-            }
-            if (c.mounted) c.go("/onboarding/priming/notification");
-          },
-          onSkip: () async {
-            c.go("/onboarding/priming/notification");
-          },
-        ),
-      ),
-      GoRoute(
-        path: "/onboarding/priming/calendar",
-        builder: (c, s) => PermissionPrimingScreen(
-          type: PermissionPrimingType.calendar,
-          onAllow: () async {
-            if (c.mounted) c.push("/calendar/sync?onboarding=true");
-          },
-          onSkip: () async {
-            // 프라이밍 3종은 서버에 permissions 한 단계로만 기록한다.
-            await ref
-                .read(authNotifierProvider.notifier)
-                .advanceOnboarding("permissions");
-            if (c.mounted) c.go("/onboarding/priming/location");
-          },
-        ),
-      ),
+        }
+        // 알림은 §4.1 프라이밍 3종의 마지막이다. 다음은 S-05 웰니스.
+        await ref
+            .read(authNotifierProvider.notifier)
+            .advanceOnboarding("wellness");
+        if (c.mounted) c.go("/onboarding/wellness");
+      },
+      onSkip: () async {
+        await ref
+            .read(authNotifierProvider.notifier)
+            .advanceOnboarding("wellness");
+        if (c.mounted) c.go("/onboarding/wellness");
+      },
+    ),
+  ),
+  GoRoute(
+    path: "/onboarding/priming/location",
+    builder: (c, s) => PermissionPrimingScreen(
+      type: PermissionPrimingType.location,
+      onAllow: () async {
+        final status = await PermissionService.instance.requestLocation();
+        if (!c.mounted) return;
+        if (!status.isGranted) {
+          await PermissionService.instance.showRationale(
+            c,
+            PermissionRationaleType.location,
+          );
+        }
+        if (c.mounted) c.go("/onboarding/priming/notification");
+      },
+      onSkip: () async {
+        c.go("/onboarding/priming/notification");
+      },
+    ),
+  ),
+  GoRoute(
+    path: "/onboarding/priming/calendar",
+    builder: (c, s) => PermissionPrimingScreen(
+      type: PermissionPrimingType.calendar,
+      onAllow: () async {
+        if (c.mounted) c.push("/calendar/sync?onboarding=true");
+      },
+      onSkip: () async {
+        // 프라이밍 3종은 서버에 permissions 한 단계로만 기록한다.
+        await ref
+            .read(authNotifierProvider.notifier)
+            .advanceOnboarding("permissions");
+        if (c.mounted) c.go("/onboarding/priming/location");
+      },
+    ),
+  ),
 
-      // ─── 기능 화면 (인증 필요) ───────────────────────────────────
-      GoRoute(
-        path: "/notifications/today",
-        builder: (c, s) => const NotificationLogScreen(),
-      ),
-      GoRoute(
-        path: "/settings/wellness-prefs",
-        builder: (c, s) => const WellnessPrefsScreen(),
-      ),
-      GoRoute(
-        path: "/summary/daily",
-        builder: (c, s) => const DailySummaryScreen(),
-      ),
-      GoRoute(
-        path: "/places/manage",
-        builder: (c, s) => const PlaceRegistrationScreen(),
-      ),
-      GoRoute(
-        path: "/plans/:planId/routes",
-        builder: (c, s) => RouteSelectionScreen(
-          planId: s.pathParameters["planId"]!,
-          eventId: s.uri.queryParameters["eventId"]!,
-        ),
-      ),
-      GoRoute(
-        path: "/events/create-from-map",
-        builder: (c, s) => const EventFormScreen(fromMap: true),
-      ),
-      GoRoute(
-        path: "/search/place",
-        builder: (c, s) => const PlaceSearchScreen(),
-      ),
-      GoRoute(
-        path: "/calendar/new",
-        builder: (c, s) => const EventFormScreen(),
-      ),
-      // S-41 캘린더 연동 관리 (§6.1 /calendar/connections). 기존 /calendar/sync는
-      // 온보딩 중 연결 단계가 계속 쓴다.
-      GoRoute(
-        path: "/calendar/connections",
-        builder: (c, s) => const CalendarSyncScreen(),
-      ),
-      GoRoute(
-        path: "/calendar/sync",
-        builder: (c, s) => CalendarSyncScreen(
-          isOnboarding: s.uri.queryParameters["onboarding"] == "true",
-        ),
-      ),
-      GoRoute(
-        path: "/calendar/weekly-report",
-        builder: (c, s) => WeeklyReportScreen(
-          initialDate: DateTime.tryParse(s.uri.queryParameters["date"] ?? ""),
-        ),
-      ),
+  // ─── 기능 화면 (인증 필요) ───────────────────────────────────
+  GoRoute(
+    path: "/notifications/today",
+    builder: (c, s) => const NotificationLogScreen(),
+  ),
+  GoRoute(
+    path: "/settings/wellness-prefs",
+    builder: (c, s) => const WellnessPrefsScreen(),
+  ),
+  GoRoute(
+    path: "/summary/daily",
+    builder: (c, s) => const DailySummaryScreen(),
+  ),
+  GoRoute(path: "/weather", builder: (c, s) => const WeatherDetailScreen()),
+  GoRoute(
+    path: "/places/manage",
+    builder: (c, s) => const PlaceRegistrationScreen(),
+  ),
+  GoRoute(
+    path: "/plans/:planId/routes",
+    builder: (c, s) => RouteSelectionScreen(
+      planId: s.pathParameters["planId"]!,
+      eventId: s.uri.queryParameters["eventId"]!,
+    ),
+  ),
+  GoRoute(
+    path: "/events/create-from-map",
+    builder: (c, s) => const EventFormScreen(fromMap: true),
+  ),
+  GoRoute(path: "/search/place", builder: (c, s) => const PlaceSearchScreen()),
+  GoRoute(path: "/calendar/new", builder: (c, s) => const EventFormScreen()),
+  // S-41 캘린더 연동 관리 (§6.1 /calendar/connections). 기존 /calendar/sync는
+  // 온보딩 중 연결 단계가 계속 쓴다.
+  GoRoute(
+    path: "/calendar/connections",
+    builder: (c, s) => const CalendarSyncScreen(),
+  ),
+  GoRoute(
+    path: "/calendar/sync",
+    builder: (c, s) => CalendarSyncScreen(
+      isOnboarding: s.uri.queryParameters["onboarding"] == "true",
+    ),
+  ),
+  GoRoute(
+    path: "/calendar/weekly-report",
+    builder: (c, s) => WeeklyReportScreen(
+      initialDate: DateTime.tryParse(s.uri.queryParameters["date"] ?? ""),
+    ),
+  ),
 
-      // ─── DTL-01 일정 상세 ─────────────────────────────────────
-      GoRoute(
-        path: "/events/:eventId",
-        builder: (c, s) =>
-            EventDetailScreen(eventId: s.pathParameters["eventId"]!),
-      ),
+  // ─── DTL-01 일정 상세 ─────────────────────────────────────
+  GoRoute(
+    path: "/events/:eventId",
+    builder: (c, s) => EventDetailScreen(eventId: s.pathParameters["eventId"]!),
+  ),
 
-      // ─── PRF 프로필 하위 ──────────────────────────────────────
-      GoRoute(
-        path: "/profile/account",
-        builder: (c, s) => const AccountScreen(),
-      ),
-      GoRoute(
-        path: "/profile/withdraw",
-        builder: (c, s) => const WithdrawScreen(),
-      ),
-      GoRoute(
-        path: "/profile/prep",
-        builder: (c, s) => const PrepTimeEntryScreen(isOnboarding: false),
-      ),
-      GoRoute(
-        path: "/profile/notifications",
-        builder: (c, s) => const NotificationSettingsScreen(),
-      ),
-      GoRoute(
-        path: "/profile/permissions",
-        builder: (c, s) => const PermissionsScreen(),
-      ),
-      GoRoute(
-        path: "/profile/personalization",
-        builder: (c, s) => const PersonalizationScreen(),
-      ),
-      GoRoute(
-        path: "/profile/data",
-        builder: (c, s) => const DataManagementScreen(),
-      ),
-      GoRoute(
-        path: "/profile/change-password",
-        builder: (c, s) => const ChangePasswordScreen(),
-      ),
-      GoRoute(
-        path: "/profile/change-email",
-        builder: (c, s) => const ChangeEmailScreen(),
-      ),
-      GoRoute(
-        path: "/profile/providers",
-        builder: (c, s) => const ProvidersScreen(),
-      ),
-      GoRoute(
-        path: "/profile/sessions",
-        builder: (c, s) => const SessionsScreen(),
-      ),
-      GoRoute(
-        path: "/map/bookmarks",
-        builder: (c, s) => const BookmarksScreen(),
-      ),
+  // ─── PRF 프로필 하위 ──────────────────────────────────────
+  GoRoute(path: "/profile/account", builder: (c, s) => const AccountScreen()),
+  GoRoute(path: "/profile/withdraw", builder: (c, s) => const WithdrawScreen()),
+  GoRoute(
+    path: "/profile/prep",
+    builder: (c, s) => const PrepTimeEntryScreen(isOnboarding: false),
+  ),
+  GoRoute(
+    path: "/profile/notifications",
+    builder: (c, s) => const NotificationSettingsScreen(),
+  ),
+  GoRoute(
+    path: "/profile/permissions",
+    builder: (c, s) => const PermissionsScreen(),
+  ),
+  GoRoute(
+    path: "/profile/personalization",
+    builder: (c, s) => const PersonalizationScreen(),
+  ),
+  GoRoute(
+    path: "/profile/data",
+    builder: (c, s) => const DataManagementScreen(),
+  ),
+  GoRoute(
+    path: "/profile/change-password",
+    builder: (c, s) => const ChangePasswordScreen(),
+  ),
+  GoRoute(
+    path: "/profile/change-email",
+    builder: (c, s) => const ChangeEmailScreen(),
+  ),
+  GoRoute(
+    path: "/profile/providers",
+    builder: (c, s) => const ProvidersScreen(),
+  ),
+  GoRoute(path: "/profile/sessions", builder: (c, s) => const SessionsScreen()),
+  GoRoute(path: "/map/bookmarks", builder: (c, s) => const BookmarksScreen()),
 
-      // ─── 메인 4탭 (화면설계서 확정: 캘린더·홈·지도·프로필) ────
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => MainTabShell(shell: shell),
-        branches: [
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: "/calendar",
-                builder: (c, s) => const CalendarScreen(),
+  // ─── 메인 4탭 (화면설계서 확정: 캘린더·홈·지도·프로필) ────
+  StatefulShellRoute.indexedStack(
+    builder: (context, state, shell) => MainTabShell(shell: shell),
+    branches: [
+      StatefulShellBranch(
+        routes: [
+          GoRoute(path: "/calendar", builder: (c, s) => const CalendarScreen()),
+        ],
+      ),
+      StatefulShellBranch(
+        routes: [GoRoute(path: "/home", builder: (c, s) => const HomeScreen())],
+      ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(
+            path: "/map",
+            builder: (c, s) => MapScreen(
+              initialDestName: s.uri.queryParameters["destName"],
+              initialDestLat: double.tryParse(
+                s.uri.queryParameters["destLat"] ?? "",
               ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(path: "/home", builder: (c, s) => const HomeScreen()),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: "/map",
-                builder: (c, s) => MapScreen(
-                  initialDestName: s.uri.queryParameters["destName"],
-                  initialDestLat: double.tryParse(
-                    s.uri.queryParameters["destLat"] ?? "",
-                  ),
-                  initialDestLng: double.tryParse(
-                    s.uri.queryParameters["destLng"] ?? "",
-                  ),
-                ),
+              initialDestLng: double.tryParse(
+                s.uri.queryParameters["destLng"] ?? "",
               ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: "/profile",
-                builder: (c, s) => const ProfileScreen(),
-              ),
-            ],
+            ),
           ),
         ],
       ),
+      StatefulShellBranch(
+        routes: [
+          GoRoute(path: "/profile", builder: (c, s) => const ProfileScreen()),
+        ],
+      ),
     ],
-  );
-});
+  ),
+];
 
 // ─── 메인 탭 셸 ───────────────────────────────────────────────────
 /// ensom_prototype.html `.tabbar` — 화면 하단에 살짝 띄운 알약 모양

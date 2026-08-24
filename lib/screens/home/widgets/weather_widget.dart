@@ -1,25 +1,21 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "package:go_router/go_router.dart";
 import "../../../models/environment_data.dart";
 import "../../../providers/environment_provider.dart";
 import "../../../theme/ensom_colors.dart";
 
-/// 홈 화면 인라인 날씨/환경 카드.
-/// 접힌 상태에서 온도·하늘·PM10 뱃지를 한 줄로 보여주고,
-/// 탭하면 확장해 PM25·자외선 정보를 추가로 표시한다.
+/// 홈 화면 인라인 날씨/환경 카드 (ensom_prototype.html `.weather`).
+/// 목업처럼 탭하면 날씨 상세 화면(`/weather`)으로 이동한다 — 이전엔
+/// 로컬 상태로 카드 안에서 PM25·자외선만 펼쳐 보여줬는데, 그건 목업의
+/// `openWeather()`(전체화면 상세 패널 이동)와 다른 동작이라 "날씨를
+/// 눌러도 상세 페이지가 안 뜬다"는 문제로 이어졌다.
 /// 에러 시 아무것도 렌더링하지 않는다 (graceful degradation).
-class WeatherWidget extends ConsumerStatefulWidget {
+class WeatherWidget extends ConsumerWidget {
   const WeatherWidget({super.key});
 
   @override
-  ConsumerState<WeatherWidget> createState() => _WeatherWidgetState();
-}
-
-class _WeatherWidgetState extends ConsumerState<WeatherWidget> {
-  bool _expanded = false;
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final envAsync = ref.watch(environmentProvider);
 
     return envAsync.when(
@@ -27,14 +23,14 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget> {
       error: (_, _) => const SizedBox.shrink(),
       data: (data) {
         if (data == null) return const SizedBox.shrink();
-        return _buildCard(data);
+        return _buildCard(context, data);
       },
     );
   }
 
-  Widget _buildCard(EnvironmentData data) {
+  Widget _buildCard(BuildContext context, EnvironmentData data) {
     return GestureDetector(
-      onTap: () => setState(() => _expanded = !_expanded),
+      onTap: () => context.push("/weather"),
       child: Container(
         width: 108,
         decoration: BoxDecoration(
@@ -47,7 +43,7 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                "현재 위치",
+                "대표 장소",
                 style: TextStyle(
                   fontSize: 9.5,
                   fontWeight: FontWeight.w600,
@@ -72,74 +68,10 @@ class _WeatherWidgetState extends ConsumerState<WeatherWidget> {
                   color: EnsomColors.inkMuted,
                 ),
               ),
-              // 확장 상태: PM25 + UV
-              if (_expanded) ...[
-                const SizedBox(height: 8),
-                const Divider(height: 1, color: EnsomColors.hairline),
-                const SizedBox(height: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (data.pm25Grade != null)
-                      _GradeBadge(label: "초미세", grade: data.pm25Grade!),
-                    if (data.pm25Grade != null) const SizedBox(height: 6),
-                    if (data.uvIndex != null) ...[
-                      Text(
-                        "자외선 ${data.uvIndex}",
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: EnsomColors.inkMuted,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
             ],
           ),
         ),
       ),
     );
-  }
-}
-
-class _GradeBadge extends StatelessWidget {
-  const _GradeBadge({required this.label, required this.grade});
-
-  final String label;
-  final String grade;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: _gradeColor(grade).withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        "$label $grade",
-        style: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: _gradeColor(grade),
-        ),
-      ),
-    );
-  }
-
-  Color _gradeColor(String grade) {
-    switch (grade) {
-      case "좋음":
-        return EnsomColors.dataGood;
-      case "보통":
-        return EnsomColors.dataModerate;
-      case "나쁨":
-        return EnsomColors.dataWarning;
-      case "매우나쁨":
-        return EnsomColors.dataSevere;
-      default:
-        return EnsomColors.inkMuted;
-    }
   }
 }
