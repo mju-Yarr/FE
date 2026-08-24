@@ -181,10 +181,14 @@ class ApiEnsomRepository implements EnsomRepository {
   // ================================================================
 
   @override
+  Future<Map<String, dynamic>> fetchSettings() =>
+      _client.get<Map<String, dynamic>>("/me/settings");
+
+  @override
   Future<void> updateSettings(Map<String, dynamic> patch) async {
     // BE SettingsRequest는 전체 필드를 요구한다 (부분 patch 불가).
     // 현재 값을 먼저 읽고 변경분을 merge해서 전송한다.
-    final current = await _client.get<Map<String, dynamic>>("/me/settings");
+    final current = await fetchSettings();
     final merged = {...current, ...patch};
     await _client.patch<Map<String, dynamic>>("/me/settings", body: merged);
   }
@@ -496,7 +500,11 @@ class ApiEnsomRepository implements EnsomRepository {
 
   @override
   Future<void> updateWellnessPrefs(List<WellnessPref> prefs) async {
-    await _client.patch<Map<String, dynamic>>(
+    // PATCH /me/wellness-prefs는 래핑 없이 갱신된 배열을 그대로 반환한다
+    // (Map이 아님). patch<Map<String,dynamic>>로 받으면 decoded as T에서
+    // TypeError가 던져지고, 화면의 catch(_)가 이를 저장 실패로 오인해
+    // 토글을 즉시 롤백했다 — "토글이 안눌려" 버그의 원인.
+    await _client.patch<dynamic>(
       "/me/wellness-prefs",
       body: {"prefs": prefs.map((p) => p.toJson()).toList()},
     );
