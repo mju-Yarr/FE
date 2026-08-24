@@ -17,6 +17,7 @@ import "../screens/onboarding/onboarding_complete_screen.dart";
 import "../screens/onboarding/permission_priming_screen.dart";
 import "../screens/onboarding/signup_complete_screen.dart";
 import "../screens/home/home_screen.dart";
+import "../screens/home/weather_detail_screen.dart";
 import "../screens/notifications/notification_log_screen.dart";
 import "../screens/places/place_registration_screen.dart";
 import "../screens/route/route_selection_screen.dart";
@@ -270,6 +271,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: "/summary/daily",
         builder: (c, s) => const DailySummaryScreen(),
+      ),
+      GoRoute(
+        path: "/weather",
+        builder: (c, s) => const WeatherDetailScreen(),
       ),
       GoRoute(
         path: "/places/manage",
