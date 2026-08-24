@@ -7,6 +7,7 @@ import "package:go_router/go_router.dart";
 import "package:google_sign_in/google_sign_in.dart" show GoogleSignInAccount;
 import "../../core/app_config.dart";
 import "../../core/google_auth_helper.dart";
+import "../../core/google_id_token.dart";
 import "../../core/google_web_button/google_web_button.dart";
 import "../../network/api_client.dart";
 import "../../providers/auth_providers.dart";
@@ -74,20 +75,24 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       if (idToken == null) {
         throw StateError("Google 인증에서 idToken을 가져오지 못했습니다.");
       }
+      await _validateGoogleToken(idToken);
       await _completeLogin(idToken);
     } on ApiException catch (e) {
       debugPrint("[google-login] 실패(ApiException): ${e.code} ${e.message}");
+      if (e.code == "INVALID_GOOGLE_TOKEN") {
+        await GoogleAuthHelper.instance.clearLoginSession();
+      }
       setState(() {
         _notice = e.code == "NETWORK_ERROR"
             ? _AuthNotice.network
             : _AuthNotice.provider;
-        _errorDetail = "${e.code}: ${e.message}";
+        _errorDetail = null;
       });
     } catch (e, st) {
       debugPrint("[google-login] 실패: $e\n$st");
       setState(() {
         _notice = _AuthNotice.provider;
-        _errorDetail = e.toString();
+        _errorDetail = null;
       });
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -111,24 +116,40 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         });
         return;
       }
+      await _validateGoogleToken(idToken);
       await _completeLogin(idToken);
     } on ApiException catch (e) {
       debugPrint("[google-login] 실패(ApiException): ${e.code} ${e.message}");
+      if (e.code == "INVALID_GOOGLE_TOKEN") {
+        await GoogleAuthHelper.instance.clearLoginSession();
+      }
       setState(() {
         _notice = e.code == "NETWORK_ERROR"
             ? _AuthNotice.network
             : _AuthNotice.provider;
-        _errorDetail = "${e.code}: ${e.message}";
+        _errorDetail = null;
       });
     } catch (e, st) {
       debugPrint("[google-login] 실패: $e\n$st");
       setState(() {
         _notice = _AuthNotice.provider;
-        _errorDetail = e.toString();
+        _errorDetail = null;
       });
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
+  }
+
+  Future<void> _validateGoogleToken(String idToken) async {
+    final problem = validateGoogleIdToken(
+      idToken: idToken,
+      expectedAudience: kGoogleServerClientId,
+    );
+    if (problem == null) return;
+
+    await GoogleAuthHelper.instance.clearLoginSession();
+    debugPrint("[google-login] rejected local token: ${problem.name}");
+    throw StateError("Google 로그인 세션을 새로 인증해야 합니다.");
   }
 
   Future<void> _completeLogin(String idToken) async {

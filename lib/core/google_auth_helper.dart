@@ -68,6 +68,15 @@ class GoogleAuthHelper {
     }
   }
 
+  /// 만료되었거나 다른 Client ID로 발급된 로그인 세션을 제거한다.
+  Future<void> clearLoginSession() async {
+    try {
+      await _loginSignIn.signOut();
+    } catch (_) {
+      // 이미 로그아웃된 상태여도 다음 로그인 시도는 계속할 수 있다.
+    }
+  }
+
   /// 로그인용 — idToken을 반환한다.
   /// 사용자가 취소하면 null, 인증 실패 시 예외.
   Future<String?> signInForLogin() async {
