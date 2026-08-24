@@ -298,9 +298,26 @@ class MockEnsomRepository implements EnsomRepository {
   }) => fetchRouteOptions("search");
 
   // -- 설정 ---------------------------------------------------------
+  final Map<String, dynamic> _mockSettings = {
+    "initialPrepMinutes": 30,
+    "arrivalBufferMinutes": 10,
+    "notificationSensitivity": "normal",
+    "personalizationEnabled": true,
+    "autoManageEnabled": true,
+    "wellnessEventEnabled": true,
+    "lockscreenHideSensitive": true,
+  };
+
+  @override
+  Future<Map<String, dynamic>> fetchSettings() async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    return {..._mockSettings};
+  }
+
   @override
   Future<void> updateSettings(Map<String, dynamic> patch) async {
     await Future.delayed(const Duration(milliseconds: 200));
+    _mockSettings.addAll(patch);
   }
 
   // -- 맞춤 준비 항목 ------------------------------------------------

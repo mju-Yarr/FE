@@ -80,6 +80,7 @@ abstract class EnsomRepository {
   });
 
   // 설정 (SET-03, ONB-01)
+  Future<Map<String, dynamic>> fetchSettings();
   Future<void> updateSettings(Map<String, dynamic> patch);
 
   // 맞춤 준비 항목 (ONB-01, SET-02, PLAN-05)

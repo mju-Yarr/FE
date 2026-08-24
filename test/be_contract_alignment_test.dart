@@ -5,6 +5,7 @@ import "package:ensom/core/auth_service.dart";
 import "package:ensom/models/notification.dart";
 import "package:ensom/models/event.dart";
 import "package:ensom/models/daily_wellness_summary.dart";
+import "package:ensom/models/wellness_pref.dart";
 import "package:ensom/network/api_client.dart";
 import "package:ensom/repository/api_ensom_repository.dart";
 import "package:flutter_test/flutter_test.dart";
@@ -204,4 +205,34 @@ void main() {
     expect(body["endsAt"], "2026-08-23T06:00:00.000Z");
     expect(body["originPlaceId"], "place-1");
   });
+
+  test(
+    "wellness prefs PATCH accepts the BE's bare-array response",
+    () async {
+      // BE는 {"data": ...} 래핑 없이 갱신된 배열을 그대로 반환한다.
+      // patch<Map<String,dynamic>>로 받으면 decoded as T에서 TypeError가
+      // 던져지고, 화면은 이를 저장 실패로 오인해 토글을 즉시 롤백했다
+      // ("토글이 안눌려" 버그). patch<dynamic>이어야 예외 없이 통과한다.
+      final repository = await _repository((request) async {
+        return http.Response(
+          jsonEncode([
+            {
+              "wellnessTopic": "uv",
+              "isEnabled": true,
+              "remindIntervalMinutes": 120,
+              "dailyEventCap": 1,
+            },
+          ]),
+          200,
+        );
+      });
+
+      await expectLater(
+        repository.updateWellnessPrefs(const [
+          WellnessPref(topic: "uv", isEnabled: true, remindIntervalMinutes: 120),
+        ]),
+        completes,
+      );
+    },
+  );
 }
